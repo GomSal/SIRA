@@ -1,4 +1,4 @@
-# Landsat project
+# SIRA
 
 Repositorio principal para la extracción, procesamiento y análisis de datos de Landsat.
 
@@ -6,8 +6,8 @@ Repositorio principal para la extracción, procesamiento y análisis de datos de
 
 ```mermaid
 graph TD
-    A[Inicio] --> B[Clonar Repositorio]
-    B --> C[Configurar Entorno Virtual]
+    A[Inicio] --> B[Clonar Repositorio SIRA]
+    B --> C[Configurar Ambiente SIRA]
     C --> D[Instalar Dependencias]
     D --> E[Ejecutar src/main.py]
     E --> F{Autenticación API Exitosa?}
@@ -21,25 +21,25 @@ graph TD
 
 ## Guía de Clonación e Instalación
 
-A continuación, se presentan las 3 opciones soportadas para la configuración del entorno local.
+El repositorio se clona en una carpeta llamada `SIRA` y el ambiente se llama `SIRA` en las 3 opciones soportadas.
 
 ### 1. Opción Conda (Recomendada para Data Science)
 Abre tu terminal de Anaconda/Miniconda y ejecuta:
 ```bash
-git clone https://github.com/TU_USUARIO/Landsat-project.git
-cd "Landsat project"
-conda create --name landsat_env python=3.10 -y
-conda activate landsat_env
+git clone https://github.com/GomSal/SIRA.git
+cd SIRA
+conda create --name SIRA python=3.10 -y
+conda activate SIRA
 pip install -r requirements.txt
 ```
 
 ### 2. Opción PowerShell (Usuarios Windows)
 Abre PowerShell como administrador y ejecuta:
 ```powershell
-git clone https://github.com/TU_USUARIO/Landsat-project.git
-cd "Landsat project"
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+git clone https://github.com/GomSal/SIRA.git
+cd SIRA
+python -m venv SIRA
+.\SIRA\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 *(Nota: Si obtienes un error de políticas de ejecución, ejecuta `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` previamente).*
@@ -47,9 +47,9 @@ pip install -r requirements.txt
 ### 3. Opción Pip / Terminal estándar (Linux/macOS)
 Abre tu terminal Bash/Zsh y ejecuta:
 ```bash
-git clone https://github.com/TU_USUARIO/Landsat-project.git
-cd "Landsat project"
-python3 -m venv venv
-source venv/bin/activate
+git clone https://github.com/GomSal/SIRA.git
+cd SIRA
+python3 -m venv SIRA
+source SIRA/bin/activate
 pip install -r requirements.txt
 ```
