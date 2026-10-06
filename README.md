@@ -21,6 +21,10 @@ graph TD
 
 ## Guía de Clonación e Instalación
 
+> **¡Importante! Uso recomendado de Conda (conda-forge)**
+> 
+> Para este proyecto, **recomendamos encarecidamente utilizar Conda y el canal `conda-forge`** para la instalación de dependencias. Las bibliotecas científicas y geoespaciales dependen de librerías complejas en C/C++ (como BLAS/LAPACK). Instalar mediante un `pip` estándar a menudo falla porque tu máquina intentará compilar el código desde cero. Al usar `conda-forge`, descargas binarios que ya están precompilados y perfectamente enlazados, lo que te ahorrará dolores de cabeza y errores críticos de compatibilidad.
+
 El repositorio se clona en una carpeta llamada `SIRA` y el ambiente se llama `SIRA` en las 3 opciones soportadas.
 
 ### 1. Opción Conda (Recomendada para Data Science)
@@ -30,7 +34,7 @@ git clone https://github.com/GomSal/SIRA.git
 cd SIRA
 conda create --name SIRA python=3.10 -y
 conda activate SIRA
-pip install -r requirements.txt
+conda install -c conda-forge --file requirements.txt -y
 ```
 
 ### 2. Opción PowerShell (Usuarios Windows)
