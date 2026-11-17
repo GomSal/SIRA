@@ -236,7 +236,51 @@ flowchart TB
 
 ## 8. Ronda 1 del Corrector: resultados
 
-*Se completa al terminar la corrida en AWS.*
+Corrida autónoma en AWS EC2 (t3.medium, us-west-2), 17-nov-2026. Duró 9,7 minutos y terminó sola. Archivos en `reports/ronda1_b/`.
+
+**Datos:**
+- 68 imágenes despejadas (Sentinel-2 + Landsat, 2021–2022). Se omitió 1 imagen de Landsat 7 (23-ago-2022) porque Planetary Computer negó el acceso.
+- **1.967 filas píxel·fecha** con humedad real en las 3 siembras (GS1 635, GS2 652, GS3 680), de **22 fechas**. La curva de humedad solo cubre los días ~30–113 de cada siembra, así que no entran todas las fechas despejadas.
+- 1.490 filas tienen una medición a 2 días o menos.
+
+**Aporte de cada entrada** (Spearman con la humedad, filas con medición a ≤2 días):
+
+| Entrada | Spearman | Descontando NDMI y NDWI |
+|---|---|---|
+| NDMI | −0,07 | — |
+| NDWI | 0,00 | — |
+| NDVI | −0,11 | −0,33 |
+| OPTRAM (W) | −0,19 | −0,15 |
+| Lluvia 5 días | −0,36 | −0,35 |
+| Balance lluvia − ETo, 5 días | −0,35 | −0,35 |
+| **Riego 10 días** | **+0,61** | **+0,61** |
+
+**Modelos** (RMSE en puntos de humedad, por franja·fecha, con IC 95 %):
+
+| Modelo | Cronológico (GS1→GS2, GS1+2→GS3) | Una temporada afuera |
+|---|---|---|
+| Línea base: la media de entrenamiento | 4,27 | 4,06 |
+| M0 OPTRAM calibrado | 4,19 (3,75–4,66) | 4,26 (3,26–5,14) |
+| M1 índices + clima | 4,80 (4,19–5,53) | 3,82 (3,06–4,51) |
+| M2 + OPTRAM | 4,59 (4,01–5,34) | 3,71 (2,93–4,35) |
+| M3 + etapa | 4,57 (4,05–5,12) | 3,84 (2,97–4,55) |
+| **M4 + riego** | **3,08 (2,28–3,78)** | 3,75 (2,71–4,72) |
+
+**Lectura:**
+1. **Los índices de la imagen casi no siguen la humedad del suelo a 20 cm en Nataima.** El NDMI y el NDWI tienen correlación ≈0. Los modelos que solo ven la imagen y el clima (M0–M3) **no superan a la línea base** de predecir la media. Ni siquiera en una misma fecha el NDMI ordena las tres franjas como la humedad: coinciden en 3 de 13 fechas. Probar con la humedad promedio de los 3–10 días previos (por si la planta reacciona con retraso) tampoco cambia el resultado (|ρ| ≤ 0,21).
+2. **Lo que sí explica la humedad es el agua aplicada.** El riego de los últimos 10 días tiene ρ = 0,61, y es el único grupo que mejora claramente en la validación cronológica (RMSE 3,08 frente a 4,27 de la línea base).
+3. **Causas probables, todas físicas:**
+   - el arroz bien regado no muestra estrés en la hoja mientras el suelo se mueve entre capacidad de campo y saturación, así que el NDMI se mantiene alto;
+   - el follaje denso tapa el suelo y satura los índices (el artículo lo advierte);
+   - el riego cambia la humedad en horas, mientras el satélite pasa cada ~10 días;
+   - las franjas de 23 m se mezclan en los píxeles de 20–30 m.
+
+**Consecuencia para la arquitectura:** con estos datos, **traducir el índice en humedad del suelo (el Corrector tal como estaba planteado) no tiene sustento en Nataima**. El balance de agua (lluvia + riego − ETo) sí lo tiene. Se abren tres caminos para decidir:
+- **(a)** un Corrector basado en el **balance hídrico**, con el satélite como apoyo para estimar el consumo del cultivo (Kc por NDVI) y la etapa;
+- **(b)** sumar **Sentinel-1 (radar)**, que sí es sensible a la humedad del suelo y a la inundación, y no depende de las nubes;
+- **(c)** cambiar lo que el Corrector traduce: en vez de la humedad del suelo, una variable de **estado de la planta** que el índice sí pueda ver.
+
+La ronda 2 (Prithvi) queda condicionada a esa decisión: no hay razón física para esperar que Prithvi cambie la conclusión 1.
 
 ---
 

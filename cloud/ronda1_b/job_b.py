@@ -161,7 +161,9 @@ def e1_satelite(out: Path, qa: bool) -> pd.DataFrame:
                                                "ndvi": ind["ndvi"].ravel()[sel], "str": ind["str"].ravel()[sel]}))
             log(f"E1 {k}/{len(fechas)} {col} {r.fecha}: {int(validos.sum())} píxeles válidos en la ventana")
         except Exception as e:  # noqa: BLE001  (una imagen dañada o con acceso denegado no detiene todo)
-            fallidas.append({"coleccion": r.coleccion, "id": r.id, "fecha": str(r.fecha), "error": str(e)[:300]})
+            import re
+            msg = re.sub(r"\?\S*", "?<token omitido>", str(e))  # no guardar tokens de acceso en los resultados
+            fallidas.append({"coleccion": r.coleccion, "id": r.id, "fecha": str(r.fecha), "error": msg[:300]})
             log(f"E1 {k}/{len(fechas)} {r.coleccion} {r.fecha}: OMITIDA ({str(e)[:80]})")
         if k % 10 == 0:  # avance guardado y subido cada 10 imágenes
             pd.DataFrame(filas_lote).to_csv(out / "e1_pixeles_lote.csv", index=False)
