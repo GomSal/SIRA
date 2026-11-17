@@ -398,6 +398,26 @@ Línea base de RMSE: 7,68 / 4,34 / 6,28 mm. Con la rotación "este" el resultado
 - La causa es la frecuencia, no el método: el reservorio necesita saber cuándo se regó (9–24 riegos por temporada), y el radar de 2021–2022 pasó cada 6–12 días con una sola órbita útil a la vez.
 - **Para 2025 en adelante la frecuencia mejora:** Sentinel-1C (lanzado en diciembre de 2024) devuelve la pasada de 6 días, y NISAR (2025) agrega banda L cada 12 días. Hay que volver a probar con esos datos; los de Nataima 2021–2022 no lo permiten.
 
+**Corrección del diseño: óptico primero, radar de relleno** (`scripts/reservorio_satelital_v2.py`).
+- La regla acordada es usar el óptico cuando hay imagen despejada y el radar solo cuando no la hay. En la prueba anterior el radar era la fuente principal y el óptico solo un umbral de inundación.
+- Ahora el óptico entra como **señal continua**: NDWI, LSWI (= NDMI), MNDWI, NDVI y STR (la reflectancia transformada del SWIR, base de OPTRAM), de Sentinel-2 y Landsat.
+- Observaciones por franja: GS1 13 ópticas + 21 de radar = 32 fechas; GS2 11 + 5 = 15; GS3 6 + 11 = 17. Es una cada 4–8 días.
+
+| Variante (rotación oeste) | Spearman GS1 / GS2 / GS3 | RMSE (mm) GS1 / GS2 / GS3 |
+|---|---|---|
+| Con riego real (techo) | 0,56 / 0,58 / 0,74 | 5,67 / 4,30 / 4,54 |
+| Sin satélite (piso) | −0,05 / 0,17 / −0,12 | 7,93 / 4,33 / 6,40 |
+| Solo óptico | 0,02 / 0,15 / −0,01 | 7,56 / 4,51 / 6,68 |
+| Solo radar | 0,19 / 0,08 / 0,24 | 7,44 / 10,62 / 6,29 |
+| **Óptico + radar de relleno** | **0,28 / 0,10 / 0,04** | 7,58 / 6,72 / 6,08 |
+
+Con la rotación "este", la variante combinada da 0,10 / 0,14 / −0,18.
+
+**Lectura:**
+- Combinar las fuentes no supera al radar solo.
+- **Los índices ópticos no llevan información del riego reciente en Nataima.** Coincide con la ronda 1, donde los índices no siguieron la humedad del suelo.
+- Con los datos 2021–2022, el satélite **no reemplaza el registro de riego** para estimar la humedad a 20 cm.
+
 ---
 
 ## 9. Próximos pasos
