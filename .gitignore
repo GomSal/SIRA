@@ -9,3 +9,5 @@ data/interim/_*.csv
 docs/_preview.html
 # datos pesados viven en S3 (ver README)
 data/s3/
+cloud/*/user_data.generado.sh
+cloud/*/ultima_corrida.json
