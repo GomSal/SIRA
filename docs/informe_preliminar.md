@@ -331,6 +331,23 @@ Se probó la temperatura de superficie de Landsat (TVDI, LST relativa a la veget
 
 **Conclusión:** la prueba **no es concluyente** por falta de datos, no por falla del método. Nataima no tiene suficientes episodios de estrés, fechas despejadas ni tamaño de lote para validar una señal térmica de estrés.
 
+### 8.3 Balance hídrico contra el TDR (17-nov)
+
+Se probó si un balance hídrico reproduce el faltante de agua medido, Dr = 150 × (0,30 − θ_TDR) mm, en los 198 días con medición. Validación: dejar una temporada afuera. Archivos en `reports/balance_hidrico/`.
+
+| Versión | Entradas | Spearman | RMSE (mm) frente a línea base |
+|---|---|---|---|
+| FAO-56 con parámetros del artículo (TAW 6,7 mm, drenaje rápido) | riego y lluvia reales | 0,04 | 9,3 frente a 6,5 |
+| FAO-56 + Kc desde NDVI | riego real, lluvia CHIRPS | 0,03 | 6,8 frente a 6,5 |
+| FAO-56 + Kc desde NDVI + reinicios por inundación vista por satélite | **sin riego** | −0,06 | 8,5 frente a 6,5 |
+| **Reservorio calibrado** (memoria τ, fracción α de lluvia efectiva) | riego y lluvia reales | **0,52 / 0,57 / 0,73** (GS2 / GS1 / GS3) | 4,3–5,7 frente a 4,3–7,7 |
+
+**Lectura:**
+- El balance FAO-56 con los parámetros nominales falla porque el suelo de Nataima, a 20 cm, se mantiene **sobre capacidad de campo semanas después de los riegos** (memoria calibrada de 30–45 días), y **la lluvia aporta poco** (α = 0,25–0,5), coherente con la alta percolación que describe el artículo.
+- Con esa calibración, el balance **sí sigue el TDR** en temporadas que no vio (ρ 0,52–0,73) y mejora el RMSE en GS1 y GS3. Pero el acierto de clase no supera a la línea base, porque el 69 % de los días medidos son "exceso".
+- **La versión de producción (sin riego, solo con lo que ve el satélite) no funciona todavía:** con ~10 días entre imágenes despejadas no se detectan los 9–24 riegos por temporada.
+- **El dato que más pesa es cuánta agua ha recibido el lote en las últimas semanas.** Ahí está el nudo para producción: conseguir el riego sin depender del campesino. Una opción son los turnos de agua del distrito de riego.
+
 ---
 
 ## 9. Próximos pasos
