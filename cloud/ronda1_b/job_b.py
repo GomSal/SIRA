@@ -96,74 +96,85 @@ def e1_satelite(out: Path, qa: bool) -> pd.DataFrame:
            "landsat-c2-l2": pd.read_csv(DATOS / "pixeles_franjas_landsat_30m.csv")}
     cat = reintentar(lambda: pystac_client.Client.open("https://planetarycomputer.microsoft.com/api/stac/v1",
                                                        modifier=pc.sign_inplace))
-    filas_lote, filas_ventana = [], []
+    filas_lote, filas_ventana, fallidas = [], [], []
     for k, r in enumerate(fechas.itertuples(), 1):
-        col = r.coleccion
-        it = reintentar(lambda: cat.get_collection(col).get_item(r.id))
-        if col == "sentinel-2-l2a":
-            nombres = {"azul": "B02", "verde": "B03", "rojo": "B04", "nir": "B08", "nir8a": "B8A",
-                       "swir1": "B11", "swir2": "B12", "qa": "SCL"}
-            base = str(it.properties.get("s2:processing_baseline", "00.00"))
-            offset = -1000.0 if base >= "04.00" else 0.0  # baseline 04.00+ añade +1000 a los DN
-            escala = lambda dn: (dn + offset) / 10000.0  # noqa: E731
-            res = 10.0
-        else:
-            nombres = {"azul": "blue", "verde": "green", "rojo": "red", "nir": "nir08", "nir8a": "nir08",
-                       "swir1": "swir16", "swir2": "swir22", "qa": "qa_pixel"}
-            escala = lambda dn: dn * 0.0000275 - 0.2  # noqa: E731
-            res = 30.0
-        bandas = {}
-        with rasterio.open(it.assets[nombres["rojo"]].href) as ref:
-            crs, trf = ref.crs, ref.transform
-            x, y = Transformer.from_crs("EPSG:4326", crs, always_xy=True).transform(LON, LAT)
-            w = from_bounds(x - MEDIA_VENTANA_M, y - MEDIA_VENTANA_M, x + MEDIA_VENTANA_M, y + MEDIA_VENTANA_M,
-                            transform=trf).round_offsets().round_lengths()
-            wtr = ref.window_transform(w)
-            shape = (int(w.height), int(w.width))
-        for clave, banda in nombres.items():
-            def leer(banda=banda):
-                with rasterio.open(it.assets[banda].href) as src:
-                    win = from_bounds(*rasterio.windows.bounds(w, trf), transform=src.transform)
-                    return src.read(1, window=win, out_shape=shape, boundless=True, fill_value=0,
-                                    resampling=Resampling.nearest)
-            bandas[clave] = reintentar(leer).astype(float)
-        q = bandas.pop("qa").astype(np.int64)
-        if col == "sentinel-2-l2a":
-            limpio = np.isin(q, [4, 5, 6])
-        else:
-            malo = q & 0b11111
-            limpio = (malo == 0) & ((q & (1 << 6)) | (q & (1 << 7)) > 0)
-        R = {c: escala(v) for c, v in bandas.items()}
-        validos = limpio & (R["rojo"] > 0) & (R["nir"] > 0) & (R["swir2"] > 0)
-        ind = indices(R)
-        # píxeles del lote (tabla de fracciones por franja, centros en el mismo CRS)
-        p = pix[col]
-        inv = ~wtr
-        cc, rr = inv * (p.x_centro.to_numpy(), p.y_centro.to_numpy())
-        cc, rr = np.floor(cc).astype(int), np.floor(rr).astype(int)
-        dentro = (rr >= 0) & (rr < shape[0]) & (cc >= 0) & (cc < shape[1])
-        for i in np.where(dentro)[0]:
-            a, b = rr[i], cc[i]
-            if not validos[a, b]:
-                continue
-            fila = {"sensor": "S2" if col.startswith("sentinel") else "L",
-                    "satelite": it.properties.get("platform", ""), "fecha": str(r.fecha),
-                    "pixel_id": p.pixel_id.iloc[i], **{f"frac_{f}": p[f"frac_{f}"].iloc[i] for f in FRANJAS},
-                    "frac_lote": p.frac_lote.iloc[i], **{n: float(v[a, b]) for n, v in ind.items()}}
-            filas_lote.append(fila)
-        # nube de puntos de la ventana para el trapecio de OPTRAM (submuestreo fijo)
-        sel = np.where(validos.ravel())[0]
-        rng = np.random.default_rng(k)
-        sel = rng.choice(sel, size=min(len(sel), 6000), replace=False) if len(sel) else sel
-        filas_ventana.append(pd.DataFrame({"sensor": "S2" if col.startswith("sentinel") else "L",
-                                           "fecha": str(r.fecha),
-                                           "ndvi": ind["ndvi"].ravel()[sel], "str": ind["str"].ravel()[sel]}))
-        log(f"E1 {k}/{len(fechas)} {col} {r.fecha}: {int(validos.sum())} píxeles válidos en la ventana")
+        try:
+            col = r.coleccion
+            it = reintentar(lambda: cat.get_collection(col).get_item(r.id))
+            if col == "sentinel-2-l2a":
+                nombres = {"azul": "B02", "verde": "B03", "rojo": "B04", "nir": "B08", "nir8a": "B8A",
+                           "swir1": "B11", "swir2": "B12", "qa": "SCL"}
+                base = str(it.properties.get("s2:processing_baseline", "00.00"))
+                offset = -1000.0 if base >= "04.00" else 0.0  # baseline 04.00+ añade +1000 a los DN
+                escala = lambda dn: (dn + offset) / 10000.0  # noqa: E731
+                res = 10.0
+            else:
+                nombres = {"azul": "blue", "verde": "green", "rojo": "red", "nir": "nir08", "nir8a": "nir08",
+                           "swir1": "swir16", "swir2": "swir22", "qa": "qa_pixel"}
+                escala = lambda dn: dn * 0.0000275 - 0.2  # noqa: E731
+                res = 30.0
+            bandas = {}
+            with rasterio.open(it.assets[nombres["rojo"]].href) as ref:
+                crs, trf = ref.crs, ref.transform
+                x, y = Transformer.from_crs("EPSG:4326", crs, always_xy=True).transform(LON, LAT)
+                w = from_bounds(x - MEDIA_VENTANA_M, y - MEDIA_VENTANA_M, x + MEDIA_VENTANA_M, y + MEDIA_VENTANA_M,
+                                transform=trf).round_offsets().round_lengths()
+                wtr = ref.window_transform(w)
+                shape = (int(w.height), int(w.width))
+            for clave, banda in nombres.items():
+                def leer(banda=banda):
+                    with rasterio.open(it.assets[banda].href) as src:
+                        win = from_bounds(*rasterio.windows.bounds(w, trf), transform=src.transform)
+                        return src.read(1, window=win, out_shape=shape, boundless=True, fill_value=0,
+                                        resampling=Resampling.nearest)
+                bandas[clave] = reintentar(leer).astype(float)
+            q = bandas.pop("qa").astype(np.int64)
+            if col == "sentinel-2-l2a":
+                limpio = np.isin(q, [4, 5, 6])
+            else:
+                malo = q & 0b11111
+                limpio = (malo == 0) & ((q & (1 << 6)) | (q & (1 << 7)) > 0)
+            R = {c: escala(v) for c, v in bandas.items()}
+            validos = limpio & (R["rojo"] > 0) & (R["nir"] > 0) & (R["swir2"] > 0)
+            ind = indices(R)
+            # píxeles del lote (tabla de fracciones por franja, centros en el mismo CRS)
+            p = pix[col]
+            inv = ~wtr
+            cc, rr = inv * (p.x_centro.to_numpy(), p.y_centro.to_numpy())
+            cc, rr = np.floor(cc).astype(int), np.floor(rr).astype(int)
+            dentro = (rr >= 0) & (rr < shape[0]) & (cc >= 0) & (cc < shape[1])
+            for i in np.where(dentro)[0]:
+                a, b = rr[i], cc[i]
+                if not validos[a, b]:
+                    continue
+                fila = {"sensor": "S2" if col.startswith("sentinel") else "L",
+                        "satelite": it.properties.get("platform", ""), "fecha": str(r.fecha),
+                        "pixel_id": p.pixel_id.iloc[i], **{f"frac_{f}": p[f"frac_{f}"].iloc[i] for f in FRANJAS},
+                        "frac_lote": p.frac_lote.iloc[i], **{n: float(v[a, b]) for n, v in ind.items()}}
+                filas_lote.append(fila)
+            # nube de puntos de la ventana para el trapecio de OPTRAM (submuestreo fijo)
+            sel = np.where(validos.ravel())[0]
+            rng = np.random.default_rng(k)
+            sel = rng.choice(sel, size=min(len(sel), 6000), replace=False) if len(sel) else sel
+            filas_ventana.append(pd.DataFrame({"sensor": "S2" if col.startswith("sentinel") else "L",
+                                               "fecha": str(r.fecha),
+                                               "ndvi": ind["ndvi"].ravel()[sel], "str": ind["str"].ravel()[sel]}))
+            log(f"E1 {k}/{len(fechas)} {col} {r.fecha}: {int(validos.sum())} píxeles válidos en la ventana")
+        except Exception as e:  # noqa: BLE001  (una imagen dañada o con acceso denegado no detiene todo)
+            fallidas.append({"coleccion": r.coleccion, "id": r.id, "fecha": str(r.fecha), "error": str(e)[:300]})
+            log(f"E1 {k}/{len(fechas)} {r.coleccion} {r.fecha}: OMITIDA ({str(e)[:80]})")
+        if k % 10 == 0:  # avance guardado y subido cada 10 imágenes
+            pd.DataFrame(filas_lote).to_csv(out / "e1_pixeles_lote.csv", index=False)
+            pd.DataFrame(fallidas).to_csv(out / "e1_imagenes_omitidas.csv", index=False)
+            subir_parcial(out)
     lote = pd.DataFrame(filas_lote)
     vent = pd.concat(filas_ventana, ignore_index=True) if filas_ventana else pd.DataFrame()
     lote.to_csv(out / "e1_pixeles_lote.csv", index=False)
     vent.to_csv(out / "e1_ventana_optram.csv.gz", index=False)
-    log(f"E1 listo: {len(lote)} filas píxel·fecha del lote, {len(vent)} puntos de ventana")
+    pd.DataFrame(fallidas, columns=["coleccion", "id", "fecha", "error"]).to_csv(out / "e1_imagenes_omitidas.csv", index=False)
+    if len(fallidas) > 0.25 * len(fechas):
+        raise RuntimeError(f"demasiadas imágenes omitidas: {len(fallidas)} de {len(fechas)}")
+    log(f"E1 listo: {len(lote)} filas píxel·fecha del lote, {len(vent)} puntos de ventana; {len(fallidas)} imágenes omitidas")
     return lote, vent
 
 
