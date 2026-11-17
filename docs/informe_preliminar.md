@@ -348,6 +348,25 @@ Se probó si un balance hídrico reproduce el faltante de agua medido, Dr = 150 
 - **La versión de producción (sin riego, solo con lo que ve el satélite) no funciona todavía:** con ~10 días entre imágenes despejadas no se detectan los 9–24 riegos por temporada.
 - **El dato que más pesa es cuánta agua ha recibido el lote en las últimas semanas.** Ahí está el nudo para producción: conseguir el riego sin depender del campesino. Una opción son los turnos de agua del distrito de riego.
 
+### 8.4 Reservorio con Kc desde el NDVI (17-nov)
+
+La sección 8.3 usó el Kc de la tabla FAO-56. Aquí se rehízo con **Kc = a·NDVI + b**, con el NDVI de Sentinel-2 de cada franja interpolado por día, como se acordó en la arquitectura. Se probó con las dos rotaciones posibles de tratamientos (este y oeste). Script: `scripts/prueba_reservorio.py <rotación> <modo>`; resultados en `reports/balance_hidrico/reservorio_resultados_*.csv`.
+
+| Kc | a, b calibrados | Spearman GS1 / GS2 / GS3 | RMSE (mm) GS1 / GS2 / GS3 |
+|---|---|---|---|
+| Tabla FAO-56 | — | 0,57 / 0,52 / 0,73 | 5,74 / 4,33 / 4,65 |
+| **NDVI, rango físico del arroz (Kc 0,6–1,3)** | **a = 1,0, b = 0,45 en todos los pliegues** | **0,56 / 0,58–0,59 / 0,73–0,74** | **5,66 / 4,30 / 4,54–4,58** |
+| NDVI, rejilla libre | a = 2–3, b = −0,4–0,8 (en el borde; Kc irreal) | 0,57 / 0,60 / 0,74–0,77 | 5,71 / 4,18–4,45 / 4,71–4,74 |
+| Constante (control, sin NDVI) | Kc = 1,3 | 0,57 / 0,50 / 0,73 | 5,71 / 4,43 / 4,62 |
+
+Línea base de RMSE: 7,68 / 4,34 / 6,28 mm.
+
+**Lectura:**
+- **Con el NDVI en rango físico, el resultado es igual o algo mejor que con la tabla FAO**, sobre todo en GS2 (ρ 0,52 → 0,59). La recta calibrada (**Kc = 1,0·NDVI + 0,45**) sale idéntica en los tres pliegues y en las dos rotaciones: es estable y físicamente plausible (Kc ≈ 0,65 con NDVI 0,2; ≈ 1,3 con NDVI 0,85).
+- **La rejilla libre no se debe usar:** mejora apenas, a costa de un Kc irreal (de hasta 1,5, recortado).
+- **El origen del Kc pesa poco.** Hasta el Kc constante da casi lo mismo. La capacidad del reservorio viene del riego y de la memoria del suelo (τ = 30–60 días), no del consumo del cultivo. Esto confirma el nudo de la sección 8.3: para producción hay que estimar el riego desde el satélite (radar Sentinel-1 + NDVI/NDWI).
+- El acierto de clase sigue sin superar la línea base (≈ 69 % de días en "exceso").
+
 ---
 
 ## 9. Próximos pasos
