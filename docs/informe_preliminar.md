@@ -367,6 +367,37 @@ Línea base de RMSE: 7,68 / 4,34 / 6,28 mm.
 - **El origen del Kc pesa poco.** Hasta el Kc constante da casi lo mismo. La capacidad del reservorio viene del riego y de la memoria del suelo (τ = 30–60 días), no del consumo del cultivo. Esto confirma el nudo de la sección 8.3: para producción hay que estimar el riego desde el satélite (radar Sentinel-1 + NDVI/NDWI).
 - El acierto de clase sigue sin superar la línea base (≈ 69 % de días en "exceso").
 
+### 8.5 Versión sin riego: radar Sentinel-1 + NDVI/NDWI (17-nov)
+
+**Objetivo:** reemplazar el registro de riego (que nadie reporta en producción) por lo que ve el satélite. Scripts: `scripts/radar_lote.py`, `scripts/diagnostico_radar.py`, `scripts/reservorio_satelital.py`; resultados en `reports/radar/`.
+
+**Datos:** Sentinel-1 RTC (Planetary Computer) sobre el lote, abril 2021 – diciembre 2022.
+- Hay **64 fechas** (S1B 41, S1A 23), de dos órbitas: descendente 69 y ascendente 150.
+- Dentro de las siembras: 21 fechas en GS1, **solo 5 en GS2** (S1B falló en diciembre de 2021) y 11 en GS3.
+- Unos 18 píxeles de 10 m por franja y fecha.
+
+**Diagnóstico** (Spearman; "dentro de fecha" = las 3 franjas comparadas el mismo día):
+- **El riego del mismo día o del anterior se ve:** la franja recién regada sale con más VV y VH (ρ = 0,21–0,25, p < 0,03) en las dos rotaciones.
+- **El VH sigue el estado del reservorio** (ρ = 0,30–0,43) y el riego de la última semana (ρ = 0,21–0,32). Es una lectura global, en la que también influye el crecimiento del cultivo.
+- **Con la rotación "oeste", el VH sigue al TDR dentro de cada fecha** (ρ = −0,44, n = 60, p < 0,001). Con la rotación "este" no hay relación. Es un indicio de que la rotación real fue la "oeste".
+- **La inundación vista con el óptico** (LSWI + 0,05 ≥ NDVI o MNDWI > 0) no se marcó en ninguna de las 66 fechas despejadas dentro de las siembras: en Nataima la lámina de agua no dura lo suficiente para verse.
+
+**Reservorio sin riego**, con asimilación del radar (Ŝ = ridge de VH, VV, VH−VV, órbita, Kc y días desde siembra; dejando una temporada afuera):
+
+| Variante | Spearman GS1 / GS2 / GS3 (rotación oeste) | RMSE (mm) GS1 / GS2 / GS3 |
+|---|---|---|
+| Con riego real (techo) | 0,56 / 0,58 / 0,74 | 5,67 / 4,30 / 4,54 |
+| Sin riego ni satélite (piso) | −0,05 / 0,17 / −0,12 | 7,93 / 4,33 / 6,40 |
+| **Sin riego + radar** | **0,19 / 0,08 / 0,24** | 7,44 / 10,62 / 6,29 |
+| Sin riego + radar + óptico | igual que el anterior (el óptico no marcó inundación) | igual |
+
+Línea base de RMSE: 7,68 / 4,34 / 6,28 mm. Con la rotación "este" el resultado es parecido o peor.
+
+**Lectura:**
+- El radar recupera **una parte pequeña** de la información del riego: sube de ≈ 0 a ≈ 0,2, frente a 0,6–0,7 con el riego real. **No alcanza para decidir el riego** y en GS2 empeora el error, porque solo había 5 fechas de radar.
+- La causa es la frecuencia, no el método: el reservorio necesita saber cuándo se regó (9–24 riegos por temporada), y el radar de 2021–2022 pasó cada 6–12 días con una sola órbita útil a la vez.
+- **Para 2025 en adelante la frecuencia mejora:** Sentinel-1C (lanzado en diciembre de 2024) devuelve la pasada de 6 días, y NISAR (2025) agrega banda L cada 12 días. Hay que volver a probar con esos datos; los de Nataima 2021–2022 no lo permiten.
+
 ---
 
 ## 9. Próximos pasos
