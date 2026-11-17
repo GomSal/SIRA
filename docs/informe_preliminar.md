@@ -320,6 +320,17 @@ Corrida autónoma en AWS EC2 (t3.medium, us-west-2), 17-nov-2026. Duró 9,7 minu
 
 La ronda 2 (Prithvi) queda condicionada a esa decisión: no hay razón física para esperar que Prithvi cambie la conclusión 1.
 
+### 8.2 Prueba térmica con Landsat (17-nov)
+
+Se probó la temperatura de superficie de Landsat (TVDI, LST relativa a la vegetación de alrededor, LST menos la temperatura del aire) contra la humedad del lote. Archivos en `reports/termica_landsat/`.
+
+- De 27 fechas Landsat despejadas en 2021–2022, **solo 8 caen dentro del rango de la curva de humedad**.
+- En esas 8 fechas, la humedad promedio del lote estuvo siempre entre **30 y 34 %**, por encima de la capacidad de campo. **No hubo ningún episodio de estrés** que el térmico pudiera detectar.
+- Las correlaciones son inestables. Las pocas "significativas" tienen el **signo físicamente contrario** (más calor con más humedad) y aparecen entre 30 pruebas con 8 datos, así que se esperan por azar.
+- Además, el lote (136 × 70 m) es más pequeño que un píxel térmico de Landsat 8/9 (100 m nativos) y se mezcla con árboles y edificios vecinos.
+
+**Conclusión:** la prueba **no es concluyente** por falta de datos, no por falla del método. Nataima no tiene suficientes episodios de estrés, fechas despejadas ni tamaño de lote para validar una señal térmica de estrés.
+
 ---
 
 ## 9. Próximos pasos
