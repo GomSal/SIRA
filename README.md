@@ -1,39 +1,69 @@
-# SIRA: fase 0, verdad de campo de Nataima
+# SIRA
 
-Reconstrucción, a partir del artículo abierto (CC BY 4.0) de Martínez-Vega et al. (2025, *Irrigation Science* 43:1615–1633), de los datos diarios del ensayo de riego de arroz en el C.I. Nataima (Espinal, Tolima). Son 3 temporadas (GS1–GS3) y 3 tratamientos (CD, MIRI, AWD+MIRI). Los datos originales son privados, así que se digitalizan las figuras rasterizadas del PDF.
+Repositorio principal para la extracción, procesamiento y análisis de datos de Landsat.
 
-## Cómo correrlo
+## Diagrama de Flujo del Desarrollo del Proyecto
 
-```bash
-python -m venv .venv
-.venv/Scripts/python.exe -m pip install --only-binary=:all: numpy pandas scipy matplotlib pytest pymupdf pyproj shapely
-cd src && ../.venv/Scripts/python.exe -m sira.digitalizar.ensamblar && cd ..
-.venv/Scripts/python.exe -m pytest -q
-.venv/Scripts/python.exe scripts/graficas_control.py
+```mermaid
+graph TD
+    A[Inicio] --> B[Clonar Repositorio SIRA]
+    B --> C[Configurar Ambiente SIRA]
+    C --> D[Instalar Dependencias]
+    D --> E[Ejecutar src/main.py]
+    E --> F{Autenticación API Exitosa?}
+    F -->|Sí| G[Extracción de Datos Landsat]
+    F -->|No| H[Registrar Error / Solicitar Credenciales]
+    G --> I[Procesamiento / Limpieza de Datos]
+    I --> J[Guardar en data/processed]
+    J --> K[Fin]
+    H --> K
 ```
 
-## Qué sale
+## Guía de Clonación e Instalación
 
-| Archivo | Contenido |
-|---|---|
-| `data/processed/nataima_diario.csv` | Una fila por temporada × día después de siembra × tratamiento: `etapa`, `lluvia_mm`, `atwd_mm`, `eto5_mm`, `riego_mm`, `vwc_pct` y `vwc_ee_pct` (vacíos los días sin medición) |
-| `data/interim/fig2_lluvia_atwd.csv` | Fig. 2 tal como se digitalizó |
-| `data/interim/fig4_riego.csv` | Fig. 4: riego diario y acumulado por tratamiento, y lluvia acumulada |
-| `data/interim/fig3_vwc_detecciones.csv` | Fig. 3: todas las detecciones, con `fuente` = `barra` (se usa) o `rombo` (descartada) |
-| `reports/validacion_digitalizacion.md` | Comparación con todo número publicado en el artículo |
-| `reports/control/*.png` | Lo digitalizado dibujado sobre la figura original |
+> **¡Importante! Uso recomendado de Conda (conda-forge)**
+> 
+> Para este proyecto, **recomendamos encarecidamente utilizar Conda y el canal `conda-forge`** para la instalación de dependencias. Las bibliotecas científicas y geoespaciales dependen de librerías complejas en C/C++ (como BLAS/LAPACK). Instalar mediante un `pip` estándar a menudo falla porque tu máquina intentará compilar el código desde cero. Al usar `conda-forge`, descargas binarios que ya están precompilados y perfectamente enlazados, lo que te ahorrará dolores de cabeza y errores críticos de compatibilidad.
 
-## Método, en corto
+El repositorio se clona en una carpeta llamada `SIRA` y el ambiente se llama `SIRA` en las 3 opciones soportadas.
 
-- **Fig. 2 (lluvia y AtWD):** los ejes se calibran con las etiquetas de días, la serie en 0 mm y la línea de 100 mm. Cada barra se sigue desde la base aunque la cruce la línea roja. El AtWD se lee por continuidad, para no confundirlo con la leyenda.
-- **Fig. 4 (riego acumulado):** cada línea es el camino más probable (Viterbi) a través de la imagen. El camino es continuo, no baja y está anclado en 0 y en el total de la Tabla 2. Un riego es una rampa de un día entre dos marcas. Cada serie se reescala ≤1,5 % para que cuadre exacto con la Tabla 2.
-- **Fig. 3 (humedad TDR):** solo se usan los marcadores con barra de error simétrica (media = centro, EE = media barra). La curva suavizada de Excel no es dato y no se usa.
+### 1. Opción Conda (Recomendada para Data Science)
+Abre tu terminal de Anaconda/Miniconda y ejecuta:
+```bash
+git clone https://github.com/GomSal/SIRA.git
+cd SIRA
+conda create --name SIRA python=3.10 -y
+conda activate SIRA
+conda install -c conda-forge --file requirements.txt -y
+```
 
-## Hallazgos y límites
+### 2. Opción PowerShell (Usuarios Windows)
+Abre PowerShell como administrador y ejecuta:
+```powershell
+git clone https://github.com/GomSal/SIRA.git
+cd SIRA
+python -m venv SIRA
+.\SIRA\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+*(Nota: Si obtienes un error de políticas de ejecución, ejecuta `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` previamente).*
 
-- Lluvia: GS1 cuadra exacto (521,5 frente a 521,4 mm), GS2 queda +1,5 % y GS3 +1,0 %. En GS2 el texto dice 87 mm de lluvia máxima diaria, pero la figura muestra 77 mm.
-- Las sumas por etapa de la Fig. 4 solo cuadran (≈2 mm de error medio) con cortes de etapa distintos a los del sombreado. Se usan esos cortes.
-- La línea de AtWD de GS1 está dibujada un día antes que las barras de lluvia.
-- Humedad: 198 mediciones de las 9 series. Los mínimos y máximos coinciden con el texto (±1 punto). Faltan marcadores tapados por otros, sobre todo de MIRI. Se prefirió precisión a cantidad.
-- El día de cada medición tiene una incertidumbre de ±1 día. El error de lectura de la humedad es ≈0,1 puntos, menor que el EE publicado (0,2–2,5 puntos).
-- Ojo con la escala, en `scripts/escala_lote.py`: el lote mide 136 × 70 m, con franjas de 23,5 m. En HLS a 30 m ninguna franja tiene un píxel puro. En Sentinel-2 a 10 m hay 10–15 por franja.
+### 3. Opción Pip / Terminal estándar (Linux/macOS)
+Abre tu terminal Bash/Zsh y ejecuta:
+```bash
+git clone https://github.com/GomSal/SIRA.git
+cd SIRA
+python3 -m venv SIRA
+source SIRA/bin/activate
+pip install -r requirements.txt
+```
+
+## Modelo de humedad del arroz (Corrector + Pronosticador)
+
+El trabajo de verdad de campo, ubicación del lote, imágenes, clima y arquitectura de los modelos está documentado en:
+
+- [`docs/informe_preliminar.md`](docs/informe_preliminar.md): estado actual, arquitectura del **Corrector** y del **Pronosticador**, y diagramas de entrenamiento y operación.
+- [`docs/fase0_verdad_de_campo.md`](docs/fase0_verdad_de_campo.md): digitalización del artículo de Nataima y cómo reproducirla.
+- [`HANDOVER.md`](HANDOVER.md): decisiones tomadas y siguientes pasos.
+
+Código en `src/sira/` (digitalización y verdad de campo), `scripts/` (análisis y gráficas de control) y `cloud/` (corridas en AWS con salvaguardas).
