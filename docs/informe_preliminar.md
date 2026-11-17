@@ -236,6 +236,16 @@ flowchart TB
 
 ## 8. Ronda 1 del Corrector: resultados
 
+> **⚠️ Corrida invalidada para concluir (corrección del 17-nov).** El artículo indica que los tratamientos **se trasladaron a la franja vecina en cada temporada**. La Fig. 1 muestra solo la distribución de GS1, y esta corrida usó esa misma ubicación para GS2 y GS3, así que **las etiquetas de humedad de GS2 y GS3 están asignadas a la franja equivocada**. Además:
+> - hay pocas fechas por temporada (3–5 con las tres franjas despejadas);
+> - el NDMI usa bandas de 20 m sobre franjas de 23 m, así que mezcla franjas;
+> - a lo largo de la temporada los índices los domina el crecimiento del cultivo;
+> - la franja oeste colinda con una hilera de árboles.
+>
+> Con la ubicación corregida, ninguna de las 6 asignaciones posibles por temporada da un patrón estable (`reports/rotacion_tratamientos.csv`). Una prueba que no depende de la asignación, el promedio del lote contra la humedad promedio del lote, tiene solo 13 fechas y no es concluyente.
+>
+> **Los resultados de abajo se conservan como registro, pero no sirven para afirmar ni para negar que los índices sigan el agua.** Antes de la ronda 2 hay que: (1) conocer el sentido de la rotación de tratamientos; (2) calcular el NDMI solo en píxeles de 20 m puros; (3) controlar el efecto del crecimiento del cultivo.
+
 Corrida autónoma en AWS EC2 (t3.medium, us-west-2), 17-nov-2026. Duró 9,7 minutos y terminó sola. Archivos en `reports/ronda1_b/`.
 
 **Datos:**
