@@ -37,6 +37,19 @@ LON, LAT, ELEV_M = -74.9621, 4.1895, 323.0
 MEDIA_VENTANA_M = 1000
 SIEMBRAS = {1: "2021-05-27", 2: "2021-12-04", 3: "2022-07-09"}
 FRANJAS = ("MIRI", "AWD+MIRI", "CD")
+# Franjas físicas (oeste, centro, este). En las tablas de píxeles las columnas llevan el nombre del tratamiento
+# que tenían en GS1 (Fig. 1): frac_MIRI = oeste, frac_AWD+MIRI = centro, frac_CD = este.
+FISICAS = {"O": "frac_MIRI", "C": "frac_AWD+MIRI", "E": "frac_CD"}
+# El artículo: "the treatments were relocated to the immediately adjacent strip for each consecutive growing season,
+# ensuring each treatment was applied to every strip across the three growing seasons". No dice hacia dónde: se
+# prueban las dos rotaciones posibles (y la ubicación fija de GS1, como referencia del error anterior).
+_M, _A, _C = "MIRI", "AWD+MIRI", "CD"
+ROTACIONES = {
+    "fija":  {1: (_M, _A, _C), 2: (_M, _A, _C), 3: (_M, _A, _C)},
+    "este":  {1: (_M, _A, _C), 2: (_C, _M, _A), 3: (_A, _C, _M)},
+    "oeste": {1: (_M, _A, _C), 2: (_A, _C, _M), 3: (_C, _M, _A)},
+}
+ROTACION = "este"
 UMBRAL_DEFICIT, UMBRAL_EXCESO = 27.1, 30.0
 T0 = time.time()
 
@@ -263,6 +276,29 @@ def e3_optram(out: Path, lote: pd.DataFrame, vent: pd.DataFrame) -> pd.DataFrame
     return lote
 
 
+def pureza_20m(lote: pd.DataFrame) -> pd.DataFrame:
+    """Para Sentinel-2: fracción del píxel de 20 m (donde se miden B8A, B11, B12) que cae en una sola franja.
+    El NDMI, MNDWI y OPTRAM usan esas bandas, así que su pureza real es la del píxel de 20 m, no la del de 10 m."""
+    from pyproj import Transformer
+    from shapely.geometry import box, shape
+    from shapely.ops import transform
+    gj = json.loads((DATOS / "franjas_nataima.geojson").read_text())
+    tr = Transformer.from_crs("EPSG:4326", "EPSG:32618", always_xy=True).transform
+    fr = {f["properties"]["tratamiento"]: transform(tr, shape(f["geometry"])) for f in gj["features"]
+          if f["properties"]["tipo"] == "franja"}
+    p = pd.read_csv(DATOS / "pixeles_franjas_s2_10m.csv").set_index("pixel_id")
+    pur = {}
+    for pid, r in p.iterrows():
+        x0 = math.floor((r.x_centro - 5) / 20) * 20
+        y0 = math.floor((r.y_centro - 5) / 20) * 20
+        b = box(x0, y0, x0 + 20, y0 + 20)
+        pur[pid] = max(b.intersection(g).area / b.area for g in fr.values())
+    lote = lote.copy()
+    lote["pureza20"] = lote.pixel_id.map(pur)
+    lote.loc[lote.sensor != "S2", "pureza20"] = np.nan
+    return lote
+
+
 # ---------------------------------------------------------------- E4 tabla
 def e4_tabla(out: Path, lote: pd.DataFrame, clima: pd.DataFrame) -> pd.DataFrame:
     hum = pd.read_csv(DATOS / "humedad_continua.csv")
@@ -277,7 +313,8 @@ def e4_tabla(out: Path, lote: pd.DataFrame, clima: pd.DataFrame) -> pd.DataFrame
                 temp, das = t, d
         if temp is None:
             continue
-        pesos = {fr: lote.loc[r.Index, f"frac_{fr}"] for fr in FRANJAS}
+        pesos = {trat: float(lote.loc[r.Index, FISICAS[fis]])
+                 for fis, trat in zip(("O", "C", "E"), ROTACIONES[ROTACION][temp])}
         tot = sum(pesos.values())
         if tot <= 0:
             continue
@@ -301,6 +338,7 @@ def e4_tabla(out: Path, lote: pd.DataFrame, clima: pd.DataFrame) -> pd.DataFrame
         filas.append({**lote.loc[r.Index].to_dict(), "temporada": temp, "das": das,
                       "vwc_pct": sum(vals) / tot, "dist_medicion_dias": max(dists),
                       "franja_dominante": franja_dom, "pureza": pesos[franja_dom],
+                      "franja_fisica": max(FISICAS, key=lambda k: lote.loc[r.Index, FISICAS[k]]),
                       **{k: float(c[k]) for k in ("lluvia_1d", "lluvia_3d", "lluvia_5d", "lluvia_10d",
                                                    "eto_1d", "eto_3d", "eto_5d", "eto_10d", "balance_5d", "balance_10d")},
                       **{f"riego_{n}d": v for n, v in riego_pond.items()}})
@@ -335,8 +373,14 @@ def e5_aporte(out: Path, t: pd.DataFrame) -> pd.DataFrame:
             rx = rankdata(d[c])
             res_x = rx - ctrl @ np.linalg.lstsq(ctrl, rx, rcond=None)[0]
             parcial = np.corrcoef(res_x, res_y)[0, 1] if c not in ("ndmi", "ndwi") else np.nan
+            dd = d[[c, "vwc_pct", "temporada", "fecha"]].dropna()
+            rel_x = dd[c] - dd.groupby(["temporada", "fecha"])[c].transform("mean")
+            rel_y = dd.vwc_pct - dd.groupby(["temporada", "fecha"]).vwc_pct.transform("mean")
+            rho_rel, p_rel = spearmanr(rel_x, rel_y) if rel_x.std() > 0 else (np.nan, np.nan)
             filas.append({"grupo": grupo, "entrada": c, "spearman": round(float(rho), 3), "p_valor": float(p),
-                          "parcial_sin_ndmi_ndwi": round(float(parcial), 3) if parcial == parcial else np.nan})
+                          "parcial_sin_ndmi_ndwi": round(float(parcial), 3) if parcial == parcial else np.nan,
+                          "mismo_dia": round(float(rho_rel), 3) if rho_rel == rho_rel else np.nan,
+                          "p_mismo_dia": float(p_rel) if p_rel == p_rel else np.nan})
     a = pd.DataFrame(filas)
     a.to_csv(out / "e5_aporte_entradas.csv", index=False)
     log("E5 listo:\n" + a.to_string(index=False))
@@ -381,12 +425,12 @@ def e6_modelos(out: Path, t: pd.DataFrame, qa: bool) -> pd.DataFrame:
                                                random_state=0, n_jobs=-1).fit(tr[cols], tr.vwc_pct)
                     yhat = rf.predict(te[cols])
                 preds.append(te[["temporada", "fecha", "das", "sensor", "pixel_id", "franja_dominante", "pureza",
-                                 "dist_medicion_dias", "vwc_pct"]].assign(esquema=esquema, modelo=nombre,
+                                 "pureza20", "dist_medicion_dias", "vwc_pct"]].assign(esquema=esquema, modelo=nombre,
                                                                            entrenado_con=str(entren), pred=yhat))
     P = pd.concat(preds, ignore_index=True)
     P.to_csv(out / "e6_predicciones.csv.gz", index=False)
     # evaluación principal: franja·fecha con píxeles Sentinel-2 casi puros (≥90 % en una franja) y medición a ≤2 días
-    ev = P[(P.sensor == "S2") & (P.pureza >= 0.9) & (P.dist_medicion_dias <= 2)]
+    ev = P[(P.sensor == "S2") & (P.pureza >= 0.9) & (P.pureza20 >= 0.9) & (P.dist_medicion_dias <= 2)]
     agg = ev.groupby(["esquema", "modelo", "temporada", "fecha", "franja_dominante"], as_index=False).agg(
         y=("vwc_pct", "mean"), yhat=("pred", "mean"))
     rng = np.random.default_rng(0)
@@ -419,12 +463,24 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="out")
     ap.add_argument("--qa", action="store_true")
+    ap.add_argument("--rotacion", choices=sorted(ROTACIONES), default="este")
+    ap.add_argument("--e1", default=None, help="carpeta con e1_pixeles_lote.csv y e1_ventana_optram.csv.gz ya descargados")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     estado = {"etapa": "inicio", "qa": a.qa}
     try:
-        lote, vent = e1_satelite(out, a.qa); estado["etapa"] = "E1"; subir_parcial(out)
+        global ROTACION
+        ROTACION = a.rotacion
+        estado["rotacion"] = ROTACION
+        if a.e1:
+            lote = pd.read_csv(Path(a.e1) / "e1_pixeles_lote.csv")
+            vent = pd.read_csv(Path(a.e1) / "e1_ventana_optram.csv.gz")
+            log(f"E1 reutilizado de {a.e1}: {len(lote)} filas")
+        else:
+            lote, vent = e1_satelite(out, a.qa)
+        lote = pureza_20m(lote)
+        estado["etapa"] = "E1"; subir_parcial(out)
         clima = e2_clima(out); estado["etapa"] = "E2"
         lote = e3_optram(out, lote, vent); estado["etapa"] = "E3"; subir_parcial(out)
         t = e4_tabla(out, lote, clima); estado["etapa"] = "E4"; subir_parcial(out)

@@ -246,6 +246,34 @@ flowchart TB
 >
 > **Los resultados de abajo se conservan como registro, pero no sirven para afirmar ni para negar que los índices sigan el agua.** Antes de la ronda 2 hay que: (1) conocer el sentido de la rotación de tratamientos; (2) calcular el NDMI solo en píxeles de 20 m puros; (3) controlar el efecto del crecimiento del cultivo.
 
+### 8.1 Ronda 1 corregida (17-nov)
+
+Se repitió el análisis con las tres correcciones, reutilizando las imágenes ya descargadas:
+1. **Rotación de tratamientos:** se probaron las dos rotaciones posibles (hacia el este y hacia el oeste) y la ubicación fija como referencia.
+2. **Pureza a 20 m:** la evaluación usa solo píxeles cuyo píxel de 20 m (donde se miden B8A, B11 y B12) cae en una sola franja.
+3. **Efecto del crecimiento:** correlación **dentro de cada fecha**. Las tres franjas están en la misma etapa ese día, así que se compara solo qué franja está más húmeda que las otras.
+
+Resultados en `reports/ronda1_b_corregida/{fija,este,oeste}/`.
+
+| Entrada | Rotación este: Spearman / mismo día | Rotación oeste: Spearman / mismo día |
+|---|---|---|
+| NDMI | −0,07 / −0,11 | −0,10 / −0,01 |
+| NDWI | +0,04 / −0,01 | +0,09 / +0,09 |
+| NDVI | −0,09 / +0,02 | −0,13 / −0,03 |
+| MNDWI | +0,05 / 0,00 | +0,08 / +0,05 |
+| OPTRAM (W) | −0,11 / −0,04 | −0,04 / +0,05 |
+| **Riego 10 días** | **+0,63 / +0,73** | **+0,66 / +0,78** |
+
+RMSE cronológico (puntos de humedad): con cualquiera de las dos rotaciones, los modelos que solo ven la imagen y el clima quedan en **4,1–4,4**, igual que la línea base de la media (4,3). Solo el modelo con riego baja a **3,2–3,4**.
+
+**Conclusión, ahora con las etiquetas bien asignadas:** el resultado se mantiene. En este ensayo, los índices satelitales (NDMI, NDWI, NDVI, MNDWI, OPTRAM) **no siguen la humedad del suelo a 20 cm**, ni entre fechas ni entre franjas el mismo día. El agua aplicada sí la explica.
+
+La señal de NDVI "mismo día" (ρ = 0,34) que apareció en el análisis anterior de NDVI/NDRE venía de la ubicación equivocada de los tratamientos: con la rotación corregida desaparece.
+
+**Interpretación:** el NDMI mide el agua **en la hoja** y el NDWI el agua **en superficie**. En este ensayo el arroz estuvo casi siempre bien regado (la humedad del suelo rara vez bajó del umbral de estrés de 27,1 %), así que la planta no mostró estrés, y la humedad del suelo a 20 cm, tapada por el follaje, no es visible para un sensor óptico.
+
+**Límites de esta conclusión:** son 22 fechas, 3 siembras y un solo sitio. Una relación débil podría no detectarse con tan pocos datos. Tampoco se sabe el sentido real de la rotación: se probaron los dos posibles.
+
 Corrida autónoma en AWS EC2 (t3.medium, us-west-2), 17-nov-2026. Duró 9,7 minutos y terminó sola. Archivos en `reports/ronda1_b/`.
 
 **Datos:**
