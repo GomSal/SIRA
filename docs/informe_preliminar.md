@@ -503,6 +503,25 @@ Quedan fuera esas 3 fechas de GS1 y una de GS2 (3-ene).
 - **En GS2 y GS3, el NDRE corregido predice al dron** con intervalos de confianza por encima de cero. Es la relación satélite–campo más sólida del proyecto.
 - **El corrector predice el estado de la planta (vigor), no el agua.** La recomendación de cuánta agua y cuándo sigue saliendo del balance por consumo (8.8).
 
+**Versión 2: Sentinel-2 + Landsat y bootstrap por bloques móviles** (`scripts/corrector_dron_v2.py`, `reports/dron/corrector_dron_v2.csv`). La sección anterior usó solo Sentinel-2; lo acordado para B era Sentinel-2 + Landsat.
+- **Landsat 7/8/9** entra con NDVI (no tiene banda de borde rojo), por píxel de 30 m con ≥ 50 % en el lote. Su referencia del dron es la mezcla de los tratamientos que cubre, ponderada por área. El modelo incluye una constante por sensor.
+- El control de calidad se aplica a la serie conjunta; descarta además una fecha de Landsat en GS3 (20-sep-2022).
+- **Bootstrap por bloques móviles:** bloques de 2 fechas consecutivas dentro de cada temporada, más ruido del dron con su error estándar, 1000 repeticiones. Antes se remuestreaban fechas sueltas, lo que ignora la autocorrelación de la serie.
+
+| Índice (sensores) | Temporada de prueba | Fechas (Landsat) | r [IC95] | RMSE frente a la línea base | Repeticiones en que supera a la línea base |
+|---|---|---|---|---|---|
+| NDVI (S2 + Landsat) | **GS1** | 9 (6) | **0,58 [−0,39 a 0,86]** | 0,037 frente a 0,043 | 61 % |
+| NDVI (S2 + Landsat) | GS2 | 8 (2) | 0,52 [−0,01 a 0,82] | 0,055 frente a 0,060 | 50 % |
+| NDVI (S2 + Landsat) | GS3 | 6 (2) | 0,79 [0,14 a 0,89] | 0,069 frente a 0,092 | 74 % |
+| NDRE (S2) | GS1 | 3 (0) | 0,20 [−0,99 a 0,93] | 0,047 frente a 0,049 | 41 % |
+| NDRE (S2) | GS2 | 6 (0) | 0,72 [0,17 a 0,97] | 0,073 frente a 0,083 | 80 % |
+| NDRE (S2) | GS3 | 5 (0) | 0,95 [0,40 a 0,97] | 0,065 frente a 0,112 | 83 % |
+
+**Lectura:**
+- **Landsat rescata GS1:** pasa de 3 a 9 fechas limpias, y el corrector de NDVI pasa de r ≈ 0 a **r = 0,58**, con menor error que la línea base. El intervalo todavía incluye el cero: es una mejora, no una prueba concluyente.
+- **El NDRE de Sentinel-2 sigue siendo el mejor corrector** en GS2 y GS3 (intervalos por encima de cero), pero no se puede usar en GS1 por falta de fechas.
+- **Datos:** 23 fechas y 141 pares (franja o píxel × fecha) para el NDVI. Los píxeles de una misma fecha no son independientes; por eso el bootstrap remuestrea fechas, no píxeles.
+
 ---
 
 ## 9. Próximos pasos
