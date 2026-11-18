@@ -1,39 +1,39 @@
-ESTADO: ARRANCANDO 20:16:34
+ESTADO: ARRANCANDO 21:13:15
 Hit:1 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble InRelease
 Get:2 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
 Get:3 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
 Get:4 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/universe amd64 Packages [15.0 MB]
-Get:5 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
-Get:6 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/universe Translation-en [5982 kB]
-Get:7 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/universe amd64 Components [3871 kB]
-Get:8 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/universe amd64 c-n-f Metadata [301 kB]
-Get:9 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/multiverse amd64 Packages [269 kB]
-Get:10 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/multiverse Translation-en [118 kB]
-Get:11 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/multiverse amd64 Components [35.0 kB]
-Get:12 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/multiverse amd64 c-n-f Metadata [8328 B]
-Get:13 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1455 kB]
-Get:14 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1714 kB]
-Get:15 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [345 kB]
-Get:16 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]
-Get:17 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 c-n-f Metadata [34.9 kB]
-Get:18 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [50.7 kB]
-Get:19 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [14.6 kB]
-Get:20 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
-Get:21 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 c-n-f Metadata [656 B]
-Get:22 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [40.6 kB]
-Get:23 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/main Translation-en [9172 B]
-Get:24 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5740 B]
-Get:25 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/main amd64 c-n-f Metadata [368 B]
-Get:26 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [31.0 kB]
-Get:27 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/universe Translation-en [18.6 kB]
-Get:28 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [12.6 kB]
-Get:29 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/universe amd64 c-n-f Metadata [1588 B]
-Get:30 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/restricted amd64 Components [212 B]
-Get:31 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/restricted amd64 c-n-f Metadata [116 B]
-Get:32 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [748 B]
-Get:33 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/multiverse Translation-en [340 B]
-Get:34 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Components [212 B]
-Get:35 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 c-n-f Metadata [116 B]
+Get:5 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/universe Translation-en [5982 kB]
+Get:6 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/universe amd64 Components [3871 kB]
+Get:7 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/universe amd64 c-n-f Metadata [301 kB]
+Get:8 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/multiverse amd64 Packages [269 kB]
+Get:9 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/multiverse Translation-en [118 kB]
+Get:10 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/multiverse amd64 Components [35.0 kB]
+Get:11 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/multiverse amd64 c-n-f Metadata [8328 B]
+Get:12 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1455 kB]
+Get:13 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1714 kB]
+Get:14 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [345 kB]
+Get:15 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]
+Get:16 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 c-n-f Metadata [34.9 kB]
+Get:17 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [50.7 kB]
+Get:18 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [14.6 kB]
+Get:19 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+Get:20 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 c-n-f Metadata [656 B]
+Get:21 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [40.6 kB]
+Get:22 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/main Translation-en [9172 B]
+Get:23 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5740 B]
+Get:24 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/main amd64 c-n-f Metadata [368 B]
+Get:25 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [31.0 kB]
+Get:26 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/universe Translation-en [18.6 kB]
+Get:27 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [12.6 kB]
+Get:28 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/universe amd64 c-n-f Metadata [1588 B]
+Get:29 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/restricted amd64 Components [212 B]
+Get:30 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/restricted amd64 c-n-f Metadata [116 B]
+Get:31 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [748 B]
+Get:32 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/multiverse Translation-en [340 B]
+Get:33 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Components [212 B]
+Get:34 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 c-n-f Metadata [116 B]
+Get:35 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
 Get:36 http://security.ubuntu.com/ubuntu noble-security/main amd64 Packages [1198 kB]
 Get:37 http://security.ubuntu.com/ubuntu noble-security/main Translation-en [239 kB]
 Get:38 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1229 kB]
@@ -46,7 +46,7 @@ Get:44 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Package
 Get:45 http://security.ubuntu.com/ubuntu noble-security/multiverse Translation-en [12.7 kB]
 Get:46 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Components [208 B]
 Get:47 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 c-n-f Metadata [468 B]
-Fetched 35.4 MB in 3s (11.7 MB/s)
+Fetched 35.4 MB in 3s (11.6 MB/s)
 Reading package lists...
 Reading package lists...
 Building dependency tree...
@@ -188,7 +188,7 @@ Get:85 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd
 Get:86 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3-setuptools-whl all 68.1.2-2ubuntu1.2 [716 kB]
 Get:87 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3.12-venv amd64 3.12.3-1ubuntu0.17 [5684 B]
 Get:88 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3-venv amd64 3.12.3-0ubuntu2.1 [1032 B]
-Fetched 89.4 MB in 1s (83.7 MB/s)
+Fetched 89.4 MB in 1s (106 MB/s)
 Selecting previously unselected package binutils-common:amd64.
 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 79306 files and directories currently installed.)
 Preparing to unpack .../00-binutils-common_2.42-4ubuntu2.10_amd64.deb ...
@@ -558,16 +558,16 @@ No containers need to be restarted.
 No user sessions are running outdated binaries.
 
 No VM guests are running outdated hypervisor (qemu) binaries on this host.
-ESTADO: INSTALANDO 20:16:59
+ESTADO: INSTALANDO 21:13:38
 64
                total        used        free      shared  buff/cache   available
-Mem:             123           1         118           0           4         121
+Mem:             123           1         117           0           4         121
 Swap:              0           0           0
 Filesystem      Size  Used Avail Use% Mounted on
 /dev/root        38G  5.7G   33G  15% /
-ESTADO: QA 20:17:57
-[    0.4s] QA: Prithvi en 1 fecha
-[   28.6s] HLS calidad:
+ESTADO: QA 21:14:34
+[    0.3s] QA: Prithvi en 1 fecha
+[   28.9s] HLS calidad:
  temporada      fecha  das coleccion  frac_despejado_lote  ndvi_lote  azul_lote motivo
          2 2022-01-08   36  hls2-s30                  1.0   0.738821    0.03079     ok
          2 2022-02-12   71  hls2-s30                  1.0   0.836259    0.02424     ok
@@ -576,18 +576,18 @@ ESTADO: QA 20:17:57
          2 2022-03-12   99  hls2-l30                  1.0   0.767633    0.03301     ok
          2 2022-03-24  111  hls2-s30                  1.0   0.804618    0.02166     ok
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[   49.1s] Prithvi 2022-03-24 hls2-s30 con 4 fechas: 0.2 s
-[   49.2s] Prithvi listo: 1 vectores de 1 fechas objetivo
-[   49.2s] QA: vectores Prithvi sintéticos (solo para probar el camino)
-[   49.4s] ===== Paso 1: análisis exploratorio
-[   51.9s] parcial subido (0.8 MB)
-[   51.9s] ===== Paso 2: calidad y preparación de datos
-[   51.9s] contrato de datos OK:
+[   46.8s] Prithvi 2022-03-24 hls2-s30 con 4 fechas: 0.4 s
+[   46.8s] Prithvi listo: 1 vectores de 1 fechas objetivo
+[   46.8s] QA: vectores Prithvi sintéticos (solo para probar el camino)
+[   47.0s] ===== Paso 1: análisis exploratorio
+[   49.6s] parcial subido (0.8 MB)
+[   49.6s] ===== Paso 2: calidad y preparación de datos
+[   49.6s] contrato de datos OK:
 indice  fechas  pares  esperado_fechas  esperado_pares  fechas_hls  pares_hls
   NDVI      23    141               23             141          14         87
   NDRE      14     42               14              42           9         27
  OSAVI      23    141               23             141          14         87
-[   51.9s] no regresión OK:
+[   49.6s] no regresión OK:
 indice  temporada_prueba      r  r_referencia    dif  fechas  fechas_ref  pares  pares_ref  pasa
   NDVI                 1 0.5798          0.58 0.0002       9           9     69         69  True
   NDVI                 2 0.5207          0.52 0.0007       8           8     37         37  True
@@ -595,7 +595,7 @@ indice  temporada_prueba      r  r_referencia    dif  fechas  fechas_ref  pares 
   NDRE                 1 0.1955          0.20 0.0045       3           3      9          9  True
   NDRE                 2 0.7152          0.72 0.0048       6           6     18         18  True
   NDRE                 3 0.9515          0.95 0.0015       5           5     15         15  True
-[   57.4s] OSAVI: rojo despejado = rojo de la imagen:
+[   55.1s] OSAVI: rojo despejado = rojo de la imagen:
 sensor      fecha            pixel_id  rojo_imagen  rojo_despejado  dif
     S2 2022-03-09 32618_504210_463140      0.02720         0.02720  0.0
     S2 2022-03-09 32618_504230_463130      0.02950         0.02950  0.0
@@ -603,107 +603,107 @@ sensor      fecha            pixel_id  rojo_imagen  rojo_despejado  dif
      L 2022-01-31 32618_504165_463065      0.04021         0.04021  0.0
      L 2022-01-31 32618_504195_463095      0.03614         0.03614  0.0
      L 2022-01-31 32618_504195_463065      0.03933         0.03933  0.0
-[   57.6s] parcial subido (0.8 MB)
-[   57.6s] ===== Paso 3: partición anidada por temporada
-[   57.6s] ===== Paso 4: métricas (fijadas antes de ver resultados)
-[   57.6s] ===== Paso 5: estandarización (dentro del Pipeline, ajustada solo con el entrenamiento)
-[   57.6s] ===== Paso 6: selección de variables y paso 7, ajuste y selección de modelos (por temporada de prueba)
-[   82.6s]   selección: 1/12
-[  101.1s]   selección: 2/12
-[  101.3s]   selección: 3/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  106.3s]   selección: 4/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  106.8s]   selección: 5/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  107.2s]   selección: 6/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  124.5s]   selección: 7/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  125.0s]   selección: 8/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  141.1s]   selección: 9/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  142.2s]   selección: 10/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  142.7s]   selección: 11/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[  142.9s]   selección: 12/12
-[  142.9s] selección:
-indice  temporada_prueba variante familia                           variables  k_prithvi  rmse_val                                               motivo
-  NDVI                 1       B1  lineal           ndvi,str,T2M_MAX,ndmi_rel          0  0.060792  empate con el mejor (huber, 0.0585) → el más simple
-  NDVI                 2       B1  lineal              ndvi,osavi,eto_10d,str          0  0.033763                             menor RMSE de validación
-  NDVI                 3       B1  lineal       ndvi,T2M_MAX,lluvia_1d,eto_5d          0  0.038576 empate con el mejor (lineal, 0.0298) → el más simple
-  NDRE                 1       B1  lineal             ndre,ndwi,ndwi_rel,ndvi          0  0.028943                             menor RMSE de validación
-  NDRE                 2       B1   ridge                           ndre,ndmi          0  0.031741                             menor RMSE de validación
-  NDRE                 3       B1  lineal               ndre,str_rel,riego_5d          0  0.055292 empate con el mejor (lineal, 0.0501) → el más simple
- OSAVI                 1       B2   lasso             osavi,eto_10d,osavi_rel          3  0.100261                             menor RMSE de validación
- OSAVI                 2       B1   huber osavi,lluvia_3d,lluvia_1d,riego_10d          0  0.127731                             menor RMSE de validación
- OSAVI                 3       B2   ridge             osavi,eto_5d,balance_5d          3  0.026023                             menor RMSE de validación
-[  157.0s] parcial subido (1.0 MB)
-[  157.0s] ===== Paso 8: evaluación
-[  157.0s] prueba:
-indice  temporada_prueba variante familia  rmse_fecha  rmse_base_fecha         r  mejora_vs_base_pct  n_fechas
-  NDVI                 1       B1  lineal    0.032729         0.042175  0.851948           22.398016         9
-  NDVI                 2       B1  lineal    0.068823         0.059703  0.543167          -15.275359         8
-  NDVI                 3       B1  lineal    0.050241         0.073007  0.745542           31.183651         6
-  NDRE                 1       B1  lineal    0.088734         0.048926 -0.029011          -81.362570         3
-  NDRE                 2       B1   ridge    0.079041         0.083302  0.389066            5.115815         6
-  NDRE                 3       B1  lineal    0.056528         0.112204  0.948607           49.620604         5
- OSAVI                 1       B2   lasso    0.377324         0.076970 -0.885735         -390.221593         7
- OSAVI                 2       B1   huber    0.206025         0.057378 -0.363221         -259.065285         8
- OSAVI                 3       B2   ridge    0.204427         0.215817 -0.845203            5.277744         2
-[  158.5s] parcial subido (1.6 MB)
-[  159.7s]   bootstrap: 36/36
-[  159.8s] bootstrap:
+[   55.3s] parcial subido (0.8 MB)
+[   55.3s] ===== Paso 3: partición anidada por temporada
+[   55.3s] ===== Paso 4: métricas (fijadas antes de ver resultados)
+[   55.3s] ===== Paso 5: estandarización (dentro del Pipeline, ajustada solo con el entrenamiento)
+[   55.3s] ===== Paso 6: selección de variables y paso 7, ajuste y selección de modelos (por temporada de prueba)
+[   80.5s]   selección: 1/12
+[   97.7s]   selección: 2/12
+[   97.8s]   selección: 3/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  103.7s]   selección: 4/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  104.7s]   selección: 5/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  105.1s]   selección: 6/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  121.0s]   selección: 7/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  123.4s]   selección: 8/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  138.5s]   selección: 9/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  138.6s]   selección: 10/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  139.1s]   selección: 11/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[  140.0s]   selección: 12/12
+[  140.0s] selección:
+indice  temporada_prueba variante familia               variables  k_prithvi  rmse_val                                               motivo
+  NDVI                 1       B1   huber                    ndvi          0  0.068291                             menor RMSE de validación
+  NDVI                 2       B1   huber                    ndvi          0  0.045787 empate con el mejor (lineal, 0.0502) → el más simple
+  NDVI                 3       B1  lineal                    ndvi          0  0.045667                             menor RMSE de validación
+  NDRE                 1       B1  lineal      ndre,ndwi,ndwi_rel          0  0.031700                             menor RMSE de validación
+  NDRE                 2       B2   huber        ndre,str_rel,das          3  0.058896                             menor RMSE de validación
+  NDRE                 3       B1  lineal            ndre,str_rel          0  0.057740 empate con el mejor (lineal, 0.0536) → el más simple
+ OSAVI                 1       B2   huber osavi,eto_10d,osavi_rel          3  0.107728                             menor RMSE de validación
+ OSAVI                 2       B1   huber         osavi,lluvia_3d          0  0.141412                             menor RMSE de validación
+ OSAVI                 3       B2  lineal                   osavi          3  0.049497  empate con el mejor (ridge, 0.0414) → el más simple
+[  153.7s] parcial subido (1.0 MB)
+[  153.7s] ===== Paso 8: evaluación
+[  153.7s] prueba:
+indice  temporada_prueba variante familia               variables  rmse_fecha  rmse_fecha_solo_indice  rmse_base_fecha  r_peso_fecha  mejora_vs_base_pct  n_fechas
+  NDVI                 1       B1   huber                    ndvi    0.036256                0.036103         0.042175      0.522506           14.035701         9
+  NDVI                 2       B1   huber                    ndvi    0.056414                0.056962         0.059703      0.533294            5.509245         8
+  NDVI                 3       B1  lineal                    ndvi    0.053866                0.057578         0.073007      0.819673           26.218596         6
+  NDRE                 1       B1  lineal      ndre,ndwi,ndwi_rel    0.090733                0.047081         0.048926      0.044994          -85.448924         3
+  NDRE                 2       B2   huber        ndre,str_rel,das    0.091443                0.053465         0.078301      0.582447          -16.783660         4
+  NDRE                 3       B1  lineal            ndre,str_rel    0.065504                0.064845         0.112204      0.945747           41.620509         5
+ OSAVI                 1       B2   huber osavi,eto_10d,osavi_rel    0.429419                0.153130         0.076970     -0.891038         -457.903570         7
+ OSAVI                 2       B1   huber         osavi,lluvia_3d    0.114497                0.062554         0.057378     -0.333447          -99.548640         8
+ OSAVI                 3       B2  lineal                   osavi    0.207764                0.194321         0.215817     -0.941239            3.731421         2
+[  155.2s] parcial subido (1.7 MB)
+[  156.5s]   bootstrap: 36/36
+[  156.5s] bootstrap:
 indice  temporada_prueba variante familia  repeticiones  fallidas  rmse_fecha rmse_fecha_IC95     rmse     rmse_IC95      mae      mae_IC95         r          r_IC95  rmse_base_fecha  pct_supera_base
-  NDRE                 1       B1  lineal             4         0    0.088734   0.061 a 0.082 0.088734 0.061 a 0.082 0.078465 0.056 a 0.073 -0.029011   0.035 a 0.444         0.048926              0.0
-  NDRE                 2       B1   ridge             4         0    0.079041   0.073 a 0.094 0.079041 0.073 a 0.094 0.069934 0.062 a 0.087  0.389066   0.082 a 0.749         0.083302             75.0
-  NDRE                 3       B1  lineal             4         0    0.056528   0.061 a 0.131 0.056528 0.061 a 0.131 0.045595 0.051 a 0.108  0.948607   0.880 a 0.951         0.112204            100.0
-  NDVI                 1       B1  lineal             4         0    0.032729   0.019 a 0.031 0.031387 0.019 a 0.032 0.025528 0.016 a 0.025  0.851948   0.689 a 0.830         0.042175            100.0
-  NDVI                 2       B1  lineal             4         0    0.068823   0.058 a 0.085 0.059384 0.050 a 0.075 0.048387 0.034 a 0.064  0.543167  -0.334 a 0.683         0.059703             25.0
-  NDVI                 3       B1  lineal             4         0    0.050241   0.023 a 0.095 0.062562 0.022 a 0.110 0.040358 0.017 a 0.090  0.745542   0.093 a 0.707         0.073007            100.0
- OSAVI                 1       B2   lasso             4         0    0.377324   0.195 a 0.484 0.358904 0.194 a 0.459 0.312998 0.179 a 0.406 -0.885735 -0.870 a -0.789         0.076970              0.0
- OSAVI                 2       B1   huber             4         0    0.206025   0.055 a 0.159 0.169322 0.054 a 0.118 0.111246 0.033 a 0.088 -0.363221  -0.302 a 0.157         0.057378              0.0
- OSAVI                 3       B2   ridge             4         0    0.204427   0.048 a 0.258 0.139191 0.048 a 0.254 0.105668 0.037 a 0.251 -0.845203  -0.780 a 0.483         0.215817            100.0
-[  159.9s] parcial subido (1.7 MB)
-[  175.5s]   estabilidad: 1/9
-[  176.0s]   estabilidad: 2/9
-[  176.4s]   estabilidad: 3/9
-[  194.3s]   estabilidad: 4/9
-[  194.3s]   estabilidad: 5/9
-[  194.8s]   estabilidad: 6/9
-[  195.2s]   estabilidad: 7/9
-[  212.3s]   estabilidad: 8/9
-[  229.9s]   estabilidad: 9/9
-[  230.1s] parcial subido (1.7 MB)
-[  237.2s] proyección:
+  NDRE                 1       B1  lineal             4         0    0.090733   0.066 a 0.083 0.090733 0.066 a 0.083 0.079705 0.055 a 0.073  0.044994   0.079 a 0.752         0.048926              0.0
+  NDRE                 2       B2   huber             4         0    0.091443   0.039 a 0.169 0.091443 0.039 a 0.169 0.073919 0.030 a 0.127  0.582447  -0.865 a 0.952         0.078301             50.0
+  NDRE                 3       B1  lineal             4         0    0.065504   0.074 a 0.132 0.065504 0.074 a 0.132 0.050695 0.057 a 0.109  0.945747   0.849 a 0.920         0.112204            100.0
+  NDVI                 1       B1   huber             4         0    0.036256   0.019 a 0.042 0.037383 0.020 a 0.049 0.030086 0.015 a 0.041  0.569660   0.210 a 0.817         0.042175             50.0
+  NDVI                 2       B1   huber             4         0    0.056414   0.048 a 0.083 0.054079 0.044 a 0.074 0.044615 0.034 a 0.063  0.526472  -0.358 a 0.575         0.059703             50.0
+  NDVI                 3       B1  lineal             4         0    0.053866   0.022 a 0.088 0.068354 0.022 a 0.101 0.045382 0.018 a 0.081  0.792873   0.391 a 0.780         0.073007            100.0
+ OSAVI                 1       B2   huber             4         0    0.429419   0.169 a 0.515 0.407874 0.159 a 0.489 0.352484 0.150 a 0.432 -0.883520 -0.869 a -0.642         0.076970              0.0
+ OSAVI                 2       B1   huber             4         0    0.114497   0.038 a 0.125 0.100079 0.029 a 0.103 0.075385 0.019 a 0.083 -0.229682  -0.361 a 0.455         0.057378             50.0
+ OSAVI                 3       B2  lineal             4         0    0.207764   0.046 a 0.264 0.142253 0.046 a 0.259 0.110145 0.035 a 0.256 -0.881224  -0.727 a 0.481         0.215817            100.0
+[  156.8s] parcial subido (1.7 MB)
+[  172.1s]   estabilidad: 1/9
+[  172.3s]   estabilidad: 2/9
+[  172.3s]   estabilidad: 3/9
+[  191.1s]   estabilidad: 4/9
+[  191.2s]   estabilidad: 5/9
+[  191.3s]   estabilidad: 6/9
+[  192.1s]   estabilidad: 7/9
+[  209.4s]   estabilidad: 8/9
+[  225.6s]   estabilidad: 9/9
+[  225.8s] parcial subido (1.7 MB)
+[  232.9s] proyección:
 {
  "n_jobs": 64,
- "eficiencia_paralela": 0.7526182478775223,
- "nucleos_efectivos": 48.16756786416143,
- "prithvi_1_fecha_s": 0.2307736873626709,
- "descarga_hls_media_s": 4.629283348719279,
- "prithvi_total_s": 121.41144013404846,
- "seleccion_completa_media_s": 59.98619685570399,
- "seleccion_principal_s": 85.24038553237915,
- "bootstrap_1_rep_s": 0.1410814258787367,
- "bootstrap_s": 26.360742076274974,
- "estabilidad_1_rep_s": 33.657054821650185,
- "estabilidad_s": 1257.7487584555054,
+ "eficiencia_paralela": 0.7860498574603557,
+ "nucleos_efectivos": 50.307190877462766,
+ "prithvi_1_fecha_s": 0.41384291648864746,
+ "descarga_hls_media_s": 4.681252519289653,
+ "prithvi_total_s": 122.76563227176666,
+ "seleccion_completa_media_s": 59.50067009528478,
+ "seleccion_principal_s": 84.68578720092773,
+ "bootstrap_1_rep_s": 0.143848717212677,
+ "bootstrap_s": 25.73466004228992,
+ "estabilidad_1_rep_s": 33.34644020928277,
+ "estabilidad_s": 1193.1414044348696,
  "resto_s": 180.0,
  "reps": {
   "n_boot": 1000,
   "n_estab": 200
  },
- "entrenamiento_min": 25.822498101069325,
- "total_min": 52.84602210330347
+ "entrenamiento_min": 24.726030861301457,
+ "total_min": 51.772124732497566
 }
 QA OK
-[  237.2s] estado final: QA_OK
-[  237.4s] parcial subido (1.7 MB)
-ESTADO: PRITHVI 20:21:56
-[   92.6s] HLS calidad:
+[  232.9s] estado final: QA_OK
+[  233.1s] parcial subido (1.7 MB)
+ESTADO: PRITHVI 21:18:29
+[   90.9s] HLS calidad:
  temporada      fecha  das coleccion  frac_despejado_lote  ndvi_lote  azul_lote                                          motivo
          1 2021-06-17   22  hls2-s30                  1.0   0.701249    0.04097                                              ok
          1 2021-06-29   34  hls2-l30                  1.0   0.819740    0.02592                                              ok
@@ -726,26 +726,26 @@ ESTADO: PRITHVI 20:21:56
          3 2022-08-11   34  hls2-l30                  1.0   0.667985    0.03656                                              ok
          3 2022-08-11   34  hls2-s30                  1.0   0.678923    0.03182                                              ok
          3 2022-10-10   94  hls2-s30                  1.0   0.809565    0.02205                                              ok
-[   98.9s] Prithvi 2021-06-29 hls2-l30 con 2 fechas: 0.1 s
-[   99.1s] Prithvi 2021-07-02 hls2-s30 con 3 fechas: 0.2 s
-[   99.3s] Prithvi 2021-07-15 hls2-l30 con 4 fechas: 0.2 s
-[   99.6s] Prithvi 2021-07-31 hls2-l30 con 4 fechas: 0.2 s
-[   99.8s] Prithvi 2021-08-06 hls2-s30 con 4 fechas: 0.2 s
-[  100.1s] Prithvi 2021-09-05 hls2-s30 con 4 fechas: 0.2 s
-[  100.3s] Prithvi 2021-09-17 hls2-l30 con 4 fechas: 0.2 s
-[  100.4s] Prithvi 2022-01-08 hls2-s30 con 1 fechas: 0.1 s
-[  100.5s] Prithvi 2022-02-12 hls2-s30 con 2 fechas: 0.1 s
-[  100.7s] Prithvi 2022-02-17 hls2-s30 con 3 fechas: 0.2 s
-[  100.9s] Prithvi 2022-03-09 hls2-s30 con 4 fechas: 0.2 s
-[  101.2s] Prithvi 2022-03-12 hls2-l30 con 4 fechas: 0.2 s
-[  101.4s] Prithvi 2022-03-24 hls2-s30 con 4 fechas: 0.2 s
-[  101.5s] Prithvi 2022-08-11 hls2-l30 con 2 fechas: 0.1 s
-[  101.7s] Prithvi 2022-08-11 hls2-s30 con 2 fechas: 0.1 s
-[  101.9s] Prithvi 2022-10-10 hls2-s30 con 3 fechas: 0.2 s
-[  102.0s] Prithvi listo: 16 vectores de 16 fechas objetivo
-[  102.0s] estado final: OK
-[  102.1s] parcial subido (0.1 MB)
-ESTADO: ENTRENANDO 20:23:40
+[   97.2s] Prithvi 2021-06-29 hls2-l30 con 2 fechas: 0.1 s
+[   97.4s] Prithvi 2021-07-02 hls2-s30 con 3 fechas: 0.2 s
+[   97.6s] Prithvi 2021-07-15 hls2-l30 con 4 fechas: 0.2 s
+[   97.8s] Prithvi 2021-07-31 hls2-l30 con 4 fechas: 0.2 s
+[   98.0s] Prithvi 2021-08-06 hls2-s30 con 4 fechas: 0.2 s
+[   98.3s] Prithvi 2021-09-05 hls2-s30 con 4 fechas: 0.2 s
+[   98.5s] Prithvi 2021-09-17 hls2-l30 con 4 fechas: 0.2 s
+[   98.6s] Prithvi 2022-01-08 hls2-s30 con 1 fechas: 0.1 s
+[   98.7s] Prithvi 2022-02-12 hls2-s30 con 2 fechas: 0.1 s
+[   98.9s] Prithvi 2022-02-17 hls2-s30 con 3 fechas: 0.2 s
+[   99.2s] Prithvi 2022-03-09 hls2-s30 con 4 fechas: 0.2 s
+[   99.4s] Prithvi 2022-03-12 hls2-l30 con 4 fechas: 0.2 s
+[   99.6s] Prithvi 2022-03-24 hls2-s30 con 4 fechas: 0.2 s
+[   99.8s] Prithvi 2022-08-11 hls2-l30 con 2 fechas: 0.1 s
+[   99.9s] Prithvi 2022-08-11 hls2-s30 con 2 fechas: 0.1 s
+[  100.1s] Prithvi 2022-10-10 hls2-s30 con 3 fechas: 0.2 s
+[  100.2s] Prithvi listo: 16 vectores de 16 fechas objetivo
+[  100.3s] estado final: OK
+[  100.4s] parcial subido (0.1 MB)
+ESTADO: ENTRENANDO 21:20:11
 [    0.5s] ===== Paso 1: análisis exploratorio
 [    3.0s] parcial subido (0.8 MB)
 [    3.0s] ===== Paso 2: calidad y preparación de datos
@@ -762,7 +762,7 @@ indice  temporada_prueba      r  r_referencia    dif  fechas  fechas_ref  pares 
   NDRE                 1 0.1955          0.20 0.0045       3           3      9          9  True
   NDRE                 2 0.7152          0.72 0.0048       6           6     18         18  True
   NDRE                 3 0.9515          0.95 0.0015       5           5     15         15  True
-[    8.6s] OSAVI: rojo despejado = rojo de la imagen:
+[    9.9s] OSAVI: rojo despejado = rojo de la imagen:
 sensor      fecha            pixel_id  rojo_imagen  rojo_despejado  dif
     S2 2022-03-09 32618_504210_463140      0.02720         0.02720  0.0
     S2 2022-03-09 32618_504230_463130      0.02950         0.02950  0.0
@@ -770,287 +770,287 @@ sensor      fecha            pixel_id  rojo_imagen  rojo_despejado  dif
      L 2022-01-31 32618_504165_463065      0.04021         0.04021  0.0
      L 2022-01-31 32618_504195_463095      0.03614         0.03614  0.0
      L 2022-01-31 32618_504195_463065      0.03933         0.03933  0.0
-[    8.8s] parcial subido (0.9 MB)
-[    8.8s] ===== Paso 3: partición anidada por temporada
-[    8.9s] ===== Paso 4: métricas (fijadas antes de ver resultados)
-[    8.9s] ===== Paso 5: estandarización (dentro del Pipeline, ajustada solo con el entrenamiento)
-[    8.9s] ===== Paso 6: selección de variables y paso 7, ajuste y selección de modelos (por temporada de prueba)
-[   34.2s]   selección: 1/12
-[   52.9s]   selección: 2/12
-[   53.4s]   selección: 3/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[   58.2s]   selección: 4/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[   58.5s]   selección: 5/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[   59.3s]   selección: 6/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[   76.7s]   selección: 7/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[   76.9s]   selección: 8/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[   94.1s]   selección: 9/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[   95.3s]   selección: 10/12
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-<dynamic-code>:628: RuntimeWarning: Mean of empty slice
-[   95.6s]   selección: 11/12
+[   10.0s] parcial subido (0.9 MB)
+[   10.0s] ===== Paso 3: partición anidada por temporada
+[   10.1s] ===== Paso 4: métricas (fijadas antes de ver resultados)
+[   10.1s] ===== Paso 5: estandarización (dentro del Pipeline, ajustada solo con el entrenamiento)
+[   10.1s] ===== Paso 6: selección de variables y paso 7, ajuste y selección de modelos (por temporada de prueba)
+[   35.6s]   selección: 1/12
+[   53.2s]   selección: 2/12
+[   53.6s]   selección: 3/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[   59.0s]   selección: 4/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[   59.8s]   selección: 5/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[   61.1s]   selección: 6/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[   77.7s]   selección: 7/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[   77.8s]   selección: 8/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[   94.3s]   selección: 9/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[   94.4s]   selección: 10/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
+[   95.4s]   selección: 11/12
+<dynamic-code>:643: RuntimeWarning: Mean of empty slice
 [   95.7s]   selección: 12/12
 [   95.7s] selección:
-indice  temporada_prueba variante familia                           variables  k_prithvi  rmse_val                                               motivo
-  NDVI                 1       B1  lineal           ndvi,str,T2M_MAX,ndmi_rel          0  0.060792 empate con el mejor (lineal, 0.0544) → el más simple
-  NDVI                 2       B1   huber              ndvi,osavi,eto_10d,str          0  0.032147                             menor RMSE de validación
-  NDVI                 3       B1  lineal       ndvi,T2M_MAX,lluvia_1d,eto_5d          0  0.038576 empate con el mejor (lineal, 0.0319) → el más simple
-  NDRE                 1       B1  lineal             ndre,ndwi,ndwi_rel,ndvi          0  0.028943                             menor RMSE de validación
-  NDRE                 2       B1   ridge                           ndre,ndmi          0  0.031741                             menor RMSE de validación
-  NDRE                 3       B1  lineal               ndre,str_rel,riego_5d          0  0.055292 empate con el mejor (lineal, 0.0496) → el más simple
- OSAVI                 1       B2  lineal             osavi,eto_10d,riego_10d          3  0.084843                             menor RMSE de validación
- OSAVI                 2       B1   huber osavi,lluvia_3d,lluvia_1d,riego_10d          0  0.127731                             menor RMSE de validación
- OSAVI                 3       B2  lineal             osavi,ndwi_rel,riego_5d          5  0.033599  empate con el mejor (ridge, 0.0293) → el más simple
-[  175.5s] parcial subido (1.1 MB)
-[  175.5s] ===== Paso 8: evaluación
-[  175.5s] prueba:
-indice  temporada_prueba variante familia  rmse_fecha  rmse_base_fecha         r  mejora_vs_base_pct  n_fechas
-  NDVI                 1       B1  lineal    0.032729         0.042175  0.851948           22.398016         9
-  NDVI                 2       B1   huber    0.068842         0.059703  0.523956          -15.308037         8
-  NDVI                 3       B1  lineal    0.050241         0.073007  0.745542           31.183651         6
-  NDRE                 1       B1  lineal    0.088734         0.048926 -0.029011          -81.362570         3
-  NDRE                 2       B1   ridge    0.079041         0.083302  0.389066            5.115815         6
-  NDRE                 3       B1  lineal    0.056528         0.112204  0.948607           49.620604         5
- OSAVI                 1       B2  lineal    0.194986         0.076970 -0.842440         -153.327301         7
- OSAVI                 2       B1   huber    0.206025         0.057378 -0.363221         -259.065285         8
- OSAVI                 3       B2  lineal    0.224199         0.215817 -0.863873           -3.883722         2
-[  188.4s] parcial subido (1.7 MB)
-[  189.3s]   bootstrap: 50/9000
-[  189.5s]   bootstrap: 100/9000
-[  189.7s]   bootstrap: 150/9000
-[  189.9s]   bootstrap: 200/9000
-[  190.1s]   bootstrap: 250/9000
-[  190.3s]   bootstrap: 300/9000
-[  190.6s]   bootstrap: 350/9000
-[  190.9s]   bootstrap: 400/9000
-[  191.1s]   bootstrap: 450/9000
-[  191.3s]   bootstrap: 500/9000
-[  191.6s]   bootstrap: 550/9000
-[  191.8s]   bootstrap: 600/9000
-[  192.1s]   bootstrap: 650/9000
-[  192.3s]   bootstrap: 700/9000
-[  192.6s]   bootstrap: 750/9000
-[  192.8s]   bootstrap: 800/9000
-[  193.1s]   bootstrap: 850/9000
-[  193.3s]   bootstrap: 900/9000
-[  193.6s]   bootstrap: 950/9000
-[  193.9s]   bootstrap: 1000/9000
-[  194.1s]   bootstrap: 1050/9000
-[  194.4s]   bootstrap: 1100/9000
-[  194.6s]   bootstrap: 1150/9000
-[  194.9s]   bootstrap: 1200/9000
-[  195.1s]   bootstrap: 1250/9000
-[  195.3s]   bootstrap: 1300/9000
-[  195.6s]   bootstrap: 1350/9000
-[  195.8s]   bootstrap: 1400/9000
-[  196.1s]   bootstrap: 1450/9000
-[  196.4s]   bootstrap: 1500/9000
-[  196.6s]   bootstrap: 1550/9000
-[  196.8s]   bootstrap: 1600/9000
-[  197.1s]   bootstrap: 1650/9000
-[  197.4s]   bootstrap: 1700/9000
-[  197.7s]   bootstrap: 1750/9000
-[  198.0s]   bootstrap: 1800/9000
-[  198.2s]   bootstrap: 1850/9000
-[  198.4s]   bootstrap: 1900/9000
-[  198.7s]   bootstrap: 1950/9000
-[  198.9s]   bootstrap: 2000/9000
-[  199.2s]   bootstrap: 2050/9000
-[  199.4s]   bootstrap: 2100/9000
-[  199.7s]   bootstrap: 2150/9000
-[  199.9s]   bootstrap: 2200/9000
-[  200.2s]   bootstrap: 2250/9000
-[  200.4s]   bootstrap: 2300/9000
-[  200.7s]   bootstrap: 2350/9000
-[  200.9s]   bootstrap: 2400/9000
-[  201.2s]   bootstrap: 2450/9000
-[  201.4s]   bootstrap: 2500/9000
-[  201.6s]   bootstrap: 2550/9000
-[  201.9s]   bootstrap: 2600/9000
-[  202.1s]   bootstrap: 2650/9000
-[  202.4s]   bootstrap: 2700/9000
-[  202.6s]   bootstrap: 2750/9000
-[  202.9s]   bootstrap: 2800/9000
-[  203.1s]   bootstrap: 2850/9000
-[  203.4s]   bootstrap: 2900/9000
-[  203.6s]   bootstrap: 2950/9000
-[  203.9s]   bootstrap: 3000/9000
-[  204.1s]   bootstrap: 3050/9000
-[  204.3s]   bootstrap: 3100/9000
-[  204.6s]   bootstrap: 3150/9000
-[  204.8s]   bootstrap: 3200/9000
-[  205.1s]   bootstrap: 3250/9000
-[  205.3s]   bootstrap: 3300/9000
-[  205.6s]   bootstrap: 3350/9000
-[  205.8s]   bootstrap: 3400/9000
-[  206.1s]   bootstrap: 3450/9000
-[  206.3s]   bootstrap: 3500/9000
-[  206.6s]   bootstrap: 3550/9000
-[  206.8s]   bootstrap: 3600/9000
-[  207.0s]   bootstrap: 3650/9000
-[  207.3s]   bootstrap: 3700/9000
-[  207.5s]   bootstrap: 3750/9000
-[  207.8s]   bootstrap: 3800/9000
-[  208.0s]   bootstrap: 3850/9000
-[  208.3s]   bootstrap: 3900/9000
-[  208.5s]   bootstrap: 3950/9000
-[  208.7s]   bootstrap: 4000/9000
-[  209.0s]   bootstrap: 4050/9000
-[  209.2s]   bootstrap: 4100/9000
-[  209.5s]   bootstrap: 4150/9000
-[  209.7s]   bootstrap: 4200/9000
-[  210.0s]   bootstrap: 4250/9000
-[  210.2s]   bootstrap: 4300/9000
-[  210.5s]   bootstrap: 4350/9000
-[  210.7s]   bootstrap: 4400/9000
-[  210.9s]   bootstrap: 4450/9000
-[  211.2s]   bootstrap: 4500/9000
-[  211.4s]   bootstrap: 4550/9000
-[  211.7s]   bootstrap: 4600/9000
-[  211.9s]   bootstrap: 4650/9000
-[  212.2s]   bootstrap: 4700/9000
-[  212.4s]   bootstrap: 4750/9000
-[  212.7s]   bootstrap: 4800/9000
-[  212.9s]   bootstrap: 4850/9000
-[  213.2s]   bootstrap: 4900/9000
-[  213.4s]   bootstrap: 4950/9000
-[  213.6s]   bootstrap: 5000/9000
-[  213.9s]   bootstrap: 5050/9000
-[  214.1s]   bootstrap: 5100/9000
-[  214.4s]   bootstrap: 5150/9000
-[  214.6s]   bootstrap: 5200/9000
-[  214.9s]   bootstrap: 5250/9000
-[  215.1s]   bootstrap: 5300/9000
-[  215.4s]   bootstrap: 5350/9000
-[  215.6s]   bootstrap: 5400/9000
-[  215.9s]   bootstrap: 5450/9000
-[  216.1s]   bootstrap: 5500/9000
-[  216.3s]   bootstrap: 5550/9000
-[  216.6s]   bootstrap: 5600/9000
-[  216.8s]   bootstrap: 5650/9000
-[  217.1s]   bootstrap: 5700/9000
-[  217.3s]   bootstrap: 5750/9000
-[  217.6s]   bootstrap: 5800/9000
-[  217.8s]   bootstrap: 5850/9000
-[  218.1s]   bootstrap: 5900/9000
-[  218.3s]   bootstrap: 5950/9000
-[  218.5s]   bootstrap: 6000/9000
-[  218.8s]   bootstrap: 6050/9000
-[  219.1s]   bootstrap: 6100/9000
-[  219.3s]   bootstrap: 6150/9000
-[  219.6s]   bootstrap: 6200/9000
-[  219.8s]   bootstrap: 6250/9000
+indice  temporada_prueba variante familia               variables  k_prithvi  rmse_val                                               motivo
+  NDVI                 1       B1   huber                    ndvi          0  0.068291  empate con el mejor (ridge, 0.0560) → el más simple
+  NDVI                 2       B1   huber                    ndvi          0  0.045787  empate con el mejor (huber, 0.0434) → el más simple
+  NDVI                 3       B1  lineal                    ndvi          0  0.045667                             menor RMSE de validación
+  NDRE                 1       B1  lineal      ndre,ndwi,ndwi_rel          0  0.031700                             menor RMSE de validación
+  NDRE                 2       B2   huber        ndre,str_rel,das          3  0.061018                             menor RMSE de validación
+  NDRE                 3       B1  lineal            ndre,str_rel          0  0.057740 empate con el mejor (lineal, 0.0496) → el más simple
+ OSAVI                 1       B2  lineal osavi,eto_10d,riego_10d          3  0.084843                             menor RMSE de validación
+ OSAVI                 2       B1  lineal         osavi,lluvia_3d          0  0.163054                             menor RMSE de validación
+ OSAVI                 3       B2   ridge                   osavi          5  0.031626  empate con el mejor (ridge, 0.0293) → el más simple
+[  170.8s] parcial subido (1.0 MB)
+[  170.8s] ===== Paso 8: evaluación
+[  170.8s] prueba:
+indice  temporada_prueba variante familia               variables  rmse_fecha  rmse_fecha_solo_indice  rmse_base_fecha  r_peso_fecha  mejora_vs_base_pct  n_fechas
+  NDVI                 1       B1   huber                    ndvi    0.036256                0.036103         0.042175      0.522506           14.035701         9
+  NDVI                 2       B1   huber                    ndvi    0.056414                0.056962         0.059703      0.533294            5.509245         8
+  NDVI                 3       B1  lineal                    ndvi    0.053866                0.057578         0.073007      0.819673           26.218596         6
+  NDRE                 1       B1  lineal      ndre,ndwi,ndwi_rel    0.090733                0.047081         0.048926      0.044994          -85.448924         3
+  NDRE                 2       B2   huber        ndre,str_rel,das    0.128196                0.053465         0.078301      0.417412          -63.722088         4
+  NDRE                 3       B1  lineal            ndre,str_rel    0.065504                0.064845         0.112204      0.945747           41.620509         5
+ OSAVI                 1       B2  lineal osavi,eto_10d,riego_10d    0.194986                0.153130         0.076970     -0.806571         -153.327301         7
+ OSAVI                 2       B1  lineal         osavi,lluvia_3d    0.128680                0.062554         0.057378     -0.395932         -124.266710         8
+ OSAVI                 3       B2   ridge                   osavi    0.225175                0.194321         0.215817     -0.941576           -4.336090         2
+[  186.1s] parcial subido (1.7 MB)
+[  187.0s]   bootstrap: 50/9000
+[  187.2s]   bootstrap: 100/9000
+[  187.4s]   bootstrap: 150/9000
+[  187.6s]   bootstrap: 200/9000
+[  187.9s]   bootstrap: 250/9000
+[  188.2s]   bootstrap: 300/9000
+[  188.4s]   bootstrap: 350/9000
+[  188.7s]   bootstrap: 400/9000
+[  189.0s]   bootstrap: 450/9000
+[  189.3s]   bootstrap: 500/9000
+[  189.5s]   bootstrap: 550/9000
+[  189.8s]   bootstrap: 600/9000
+[  190.1s]   bootstrap: 650/9000
+[  190.3s]   bootstrap: 700/9000
+[  190.6s]   bootstrap: 750/9000
+[  190.8s]   bootstrap: 800/9000
+[  191.1s]   bootstrap: 850/9000
+[  191.4s]   bootstrap: 900/9000
+[  191.7s]   bootstrap: 950/9000
+[  191.9s]   bootstrap: 1000/9000
+[  192.2s]   bootstrap: 1050/9000
+[  192.5s]   bootstrap: 1100/9000
+[  192.7s]   bootstrap: 1150/9000
+[  193.0s]   bootstrap: 1200/9000
+[  193.2s]   bootstrap: 1250/9000
+[  193.5s]   bootstrap: 1300/9000
+[  193.8s]   bootstrap: 1350/9000
+[  194.1s]   bootstrap: 1400/9000
+[  194.3s]   bootstrap: 1450/9000
+[  194.6s]   bootstrap: 1500/9000
+[  194.9s]   bootstrap: 1550/9000
+[  195.1s]   bootstrap: 1600/9000
+[  195.4s]   bootstrap: 1650/9000
+[  195.6s]   bootstrap: 1700/9000
+[  195.9s]   bootstrap: 1750/9000
+[  196.2s]   bootstrap: 1800/9000
+[  196.5s]   bootstrap: 1850/9000
+[  196.7s]   bootstrap: 1900/9000
+[  197.0s]   bootstrap: 1950/9000
+[  197.3s]   bootstrap: 2000/9000
+[  197.5s]   bootstrap: 2050/9000
+[  197.8s]   bootstrap: 2100/9000
+[  198.0s]   bootstrap: 2150/9000
+[  198.3s]   bootstrap: 2200/9000
+[  198.6s]   bootstrap: 2250/9000
+[  198.9s]   bootstrap: 2300/9000
+[  199.1s]   bootstrap: 2350/9000
+[  199.4s]   bootstrap: 2400/9000
+[  199.6s]   bootstrap: 2450/9000
+[  199.9s]   bootstrap: 2500/9000
+[  200.1s]   bootstrap: 2550/9000
+[  200.4s]   bootstrap: 2600/9000
+[  200.7s]   bootstrap: 2650/9000
+[  200.9s]   bootstrap: 2700/9000
+[  201.2s]   bootstrap: 2750/9000
+[  201.5s]   bootstrap: 2800/9000
+[  201.7s]   bootstrap: 2850/9000
+[  202.0s]   bootstrap: 2900/9000
+[  202.3s]   bootstrap: 2950/9000
+[  202.5s]   bootstrap: 3000/9000
+[  202.8s]   bootstrap: 3050/9000
+[  203.0s]   bootstrap: 3100/9000
+[  203.3s]   bootstrap: 3150/9000
+[  203.6s]   bootstrap: 3200/9000
+[  203.8s]   bootstrap: 3250/9000
+[  204.1s]   bootstrap: 3300/9000
+[  204.4s]   bootstrap: 3350/9000
+[  204.6s]   bootstrap: 3400/9000
+[  204.9s]   bootstrap: 3450/9000
+[  205.1s]   bootstrap: 3500/9000
+[  205.4s]   bootstrap: 3550/9000
+[  205.7s]   bootstrap: 3600/9000
+[  205.9s]   bootstrap: 3650/9000
+[  206.2s]   bootstrap: 3700/9000
+[  206.5s]   bootstrap: 3750/9000
+[  206.7s]   bootstrap: 3800/9000
+[  207.0s]   bootstrap: 3850/9000
+[  207.3s]   bootstrap: 3900/9000
+[  207.5s]   bootstrap: 3950/9000
+[  207.8s]   bootstrap: 4000/9000
+[  208.1s]   bootstrap: 4050/9000
+[  208.3s]   bootstrap: 4100/9000
+[  208.6s]   bootstrap: 4150/9000
+[  208.9s]   bootstrap: 4200/9000
+[  209.1s]   bootstrap: 4250/9000
+[  209.4s]   bootstrap: 4300/9000
+[  209.7s]   bootstrap: 4350/9000
+[  209.9s]   bootstrap: 4400/9000
+[  210.2s]   bootstrap: 4450/9000
+[  210.4s]   bootstrap: 4500/9000
+[  210.7s]   bootstrap: 4550/9000
+[  211.0s]   bootstrap: 4600/9000
+[  211.2s]   bootstrap: 4650/9000
+[  211.5s]   bootstrap: 4700/9000
+[  211.8s]   bootstrap: 4750/9000
+[  212.0s]   bootstrap: 4800/9000
+[  212.3s]   bootstrap: 4850/9000
+[  212.6s]   bootstrap: 4900/9000
+[  212.8s]   bootstrap: 4950/9000
+[  213.1s]   bootstrap: 5000/9000
+[  213.3s]   bootstrap: 5050/9000
+[  213.6s]   bootstrap: 5100/9000
+[  213.9s]   bootstrap: 5150/9000
+[  214.1s]   bootstrap: 5200/9000
+[  214.4s]   bootstrap: 5250/9000
+[  214.7s]   bootstrap: 5300/9000
+[  214.9s]   bootstrap: 5350/9000
+[  215.2s]   bootstrap: 5400/9000
+[  215.4s]   bootstrap: 5450/9000
+[  215.7s]   bootstrap: 5500/9000
+[  216.0s]   bootstrap: 5550/9000
+[  216.2s]   bootstrap: 5600/9000
+[  216.5s]   bootstrap: 5650/9000
+[  216.8s]   bootstrap: 5700/9000
+[  217.0s]   bootstrap: 5750/9000
+[  217.3s]   bootstrap: 5800/9000
+[  217.6s]   bootstrap: 5850/9000
+[  217.8s]   bootstrap: 5900/9000
+[  218.1s]   bootstrap: 5950/9000
+[  218.3s]   bootstrap: 6000/9000
+[  218.7s]   bootstrap: 6050/9000
+[  218.9s]   bootstrap: 6100/9000
+[  219.2s]   bootstrap: 6150/9000
+[  219.5s]   bootstrap: 6200/9000
+[  219.7s]   bootstrap: 6250/9000
 [  220.0s]   bootstrap: 6300/9000
-[  220.3s]   bootstrap: 6350/9000
+[  220.2s]   bootstrap: 6350/9000
 [  220.5s]   bootstrap: 6400/9000
 [  220.8s]   bootstrap: 6450/9000
 [  221.0s]   bootstrap: 6500/9000
 [  221.3s]   bootstrap: 6550/9000
-[  221.5s]   bootstrap: 6600/9000
-[  221.7s]   bootstrap: 6650/9000
-[  222.0s]   bootstrap: 6700/9000
-[  222.2s]   bootstrap: 6750/9000
-[  222.5s]   bootstrap: 6800/9000
-[  222.7s]   bootstrap: 6850/9000
-[  223.0s]   bootstrap: 6900/9000
-[  223.2s]   bootstrap: 6950/9000
-[  223.5s]   bootstrap: 7000/9000
-[  223.7s]   bootstrap: 7050/9000
-[  223.9s]   bootstrap: 7100/9000
-[  224.2s]   bootstrap: 7150/9000
-[  224.5s]   bootstrap: 7200/9000
-[  224.7s]   bootstrap: 7250/9000
-[  224.9s]   bootstrap: 7300/9000
-[  225.2s]   bootstrap: 7350/9000
-[  225.4s]   bootstrap: 7400/9000
-[  225.7s]   bootstrap: 7450/9000
-[  225.9s]   bootstrap: 7500/9000
-[  226.2s]   bootstrap: 7550/9000
-[  226.4s]   bootstrap: 7600/9000
-[  226.6s]   bootstrap: 7650/9000
-[  226.9s]   bootstrap: 7700/9000
-[  227.1s]   bootstrap: 7750/9000
-[  227.4s]   bootstrap: 7800/9000
-[  227.6s]   bootstrap: 7850/9000
-[  227.9s]   bootstrap: 7900/9000
-[  228.1s]   bootstrap: 7950/9000
-[  228.4s]   bootstrap: 8000/9000
-[  228.6s]   bootstrap: 8050/9000
-[  228.9s]   bootstrap: 8100/9000
-[  229.1s]   bootstrap: 8150/9000
-[  229.3s]   bootstrap: 8200/9000
-[  229.6s]   bootstrap: 8250/9000
-[  229.8s]   bootstrap: 8300/9000
-[  230.0s]   bootstrap: 8350/9000
-[  230.3s]   bootstrap: 8400/9000
-[  230.5s]   bootstrap: 8450/9000
-[  230.8s]   bootstrap: 8500/9000
-[  231.0s]   bootstrap: 8550/9000
-[  231.3s]   bootstrap: 8600/9000
-[  231.5s]   bootstrap: 8650/9000
-[  231.8s]   bootstrap: 8700/9000
-[  232.0s]   bootstrap: 8750/9000
-[  232.2s]   bootstrap: 8800/9000
-[  232.5s]   bootstrap: 8850/9000
-[  232.7s]   bootstrap: 8900/9000
-[  232.9s]   bootstrap: 8950/9000
-[  233.3s]   bootstrap: 9000/9000
-[  233.5s] bootstrap:
+[  221.6s]   bootstrap: 6600/9000
+[  221.8s]   bootstrap: 6650/9000
+[  222.1s]   bootstrap: 6700/9000
+[  222.3s]   bootstrap: 6750/9000
+[  222.6s]   bootstrap: 6800/9000
+[  222.9s]   bootstrap: 6850/9000
+[  223.2s]   bootstrap: 6900/9000
+[  223.4s]   bootstrap: 6950/9000
+[  223.7s]   bootstrap: 7000/9000
+[  224.0s]   bootstrap: 7050/9000
+[  224.2s]   bootstrap: 7100/9000
+[  224.5s]   bootstrap: 7150/9000
+[  224.7s]   bootstrap: 7200/9000
+[  225.0s]   bootstrap: 7250/9000
+[  225.3s]   bootstrap: 7300/9000
+[  225.6s]   bootstrap: 7350/9000
+[  225.8s]   bootstrap: 7400/9000
+[  226.1s]   bootstrap: 7450/9000
+[  226.3s]   bootstrap: 7500/9000
+[  226.6s]   bootstrap: 7550/9000
+[  226.9s]   bootstrap: 7600/9000
+[  227.2s]   bootstrap: 7650/9000
+[  227.4s]   bootstrap: 7700/9000
+[  227.7s]   bootstrap: 7750/9000
+[  228.0s]   bootstrap: 7800/9000
+[  228.2s]   bootstrap: 7850/9000
+[  228.5s]   bootstrap: 7900/9000
+[  228.7s]   bootstrap: 7950/9000
+[  229.0s]   bootstrap: 8000/9000
+[  229.3s]   bootstrap: 8050/9000
+[  229.6s]   bootstrap: 8100/9000
+[  229.8s]   bootstrap: 8150/9000
+[  230.1s]   bootstrap: 8200/9000
+[  230.4s]   bootstrap: 8250/9000
+[  230.6s]   bootstrap: 8300/9000
+[  230.9s]   bootstrap: 8350/9000
+[  231.2s]   bootstrap: 8400/9000
+[  231.4s]   bootstrap: 8450/9000
+[  231.7s]   bootstrap: 8500/9000
+[  232.0s]   bootstrap: 8550/9000
+[  232.2s]   bootstrap: 8600/9000
+[  232.5s]   bootstrap: 8650/9000
+[  232.8s]   bootstrap: 8700/9000
+[  233.1s]   bootstrap: 8750/9000
+[  233.3s]   bootstrap: 8800/9000
+[  233.6s]   bootstrap: 8850/9000
+[  233.8s]   bootstrap: 8900/9000
+[  234.1s]   bootstrap: 8950/9000
+[  234.4s]   bootstrap: 9000/9000
+[  234.7s] bootstrap:
 indice  temporada_prueba variante familia  repeticiones  fallidas  rmse_fecha rmse_fecha_IC95     rmse     rmse_IC95      mae      mae_IC95         r         r_IC95  rmse_base_fecha  pct_supera_base
-  NDRE                 1       B1  lineal          1000         0    0.088734   0.053 a 0.098 0.088734 0.053 a 0.098 0.078465 0.046 a 0.086 -0.029011 -0.092 a 0.755         0.048926         9.600000
-  NDRE                 2       B1   ridge          1000         0    0.079041   0.047 a 0.097 0.079041 0.047 a 0.097 0.069934 0.039 a 0.088  0.389066 -0.164 a 0.966         0.083302        71.100000
-  NDRE                 3       B1  lineal          1000         0    0.056528   0.026 a 0.119 0.056528 0.026 a 0.119 0.045595 0.022 a 0.105  0.948607  0.545 a 0.969         0.112204        91.600000
-  NDVI                 1       B1  lineal          1000         0    0.032729   0.018 a 0.072 0.031387 0.017 a 0.066 0.025528 0.014 a 0.055  0.851948 -0.171 a 0.935         0.042175        71.400000
-  NDVI                 2       B1   huber          1000         0    0.068842   0.032 a 0.097 0.058817 0.029 a 0.086 0.046336 0.022 a 0.078  0.523956 -0.400 a 0.823         0.059703        28.300000
-  NDVI                 3       B1  lineal          1000         0    0.050241   0.014 a 0.109 0.062562 0.013 a 0.126 0.040358 0.010 a 0.110  0.745542 -0.597 a 0.856         0.073007        73.800000
+  NDRE                 1       B1  lineal          1000         0    0.090733   0.059 a 0.105 0.090733 0.059 a 0.105 0.079705 0.049 a 0.093  0.044994 -0.019 a 0.781         0.048926         3.700000
+  NDRE                 2       B2   huber           989        11    0.128196   0.022 a 0.255 0.128196 0.022 a 0.255 0.107438 0.019 a 0.225  0.417412 -0.977 a 0.981         0.078301        51.870576
+  NDRE                 3       B1  lineal          1000         0    0.065504   0.029 a 0.133 0.065504 0.029 a 0.133 0.050695 0.024 a 0.114  0.945747  0.339 a 0.962         0.112204        91.300000
+  NDVI                 1       B1   huber          1000         0    0.036256   0.021 a 0.060 0.037383 0.020 a 0.067 0.030086 0.015 a 0.058  0.569660 -0.460 a 0.870         0.042175        69.100000
+  NDVI                 2       B1   huber          1000         0    0.056414   0.027 a 0.089 0.054079 0.026 a 0.086 0.044615 0.019 a 0.079  0.526472  0.072 a 0.829         0.059703        53.800000
+  NDVI                 3       B1  lineal          1000         0    0.053866   0.016 a 0.101 0.068354 0.015 a 0.120 0.045382 0.012 a 0.102  0.792873 -0.026 a 0.900         0.073007        82.200000
  OSAVI                 1       B2  lineal           989        11    0.194986   0.055 a 1.707 0.196748 0.053 a 1.584 0.182525 0.046 a 1.392 -0.842440 -0.936 a 0.884         0.076970         3.842265
- OSAVI                 2       B1   huber          1000         0    0.206025   0.042 a 0.252 0.169322 0.038 a 0.197 0.111246 0.027 a 0.133 -0.363221 -0.692 a 0.497         0.057378         7.500000
- OSAVI                 3       B2  lineal           941        59    0.224199   0.062 a 0.324 0.156132 0.062 a 0.324 0.125009 0.048 a 0.324 -0.863873 -0.955 a 0.985         0.215817        56.110521
-[  233.8s] parcial subido (2.3 MB)
-[  274.0s]   estabilidad: 50/1800
-[  297.6s]   estabilidad: 100/1800
-[  317.3s]   estabilidad: 150/1800
-[  342.0s]   estabilidad: 200/1800
-[  377.3s]   estabilidad: 250/1800
-[  405.1s]   estabilidad: 300/1800
-[  444.0s]   estabilidad: 350/1800
-[  479.8s]   estabilidad: 400/1800
-[  530.9s]   estabilidad: 450/1800
-[  580.9s]   estabilidad: 500/1800
-[  624.6s]   estabilidad: 550/1800
-[  649.6s]   estabilidad: 600/1800
-[  668.0s]   estabilidad: 650/1800
-[  687.6s]   estabilidad: 700/1800
-[  706.2s]   estabilidad: 750/1800
-[  725.0s]   estabilidad: 800/1800
-[  744.9s]   estabilidad: 850/1800
-[  762.7s]   estabilidad: 900/1800
-[  780.7s]   estabilidad: 950/1800
-[  804.3s]   estabilidad: 1000/1800
-[  835.9s]   estabilidad: 1050/1800
-[  870.7s]   estabilidad: 1100/1800
-[  900.2s]   estabilidad: 1150/1800
-[  925.3s]   estabilidad: 1200/1800
-[  949.6s]   estabilidad: 1250/1800
-[  970.9s]   estabilidad: 1300/1800
-[  994.2s]   estabilidad: 1350/1800
-[ 1020.4s]   estabilidad: 1400/1800
-[ 1050.0s]   estabilidad: 1450/1800
-[ 1076.4s]   estabilidad: 1500/1800
-[ 1105.4s]   estabilidad: 1550/1800
-[ 1146.9s]   estabilidad: 1600/1800
-[ 1188.8s]   estabilidad: 1650/1800
-[ 1242.4s]   estabilidad: 1700/1800
-[ 1289.2s]   estabilidad: 1750/1800
-[ 1323.7s]   estabilidad: 1800/1800
-[ 1324.0s] parcial subido (2.3 MB)
-[ 1324.1s] estado final: OK
-[ 1324.3s] parcial subido (2.3 MB)
-ESTADO: OK 20:45:46
-FIN OK 20:45:46
+ OSAVI                 2       B1  lineal          1000         0    0.128680   0.034 a 0.190 0.109637 0.031 a 0.155 0.079075 0.022 a 0.119 -0.275318 -0.664 a 0.622         0.057378        14.300000
+ OSAVI                 3       B2   ridge           941        59    0.225175   0.068 a 0.322 0.156425 0.068 a 0.322 0.125744 0.055 a 0.322 -0.880474 -0.932 a 0.899         0.215817        52.178533
+[  235.0s] parcial subido (2.3 MB)
+[  273.4s]   estabilidad: 50/1800
+[  295.0s]   estabilidad: 100/1800
+[  313.8s]   estabilidad: 150/1800
+[  337.1s]   estabilidad: 200/1800
+[  370.0s]   estabilidad: 250/1800
+[  396.2s]   estabilidad: 300/1800
+[  431.9s]   estabilidad: 350/1800
+[  465.5s]   estabilidad: 400/1800
+[  513.4s]   estabilidad: 450/1800
+[  562.4s]   estabilidad: 500/1800
+[  604.4s]   estabilidad: 550/1800
+[  628.5s]   estabilidad: 600/1800
+[  646.5s]   estabilidad: 650/1800
+[  665.4s]   estabilidad: 700/1800
+[  683.7s]   estabilidad: 750/1800
+[  701.9s]   estabilidad: 800/1800
+[  720.9s]   estabilidad: 850/1800
+[  738.0s]   estabilidad: 900/1800
+[  755.8s]   estabilidad: 950/1800
+[  777.4s]   estabilidad: 1000/1800
+[  808.1s]   estabilidad: 1050/1800
+[  840.9s]   estabilidad: 1100/1800
+[  871.6s]   estabilidad: 1150/1800
+[  894.7s]   estabilidad: 1200/1800
+[  917.3s]   estabilidad: 1250/1800
+[  937.9s]   estabilidad: 1300/1800
+[  959.8s]   estabilidad: 1350/1800
+[  987.7s]   estabilidad: 1400/1800
+[ 1015.2s]   estabilidad: 1450/1800
+[ 1040.3s]   estabilidad: 1500/1800
+[ 1069.3s]   estabilidad: 1550/1800
+[ 1108.7s]   estabilidad: 1600/1800
+[ 1149.4s]   estabilidad: 1650/1800
+[ 1201.6s]   estabilidad: 1700/1800
+[ 1246.1s]   estabilidad: 1750/1800
+[ 1280.8s]   estabilidad: 1800/1800
+[ 1281.0s] parcial subido (2.3 MB)
+[ 1281.1s] estado final: OK
+[ 1281.3s] parcial subido (2.3 MB)
+ESTADO: OK 21:41:33
+FIN OK 21:41:34

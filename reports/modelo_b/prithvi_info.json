@@ -29,9 +29,9 @@
  "fechas_objetivo": 16,
  "con_vector": 16,
  "sin_vector": [],
- "descarga_media_s": 4.369202488944644,
- "prithvi_medio_s": 0.19099915027618408,
- "carga_modelo_s": 6.115942716598511,
+ "descarga_media_s": 4.2857367651803155,
+ "prithvi_medio_s": 0.18874098360538483,
+ "carga_modelo_s": 6.116729259490967,
  "items_hls": 21,
  "objetivos_total": 17,
  "nota_ubicacion": "recorte 224\u00d7224 px HLS; el p\u00edxel del lote en (119, 119) \u2192 bloque (7, 7) de 16\u00d716 px (480 m)"

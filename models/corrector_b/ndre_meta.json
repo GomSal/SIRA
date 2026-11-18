@@ -5,8 +5,7 @@
  "params": {},
  "variables": [
   "ndre",
-  "str_rel",
-  "riego_5d"
+  "str_rel"
  ],
  "k_prithvi": 0,
  "regla": "la configuración elegida en más temporadas de prueba; empate → la más estable; luego la más simple",
@@ -17,15 +16,28 @@
  "fechas_entrenamiento": 14,
  "entradas_requeridas": [
   "ndre",
-  "str_rel",
-  "riego_5d"
+  "str_rel"
  ],
  "error_esperado": {
-  "descripcion": "RMSE de prueba (peso igual por fecha) de la validación cruzada anidada",
-  "GS1": 0.0887,
-  "GS2": 0.079,
-  "GS3": 0.0565,
-  "media": 0.0748
+  "descripcion": "RMSE de prueba (peso igual por fecha) del PROCEDIMIENTO completo (selección + ajuste) en la validación cruzada anidada. Es el error esperado del procedimiento, no de esta configuración: en cada temporada de prueba la selección pudo elegir otra (ver 'por_temporada'). Evaluar esta configuración en las temporadas con que se eligió sería usar la prueba para elegir.",
+  "por_temporada": {
+   "GS1": {
+    "rmse_fecha": 0.0907,
+    "configuracion": "B1 lineal [ndre,ndwi,ndwi_rel]",
+    "igual_a_la_de_uso": false
+   },
+   "GS2": {
+    "rmse_fecha": 0.1282,
+    "configuracion": "B2 huber [ndre,str_rel,das] +P3",
+    "igual_a_la_de_uso": false
+   },
+   "GS3": {
+    "rmse_fecha": 0.0655,
+    "configuracion": "B1 lineal [ndre,str_rel]",
+    "igual_a_la_de_uso": true
+   }
+  },
+  "media": 0.0948
  },
  "versiones": {
   "python": "3.12.3",
@@ -48,6 +60,6 @@
   "revision_gs3.csv": "e19cc0f742be813ff532dc3060f91ea346cf195eb45181b10d7b72d51b29f628",
   "prithvi_embeddings.csv": "c9656c746cc9012ac9f13f41b327637d1343293a74072b4162e6160276ab3276"
  },
- "git_commit": "9dbdae1c6d4146065cd7c3a7eb4ac4140b21adfa",
+ "git_commit": "077a92a8c221dca6d65bb5444440eb03c540bf9d",
  "semilla": 20261117
 }
