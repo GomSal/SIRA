@@ -455,6 +455,23 @@ El artículo base incluye índices de dron: DJI Matrice 300 con Micasense Altum,
 - El acuerdo con el dron de la sección 8.6 era **dentro de una misma temporada y en promedios por etapa**. Lo que diferencia a los regímenes cambia de temporada en temporada (en GS1 casi no hubo diferencias), así que no hay un patrón estable que aprender con 2 temporadas de entrenamiento.
 - **Consecuencia:** con estos datos, el satélite tampoco puede dar el "estado actual" del lote (régimen) como punto de partida del balance. Lo que sí sigue siendo medible desde satélite y clima es **el consumo de agua del cultivo** (Kc(NDVI) × ETo) y su pronóstico.
 
+### 8.8 Semáforo por consumo del cultivo frente a los riegos reales de MIRI (17-nov)
+
+**Prueba:** un programador que solo usa satélite y clima acumula el déficit Dr = Σ (Kc·ETo − α·lluvia). Cuando Dr llega a un umbral T, recomienda regar f·Dr mm. Se compara con los riegos que realmente se aplicaron a MIRI, el manejo óptimo del artículo. T, α y f se calibran con 2 temporadas y se prueban en la 3ª. Script: `scripts/semaforo_consumo.py`; resultados en `reports/semaforo/semaforo_consumo.csv`.
+
+| Variante | Error del total de riego GS1 / GS2 / GS3 | Error medio de la curva acumulada (mm) |
+|---|---|---|
+| Kc desde NDVI (satélite) | −26 % / +20 % / +7 % | 66 |
+| Kc de la tabla FAO (sin satélite) | −27 % / +15 % / +1 % | 60 |
+| Kc constante 1,1 | −32 % / +14 % / +3 % | 68 |
+| Riego a intervalo fijo (sin satélite ni clima) | −31 % / +33 % / +12 % | 61 |
+
+**Lectura:**
+- Todas las variantes reproducen el **total de riego de MIRI con un error de ~15–25 %**, pero **el satélite no mejora a la tabla FAO** y apenas a un calendario fijo.
+- Los parámetros calibrados cambian mucho de un pliegue a otro (T de 5 a 30 mm; f de 1,0 a 2,0). El programador no captura cómo se decidió regar MIRI, que se programó con inspección visual del suelo y un balance propio.
+- La coincidencia de fechas (riego real a ≤ 3 días del recomendado, 75–100 %) **no es informativa**: MIRI se regó cada 4–6 días, así que casi cualquier calendario acierta. El calendario fijo cubre el 90 % de los riegos reales.
+- **Conclusión de la sección 8:** en Nataima 2021–2022, el satélite **ve la respuesta de la planta al manejo dentro de una temporada** (8.6), pero **no aporta de forma medible** a la decisión de riego frente al clima y al calendario del cultivo: ni para la humedad del suelo (8.3–8.5), ni para el régimen por fecha (8.7), ni para la lámina recomendada (8.8). Con los datos de esta finca, el valor del satélite no queda demostrado para la decisión de riego.
+
 ---
 
 ## 9. Próximos pasos
