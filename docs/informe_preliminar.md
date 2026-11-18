@@ -441,6 +441,20 @@ El artículo base incluye índices de dron: DJI Matrice 300 con Micasense Altum,
 - **La rotación queda resuelta a favor de "oeste".** En GS2 coincide exactamente. En GS3 la posición de CD (oeste, la más clara en el dron) coincide; el orden de MIRI y AWD+MIRI en GS3 queda incierto, porque el dron casi no los separa fuera de la etapa vegetativa. El radar (sección 8.5) apuntaba a lo mismo.
 - **Implicación para el modelo:** un objetivo centrado en la planta (vigor y estado frente al lote mejor manejado, por etapa) sí es medible desde el satélite y tiene verificación independiente con el dron.
 
+### 8.7 ¿Distingue el satélite el régimen de riego fecha por fecha? (17-nov)
+
+**Prueba:** clasificar el régimen de cada franja (CD, MIRI o AWD+MIRI) en cada fecha despejada con píxeles puros de Sentinel-2. Rasgos: NDVI, NDWI, NDMI, MNDWI y STR, absolutos y relativos a la media del lote ese día, más los días desde siembra. Random Forest entrenado con 2 temporadas y probado en la 3ª. Como la rotación cambia la posición de cada tratamiento, el modelo no puede aprenderse la ubicación. Script: `scripts/clasificar_regimen.py`; resultados en `reports/regimen/`. El azar da 0,33.
+
+| GS3 asignada como | Exactitud por píxel GS1 / GS2 / GS3 | Franjas bien asignadas por fecha GS1 / GS2 / GS3 |
+|---|---|---|
+| Rotación "oeste" (rasgos absolutos + relativos) | 0,28 / 0,29 / 0,32 | 0,25 / 0,04 / 0,13 |
+| Asignación que prefirió el dron | 0,38 / 0,35 / 0,37 | 0,33 / 0,22 / 0,60 |
+
+**Lectura:**
+- **Al nivel del azar.** El satélite **no distingue el régimen fecha por fecha** al pasar de una temporada a otra. En la matriz de confusión, CD y AWD+MIRI se confunden entre sí sistemáticamente.
+- El acuerdo con el dron de la sección 8.6 era **dentro de una misma temporada y en promedios por etapa**. Lo que diferencia a los regímenes cambia de temporada en temporada (en GS1 casi no hubo diferencias), así que no hay un patrón estable que aprender con 2 temporadas de entrenamiento.
+- **Consecuencia:** con estos datos, el satélite tampoco puede dar el "estado actual" del lote (régimen) como punto de partida del balance. Lo que sí sigue siendo medible desde satélite y clima es **el consumo de agua del cultivo** (Kc(NDVI) × ETo) y su pronóstico.
+
 ---
 
 ## 9. Próximos pasos

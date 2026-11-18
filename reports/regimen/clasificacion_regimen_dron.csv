@@ -1,0 +1,10 @@
+variante_rotacion,rasgos,temporada_prueba,n_pixeles,n_fechas,exactitud_pixel,macroF1_pixel,exactitud_franja_fecha,exactitud_asignacion,fechas_asignacion_perfecta
+dron,absolutos,1,461,8,0.32,0.3,0.33,0.46,3/8
+dron,absolutos,2,522,9,0.32,0.31,0.3,0.15,0/9
+dron,absolutos,3,290,5,0.4,0.38,0.53,0.33,0/5
+dron,relativos,1,461,8,0.36,0.36,0.29,0.25,1/8
+dron,relativos,2,522,9,0.36,0.36,0.26,0.15,0/9
+dron,relativos,3,290,5,0.43,0.41,0.6,0.47,1/5
+dron,ambos,1,461,8,0.38,0.38,0.42,0.33,1/8
+dron,ambos,2,522,9,0.35,0.35,0.33,0.22,0/9
+dron,ambos,3,290,5,0.37,0.36,0.6,0.6,2/5
