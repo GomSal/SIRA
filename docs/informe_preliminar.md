@@ -1,30 +1,30 @@
 # SIRA: informe preliminar
 
 **Sistema Inteligente de Riego para Arroz · Equipo 10 · Proyecto Integrador · EAFIT 2026-2**
-Estado al 17 de noviembre de 2026.
+Estado al 17 de noviembre de 2026 (reestructurado: nueva variable de interés del modelo B).
 
-Este informe recoge lo que ya está hecho y verificado (datos de campo, ubicación del lote, imágenes, clima) y la arquitectura de los dos modelos: el **Corrector** y el **Pronosticador**. Todo el código y los datos derivados están en este repositorio.
+Este informe recoge lo que ya está hecho y verificado (datos de campo, ubicación del lote, imágenes, clima), el diseño de entrenamiento del **Corrector**, el balance de agua, el **Pronosticador** y la bitácora de pruebas. Todo el código y los datos derivados están en este repositorio.
 
 ---
 
 ## 1. Enfoque
 
-SIRA estima **el estado del agua de la planta de arroz** desde el satélite y anticipa **cuándo y dónde hay que regar**.
+SIRA estima **el estado del cultivo de arroz desde el satélite** y recomienda **cuánta agua aplicar y cuándo**.
 
-- El centro del sistema es la **planta**. Los índices **NDMI** (agua en la hoja) y **NDWI** (agua en superficie) son el dato bruto que entregan Landsat y Sentinel-2 en cualquier fecha y lugar.
-- El **NDVI** mide el follaje y permite estimar el consumo de agua del cultivo, ETc = Kc(NDVI) × ETo (FAO-56). Así se cierra el balance: **agua que entra (lluvia + riego) → arroz → agua que sale (evapotranspiración)**.
-- Los índices no son medidas perfectas del agua: se saturan con follaje denso, cambian con la etapa y mezclan coberturas. Por eso se calibran con **mediciones reales en tierra** (Nataima, Agrosavia).
+**Cambio de la variable de interés (17-nov).** El plan inicial era que el satélite estimara la **humedad del suelo a 20 cm** (TDR). Las pruebas de la sección 11 muestran que eso no es posible con estos datos. Ni los índices (NDMI, NDWI, NDVI, OPTRAM), ni el radar, ni la temperatura de superficie siguen esa humedad, porque depende del riego de las últimas semanas y el satélite no ve los riegos. El dron del propio artículo explica por qué: el tratamiento con el suelo más húmedo (CD) tiene la planta menos vigorosa. **Más agua en el suelo no implica más vigor ni más agua en la planta.**
 
-El sistema tiene dos modelos que trabajan en cadena:
+Por eso SIRA se organiza así:
 
-| | **Corrector** (diagnóstico) | **Pronosticador** (pronóstico) |
-|---|---|---|
-| Pregunta | ¿Qué estado real del agua corresponde a lo que ve el satélite? | ¿Cómo van a evolucionar los índices en los próximos 1–30 días? |
-| Respuesta correcta para entrenar | Humedad del suelo medida en Nataima | La siguiente imagen del satélite |
-| Datos | 3 siembras en Nataima (2021–2022) | Años de imágenes de toda una ventana de varios km |
-| Salida | Déficit / óptimo / exceso (y humedad %) por píxel | Mapas de NDMI y NDWI por píxel para t+1 … t+30 |
+| Pieza | Pregunta | Respuesta correcta para entrenar o validar | Estado |
+|---|---|---|---|
+| **Corrector (modelo B)** | ¿Qué índice mediría el dron (planta a 60 m, sin mezcla de suelo ni diques) donde el satélite ve este valor? | Índices del dron del artículo (Fig. 7) | Factible: r 0,72–0,99 en GS2–GS3 (§11.9) |
+| **Balance por consumo** | ¿Cuánta agua consume el cultivo y cuándo hay que reponerla? | Riegos reales de MIRI, el manejo óptimo del artículo | ~15–25 % de error en el total (§11.8) |
+| **Pronosticador (modelo A)** | ¿Cómo van a evolucionar los índices en los próximos 1–30 días? | La siguiente imagen del satélite | Diseñado, no entrenado |
 
-**En operación:** el Pronosticador predice los índices futuros, el Corrector traduce cada píxel de cada día a estado real del agua, y el primer día con déficit da el consejo: *"riega en N días, aquí"*.
+**En operación:**
+1. El Pronosticador proyecta los índices.
+2. El Corrector los lleva a escala de planta y da el **mapa de estado del cultivo**.
+3. El balance por consumo (Kc × ETo − lluvia) da **cuánta agua y cuándo**.
 
 ---
 
@@ -43,6 +43,8 @@ Detalle: `reports/validacion_digitalizacion.md`.
 **Curvas continuas.** Las 198 mediciones se interpolan con **PCHIP**: la curva pasa por cada medición sin inventar picos (a diferencia de la curva suavizada de Excel del artículo). Cada valor queda marcado como *medido* o *interpolado*, junto con la distancia a la medición más cercana (`data/processed/humedad_continua.csv`).
 
 ![Curvas continuas de humedad](../reports/control/humedad_continua.png)
+
+**Índices del dron (Fig. 7).** El artículo también publica índices de dron: DJI Matrice 300 con Micasense Altum a 60 m, con vuelos a los 30 días y luego cada 20. Vienen como medias por temporada × etapa × tratamiento para NDVI, NDRE y OSAVI. Se digitalizaron las 81 barras (`data/processed/dron_indices.csv`); contra las medias por etapa de la Tabla 4, el error medio es de 0,006–0,011. **Son la referencia del Corrector (§6).**
 
 **Incoherencias encontradas en el artículo:**
 - **GS2:** la lluvia máxima diaria es 87 mm en el texto, pero ≈77 mm en la figura.
@@ -74,6 +76,16 @@ Los polígonos de las 3 franjas (MIRI, AWD+MIRI, CD) se obtuvieron del plano geo
 - Los píxeles de 30 m mezclan franjas. Su humedad "verdadera" es **el promedio de las franjas que cubren, ponderado por área** (`data/processed/pixeles_franjas_*.csv`).
 - El lote completo (≈0,96 ha) cabe en un solo bloque de Prithvi (16×16 píxeles HLS, 480 m).
 
+**Rotación de tratamientos (resuelta).** Los tratamientos se trasladaron de franja en cada temporada, y la Fig. 1 solo muestra GS1. Al comparar el dron con Sentinel-2, la asignación que coincide es la **rotación "oeste"** (§11.6):
+
+| Temporada | Oeste | Centro | Este |
+|---|---|---|---|
+| GS1 | MIRI | AWD+MIRI | CD |
+| GS2 | AWD+MIRI | CD | MIRI |
+| GS3 | CD | MIRI | AWD+MIRI |
+
+En GS3 la posición de CD es segura; el orden de MIRI y AWD+MIRI es menos claro.
+
 ---
 
 ## 4. Imágenes disponibles
@@ -96,7 +108,9 @@ Se descargan de **Microsoft Planetary Computer**, sin cuenta. Tiene las mismas 1
 | **Sentinel-2 + Landsat (únicas)** | 217 | **61** | **31** |
 | HLS (Prithvi) | 186 | 39 | 20 |
 
-De las 217 fechas, 15 están parcialmente nubladas (30–90 % despejado) y 141 casi tapadas (<30 %). El relleno de huecos espacial sirve en las primeras; en las demás solo sirve el relleno temporal (§6.2).
+De las 217 fechas, 15 están parcialmente nubladas (30–90 % despejado) y 141 casi tapadas (<30 %). El relleno de huecos espacial sirve en las primeras; en las demás solo sirve el relleno temporal (§8).
+
+**Control de bruma.** La máscara de nubes (SCL) dejó pasar como "despejadas" fechas con bruma o nube fina (7-jul, 11-ago y 15-sep de 2021; 3-ene de 2022). Se descarta una fecha si el NDVI del lote cae > 0,10 frente a la fecha anterior y a la siguiente, o si el azul del lote es ≥ 0,075 entre los días 25 y 115. La regla es la misma para las tres temporadas (`scripts/revisar_bruma.py`, `reports/control/gs*_color_verdadero.png`).
 
 ---
 
@@ -121,56 +135,127 @@ Ninguna fuente reproduce la lluvia diaria exacta del lote (correlación ≤ 0,42
 
 ---
 
-## 6. Arquitectura
+## 6. Modelo B (Corrector): diseño de entrenamiento
 
-### 6.1 Corrector (modelo B): entrenamiento
+### 6.1 Qué aprende
 
-Traduce lo que ve el satélite en el **estado real del agua**. Se entrena solo con el intervalo de la tabla de verdad, respetando el orden del tiempo: cada fila usa información del pasado y del presente, nunca del futuro.
+**Variable objetivo:** el índice que mediría el dron (NDRE y NDVI de la Fig. 7) en cada franja o píxel y fecha. Es una regresión: el valor es continuo.
 
-- **Línea base física: OPTRAM** (Sadeghi et al., 2017). Relaciona la humedad del suelo con la reflectancia SWIR transformada, STR = (1 − SWIR)² / (2·SWIR), y el NDVI. Los bordes seco y húmedo del trapecio se ajustan con los píxeles despejados de la ventana, y la ecuación se calibra con Nataima.
-- **Modelos de aprendizaje automático:** Random Forest con grupos de entradas que se agregan uno a uno (M1–M4). Cada grupo debe ganarse su lugar.
-- **Criterio de decisión, fijado antes de ver resultados:** gana el que menos se equivoca en la temporada no vista, con intervalos de confianza. Si dos empatan dentro del intervalo, se elige el más simple.
+**Por qué esta variable:**
+- Es una medición de campo del cultivo a escala de planta: 60 m de altura, sin mezcla de suelo ni diques.
+- Responde al manejo del riego: CD tuvo menos vigor que MIRI y AWD+MIRI en GS2 y GS3.
+- El satélite sí la sigue (§11.6, §11.9), cosa que no ocurre con la humedad del suelo.
+
+**Lo que no hace:** no mide agua. Cuánta agua aplicar y cuándo lo da el balance por consumo (§7).
+
+### 6.2 Datos y unidad de muestra
+
+| Elemento | Detalle |
+|---|---|
+| Satélite | Sentinel-2 (NDRE y NDVI por franja; píxeles ≥ 90 % dentro) y Landsat 7/8/9 (NDVI por píxel de 30 m con ≥ 50 % dentro del lote) |
+| Fechas | Despejadas según la máscara de calidad y el control de bruma (§4), entre los días 25 y 115 de cada siembra |
+| Referencia del dron | La media por etapa se ubica en el día medio de sus vuelos (30, 60 y 100 días) y se interpola con PCHIP por tratamiento. **Solo empareja fechas; no agrega información.** En Landsat, la referencia es la mezcla de los tratamientos que cubre el píxel, ponderada por área |
+| Asignación de tratamientos | Rotación "oeste" (§3) |
+| Tamaño | NDVI: 23 fechas y 141 pares franja o píxel × fecha. NDRE: 14 fechas y 42 pares |
+| Unidad independiente | **La fecha** dentro de cada temporada, y **la temporada** entre temporadas. Los píxeles de una misma fecha no son independientes |
+
+### 6.3 Entradas candidatas
+
+Cada una se queda solo si mejora el resultado en validación:
+- NDRE (Sentinel-2), NDVI (Sentinel-2 y Landsat) y una constante por sensor;
+- NDWI y NDMI;
+- cada índice relativo a la media del lote ese día;
+- días desde siembra o etapa;
+- componentes de Prithvi (ronda 2).
+
+No entran el nombre del tratamiento ni el número de temporada.
+
+### 6.4 Separación en entrenamiento, validación y prueba
+
+Hay 3 temporadas, y las fechas dentro de cada una están autocorrelacionadas. Por eso **nunca se separan fechas o píxeles al azar**: la separación es por temporada.
+
+**Esquema principal, validación cruzada anidada por temporada:**
+1. **Prueba:** una temporada queda sellada. No se usa para nada hasta el final.
+2. **Entrenamiento y validación:** con las otras dos, se entrena con una y se valida con la otra, en los dos sentidos. Con eso se elige el modelo y sus hiperparámetros.
+3. Con el modelo elegido se reentrena con las dos temporadas y se mide **una sola vez** en la de prueba.
+4. Se repite con cada temporada como prueba, y se reportan los 3 resultados de prueba.
+
+**Verificación cronológica** (como en producción, del pasado al futuro): entrenar con GS1, validar con GS2, probar con GS3.
+
+**Criterio de selección, fijado antes de ver resultados:**
+- gana el menor RMSE de validación;
+- si dos modelos quedan dentro del intervalo de confianza del otro, se elige el más simple;
+- el modelo final tiene que superar a la línea base (la media del entrenamiento) en la prueba.
+
+### 6.5 Modelos candidatos
+
+La familia **no se decide aquí, sino en la validación**:
+
+| Modelo | Por qué se prueba |
+|---|---|
+| Regresión lineal (mínimos cuadrados) | Referencia simple; fue la usada en las pruebas de factibilidad (§11.9) |
+| Ridge y Lasso | Varias entradas correlacionadas con pocos datos |
+| Regresión robusta (Huber) | Fechas con nube residual |
+| GAM o splines | Relación no lineal suave entre el índice del satélite y el del dron |
+| Random Forest | Interacciones (sensor × etapa) sin suponer una forma |
+| XGBoost | Igual que Random Forest; con pocos datos puede sobreajustar, y la validación lo dirá |
+| Regresión logística | Solo si se decide trabajar con clases de vigor (bajo, normal, alto) en vez del valor continuo |
+
+Los hiperparámetros (penalización, profundidad, número de árboles, tasa de aprendizaje) se ajustan **solo** con el par entrenamiento–validación.
+
+### 6.6 Métricas e incertidumbre
+
+- **Métricas:** RMSE, MAE y correlación de Pearson en la temporada de prueba, frente a la línea base.
+- **Incertidumbre:** bootstrap por **bloques móviles** de 2 fechas consecutivas dentro de cada temporada, más ruido del dron según su error estándar (Tabla 4). Son 1000 repeticiones, de las que salen intervalos del 95 % y el porcentaje de repeticiones en que el modelo supera a la línea base.
+- **El bootstrap mide la incertidumbre; no genera datos de entrenamiento.**
 
 ```mermaid
 flowchart TB
-  CAMPO[("Tabla de verdad · Nataima<br/>humedad TDR (PCHIP), 3 franjas, 3 siembras")]
-  SAT[("Sentinel-2 10 m + Landsat 30 m<br/>fechas despejadas sobre el lote")]
-  HLS[("HLS 30 m")]
-  CLI[("CHIRPS (lluvia) + NASA POWER (ETo FAO-56)")]
-  SAT --> Q["Máscara de nubes (SCL / QA_PIXEL)"] --> IDX["Índices por píxel<br/>NDMI · NDWI · NDVI · MNDWI · STR"]
-  IDX --> OPT["OPTRAM<br/>trapecio STR–NDVI de la ventana → W"]
-  HLS --> PRI["Prithvi congelado → componentes<br/>(ronda 2: debe ganarse su lugar)"]
-  CLI --> CL["Lluvia y ETo acumuladas 1/3/5/10 d<br/>balance lluvia − ETo"]
-  CAMPO --> ETQ["Etiqueta por píxel y fecha<br/>humedad ponderada por el área de cada franja<br/>+ distancia a la medición más cercana"]
-  IDX --> T
-  OPT --> T
-  PRI --> T
-  CL --> T
-  ETQ --> T
-  T[/"Tabla píxel · fecha<br/>entradas + humedad real + clase"/]
-  T --> AP["Estudio de aporte<br/>Spearman y correlación parcial sin NDMI/NDWI"]
-  T --> VAL["Validación cronológica<br/>GS1 → GS2 · GS1+GS2 → GS3<br/>y dejando una temporada afuera"]
-  VAL --> M0["M0 OPTRAM calibrado"]
-  VAL --> M1["M1 índices + clima"]
-  VAL --> M2["M2 + OPTRAM"]
-  VAL --> M3["M3 + etapa"]
-  VAL --> M4["M4 + agua aplicada (riego)"]
-  M0 --> EV
-  M1 --> EV
-  M2 --> EV
-  M3 --> EV
-  M4 --> EV
-  EV["Evaluación por franja · fecha<br/>RMSE, MAE, macro-F1 (déficit/óptimo/exceso)<br/>IC 95 % por bootstrap de fechas"]
-  EV --> SEL[/"Corrector elegido"/]
+  S2[("Sentinel-2: NDRE, NDVI por franja")]
+  L[("Landsat 7/8/9: NDVI por píxel 30 m")]
+  DR[("Dron (Fig. 7): NDVI, NDRE por temporada × etapa × tratamiento")]
+  ROT[("Rotación de tratamientos: oeste")]
+  S2 --> QC["Máscara de nubes + control de bruma"]
+  L --> QC
+  QC --> X["Entradas: índices, sensor, relativos al lote, etapa (candidatas)"]
+  DR --> Y["Referencia por fecha: dron interpolado (PCHIP);<br/>Landsat: mezcla ponderada por área"]
+  ROT --> Y
+  X --> T[/"Pares fecha × franja o píxel"/]
+  Y --> T
+  T --> CV["Validación cruzada anidada por temporada<br/>prueba sellada · entrenar 1 / validar 1 (dos sentidos)"]
+  CV --> M["Candidatos: lineal · Ridge/Lasso · Huber · GAM · RF · XGBoost"]
+  M --> SEL["Selección por RMSE de validación<br/>empate → el más simple"]
+  SEL --> TEST["Prueba en la temporada sellada<br/>RMSE, MAE, r vs línea base<br/>IC 95 %: bootstrap por bloques móviles"]
+  TEST --> B[/"Corrector elegido"/]
 ```
 
-**Qué entra y qué no:**
-- **No entran** el nombre de la técnica de riego (CD/MIRI/AWD) ni el número de temporada. Las franjas valen como muestras de regímenes de agua distintos; las temporadas solo sirven para validar.
-- **La etapa del cultivo** solo se queda si mejora el resultado. En operación se estima desde el satélite, sin pedirle nada al campesino.
+### 6.7 Referencia de factibilidad (no es la selección final)
 
-### 6.2 Pronosticador (modelo A): entrenamiento
+Con una regresión lineal y el esquema de una temporada afuera (§11.9):
 
-Aprende cómo evolucionan el NDMI y el NDWI de cada píxel con el clima. **No necesita datos de campo**: la respuesta correcta es la imagen que el satélite tomó después. Por eso puede entrenarse con años de imágenes de toda una ventana de varios kilómetros, con millones de ejemplos píxel·fecha.
+| Índice | GS1 | GS2 | GS3 |
+|---|---|---|---|
+| NDRE (Sentinel-2) | r 0,20 (3 fechas) | r 0,72 [0,17 a 0,97] | r 0,95 [0,40 a 0,97] |
+| NDVI (Sentinel-2 + Landsat) | r 0,58 [−0,39 a 0,86] | r 0,52 [−0,01 a 0,82] | r 0,79 [0,14 a 0,89] |
+
+GS1 tiene pocas fechas limpias y diferencias mínimas entre tratamientos (la Tabla 4 las marca "ns"). Es la temporada más difícil.
+
+---
+
+## 7. Agua: balance por consumo
+
+El agua se decide con el balance FAO-56 y no con el Corrector:
+- consumo diario = Kc × ETo, con Kc = 1,0·NDVI + 0,45 calibrado en §11.4 (rango físico del arroz);
+- se resta la lluvia efectiva (CHIRPS);
+- cuando el déficit acumulado llega a un umbral, se recomienda reponerlo.
+
+Contra los riegos reales de MIRI (§11.8), el total recomendado tiene ~15–25 % de error; el NDVI no mejora a la tabla FAO. El reservorio calibrado con el riego real (§11.3–11.4) sí reproduce la humedad del TDR (ρ 0,56–0,74), pero necesita conocer los riegos.
+
+---
+
+## 8. Pronosticador (modelo A): entrenamiento
+
+Aprende cómo evolucionan los índices de cada píxel (NDVI y NDRE para el estado de la planta y el Kc; NDWI y NDMI como apoyo) con el clima. **No necesita datos de campo**: la respuesta correcta es la imagen que el satélite tomó después. Por eso puede entrenarse con años de imágenes de toda una ventana de varios kilómetros, con millones de ejemplos píxel·fecha.
 
 ```mermaid
 flowchart TB
@@ -182,39 +267,38 @@ flowchart TB
   SERIE --> EJ["Ejemplos de entrenamiento<br/>entrada: lo conocido en t + clima de t a t+h<br/>respuesta: índice observado en t+h<br/>(solo píxeles despejados)"]
   CLIH --> EJ
   EJ --> ENC["Prithvi codificador<br/>últimas T fechas (T por validación)"]
-  ENC --> CAB["Cabeza de pronóstico (propia)<br/>+ historia del píxel Sentinel-2 10 m<br/>salida: NDMI, NDWI para h = 1 … 30<br/>con rango de incertidumbre"]
+  ENC --> CAB["Cabeza de pronóstico (propia)<br/>+ historia del píxel Sentinel-2 10 m<br/>salida: NDVI, NDRE, NDWI para h = 1 … 30<br/>con rango de incertidumbre"]
   CAB --> VALA["Validación cronológica<br/>entrenar con años antiguos, probar con el más reciente<br/>error a 1, 7, 15 y 30 días"]
-  VALA --> TRES["Evaluación en tres niveles<br/>1. índice frente al satélite<br/>2. clase pasada por el Corrector frente a la clase del índice observado<br/>3. Nataima: clase pronosticada frente a la humedad real"]
+  VALA --> TRES["Evaluación en tres niveles<br/>1. índice frente al satélite<br/>2. índice pronosticado pasado por el Corrector frente al observado pasado por el Corrector<br/>3. Nataima: pronóstico corregido frente al dron"]
   TRES --> PSEL[/"Pronosticador elegido"/]
 ```
 
 **Hiperparámetros que se validan** (no se fijan a priori): número de fechas *T* que recibe Prithvi (1–4), ventana de días hacia atrás (30/60/90), largo de la historia de cada píxel y horizonte confiable.
 
-### 6.3 Funcionamiento general (operación diaria)
+## 9. Funcionamiento general (operación diaria)
 
 ```mermaid
 flowchart TB
   subgraph ENTRADAS["Entradas en el día t"]
-    H[("Últimas T imágenes HLS")]
-    S2[("Historia NDMI/NDWI de cada píxel · Sentinel-2 10 m")]
-    CF[("Pronóstico del clima<br/>días 1–15: GFS / ECMWF (Open-Meteo)<br/>días 16–30: climatología CHIRPS + POWER")]
+    H[("Últimas imágenes Sentinel-2 + Landsat (y HLS para Prithvi)")]
+    CF[("Clima: CHIRPS + NASA POWER (observado)<br/>pronóstico días 1–15: GFS / ECMWF<br/>días 16–30: climatología")]
   end
-  H --> GAP["Prithvi: relleno de nubes"]
-  GAP --> ENC["Prithvi codificador"]
-  ENC --> CAB["Pronosticador<br/>NDMI y NDWI para t+1 … t+30"]
-  S2 --> CAB
-  CF --> CAB
-  CAB --> OUT[/"30 mapas de NDMI y NDWI con incertidumbre"/]
-  OUT --> COR["Corrector<br/>cada píxel y cada día → déficit / óptimo / exceso"]
-  S2 --> COR
-  COR --> MAPA[/"Mapa de calor de hoy + semáforo<br/>riega en N días, aquí"/]
+  H --> QC["Máscara de nubes + control de bruma<br/>relleno de huecos"]
+  QC --> PRO["Pronosticador (A)<br/>NDVI, NDRE, NDWI para t+1 … t+30"]
+  CF --> PRO
+  QC --> COR["Corrector (B)<br/>índice equivalente al dron"]
+  PRO --> COR
+  COR --> MAPA[/"Mapa de estado del cultivo (hoy y próximos días)"/]
+  PRO --> BAL["Balance por consumo<br/>Kc(NDVI) × ETo − lluvia efectiva"]
+  CF --> BAL
+  BAL --> SEM[/"Semáforo: cuánta agua y en cuántos días"/]
 ```
 
 **Límite honesto del horizonte:** el pronóstico de lluvia es bueno hasta ~7–10 días. Después de eso el rango se abre, y el informe final mostrará el error según el horizonte.
 
 ---
 
-## 7. Infraestructura
+## 10. Infraestructura
 
 | Operación | Dónde | Por qué |
 |---|---|---|
@@ -234,19 +318,24 @@ flowchart TB
 
 ---
 
-## 8. Ronda 1 del Corrector: resultados
+## 11. Registro de pruebas (bitácora)
 
-> **⚠️ Corrida invalidada para concluir (corrección del 17-nov).** El artículo indica que los tratamientos **se trasladaron a la franja vecina en cada temporada**. La Fig. 1 muestra solo la distribución de GS1, y esta corrida usó esa misma ubicación para GS2 y GS3, así que **las etiquetas de humedad de GS2 y GS3 están asignadas a la franja equivocada**. Además:
-> - hay pocas fechas por temporada (3–5 con las tres franjas despejadas);
-> - el NDMI usa bandas de 20 m sobre franjas de 23 m, así que mezcla franjas;
-> - a lo largo de la temporada los índices los domina el crecimiento del cultivo;
-> - la franja oeste colinda con una hilera de árboles.
->
-> Con la ubicación corregida, ninguna de las 6 asignaciones posibles por temporada da un patrón estable (`reports/rotacion_tratamientos.csv`). Una prueba que no depende de la asignación, el promedio del lote contra la humedad promedio del lote, tiene solo 13 fechas y no es concluyente.
->
-> **Los resultados de abajo se conservan como registro, pero no sirven para afirmar ni para negar que los índices sigan el agua.** Antes de la ronda 2 hay que: (1) conocer el sentido de la rotación de tratamientos; (2) calcular el NDMI solo en píxeles de 20 m puros; (3) controlar el efecto del crecimiento del cultivo.
+Cada prueba con su resultado y lo que se decidió. El detalle sigue abajo.
 
-### 8.1 Ronda 1 corregida (17-nov)
+| § | Prueba | Resultado | Decisión |
+|---|---|---|---|
+| 11.1 | Índices (NDMI, NDWI, NDVI, MNDWI, OPTRAM) frente a la humedad TDR | ρ ≈ 0, también con la rotación correcta | La humedad del suelo no es visible para el óptico |
+| 11.2 | Temperatura de superficie Landsat | No concluyente (8 fechas, sin estrés) | Se descarta con estos datos |
+| 11.3–11.4 | Reservorio calibrado (riego real + memoria del suelo; Kc por NDVI) | ρ 0,56–0,74 frente al TDR | La humedad depende del riego del último mes |
+| 11.5 | Reservorio sin riego (óptico + radar Sentinel-1) | ρ ≤ 0,28 | El satélite no reemplaza el registro de riego |
+| 11.6 | Dron frente a Sentinel-2 | r ≈ 0,9 en GS2–GS3; rotación "oeste" | El satélite ve la respuesta de la planta al manejo |
+| 11.7 | Clasificar el régimen de riego por fecha | Al nivel del azar | No sirve como estado actual |
+| 11.8 | Semáforo por consumo frente a los riegos de MIRI | 15–25 % de error; el NDVI no mejora a la tabla FAO | El agua se decide con el balance (§7) |
+| 11.9 | Corrector satélite → dron, con Landsat, control de bruma y bootstrap | NDRE r 0,72–0,95 (GS2–GS3); NDVI r 0,52–0,79 | **Nueva variable de interés del modelo B (§6)** |
+
+> **Nota:** la ronda 1 (abajo) se corrió primero sin conocer la rotación de tratamientos. La rotación quedó resuelta en §11.6, y la conclusión de 11.1 se mantiene con ella.
+
+### 11.1 Ronda 1 corregida (17-nov)
 
 Se repitió el análisis con las tres correcciones, reutilizando las imágenes ya descargadas:
 1. **Rotación de tratamientos:** se probaron las dos rotaciones posibles (hacia el este y hacia el oeste) y la ubicación fija como referencia.
@@ -320,7 +409,7 @@ Corrida autónoma en AWS EC2 (t3.medium, us-west-2), 17-nov-2026. Duró 9,7 minu
 
 La ronda 2 (Prithvi) queda condicionada a esa decisión: no hay razón física para esperar que Prithvi cambie la conclusión 1.
 
-### 8.2 Prueba térmica con Landsat (17-nov)
+### 11.2 Prueba térmica con Landsat (17-nov)
 
 Se probó la temperatura de superficie de Landsat (TVDI, LST relativa a la vegetación de alrededor, LST menos la temperatura del aire) contra la humedad del lote. Archivos en `reports/termica_landsat/`.
 
@@ -331,7 +420,7 @@ Se probó la temperatura de superficie de Landsat (TVDI, LST relativa a la veget
 
 **Conclusión:** la prueba **no es concluyente** por falta de datos, no por falla del método. Nataima no tiene suficientes episodios de estrés, fechas despejadas ni tamaño de lote para validar una señal térmica de estrés.
 
-### 8.3 Balance hídrico contra el TDR (17-nov)
+### 11.3 Balance hídrico contra el TDR (17-nov)
 
 Se probó si un balance hídrico reproduce el faltante de agua medido, Dr = 150 × (0,30 − θ_TDR) mm, en los 198 días con medición. Validación: dejar una temporada afuera. Archivos en `reports/balance_hidrico/`.
 
@@ -348,9 +437,9 @@ Se probó si un balance hídrico reproduce el faltante de agua medido, Dr = 150 
 - **La versión de producción (sin riego, solo con lo que ve el satélite) no funciona todavía:** con ~10 días entre imágenes despejadas no se detectan los 9–24 riegos por temporada.
 - **El dato que más pesa es cuánta agua ha recibido el lote en las últimas semanas.** Ahí está el nudo para producción: conseguir el riego sin depender del campesino. Una opción son los turnos de agua del distrito de riego.
 
-### 8.4 Reservorio con Kc desde el NDVI (17-nov)
+### 11.4 Reservorio con Kc desde el NDVI (17-nov)
 
-La sección 8.3 usó el Kc de la tabla FAO-56. Aquí se rehízo con **Kc = a·NDVI + b**, con el NDVI de Sentinel-2 de cada franja interpolado por día, como se acordó en la arquitectura. Se probó con las dos rotaciones posibles de tratamientos (este y oeste). Script: `scripts/prueba_reservorio.py <rotación> <modo>`; resultados en `reports/balance_hidrico/reservorio_resultados_*.csv`.
+La sección 11.3 usó el Kc de la tabla FAO-56. Aquí se rehízo con **Kc = a·NDVI + b**, con el NDVI de Sentinel-2 de cada franja interpolado por día, como se acordó en la arquitectura. Se probó con las dos rotaciones posibles de tratamientos (este y oeste). Script: `scripts/prueba_reservorio.py <rotación> <modo>`; resultados en `reports/balance_hidrico/reservorio_resultados_*.csv`.
 
 | Kc | a, b calibrados | Spearman GS1 / GS2 / GS3 | RMSE (mm) GS1 / GS2 / GS3 |
 |---|---|---|---|
@@ -364,10 +453,10 @@ Línea base de RMSE: 7,68 / 4,34 / 6,28 mm.
 **Lectura:**
 - **Con el NDVI en rango físico, el resultado es igual o algo mejor que con la tabla FAO**, sobre todo en GS2 (ρ 0,52 → 0,59). La recta calibrada (**Kc = 1,0·NDVI + 0,45**) sale idéntica en los tres pliegues y en las dos rotaciones: es estable y físicamente plausible (Kc ≈ 0,65 con NDVI 0,2; ≈ 1,3 con NDVI 0,85).
 - **La rejilla libre no se debe usar:** mejora apenas, a costa de un Kc irreal (de hasta 1,5, recortado).
-- **El origen del Kc pesa poco.** Hasta el Kc constante da casi lo mismo. La capacidad del reservorio viene del riego y de la memoria del suelo (τ = 30–60 días), no del consumo del cultivo. Esto confirma el nudo de la sección 8.3: para producción hay que estimar el riego desde el satélite (radar Sentinel-1 + NDVI/NDWI).
+- **El origen del Kc pesa poco.** Hasta el Kc constante da casi lo mismo. La capacidad del reservorio viene del riego y de la memoria del suelo (τ = 30–60 días), no del consumo del cultivo. Esto confirma el nudo de la sección 11.3: para producción hay que estimar el riego desde el satélite (radar Sentinel-1 + NDVI/NDWI).
 - El acierto de clase sigue sin superar la línea base (≈ 69 % de días en "exceso").
 
-### 8.5 Versión sin riego: radar Sentinel-1 + NDVI/NDWI (17-nov)
+### 11.5 Versión sin riego: radar Sentinel-1 + NDVI/NDWI (17-nov)
 
 **Objetivo:** reemplazar el registro de riego (que nadie reporta en producción) por lo que ve el satélite. Scripts: `scripts/radar_lote.py`, `scripts/diagnostico_radar.py`, `scripts/reservorio_satelital.py`; resultados en `reports/radar/`.
 
@@ -418,13 +507,13 @@ Con la rotación "este", la variante combinada da 0,10 / 0,14 / −0,18.
 - **Los índices ópticos no llevan información del riego reciente en Nataima.** Coincide con la ronda 1, donde los índices no siguieron la humedad del suelo.
 - Con los datos 2021–2022, el satélite **no reemplaza el registro de riego** para estimar la humedad a 20 cm.
 
-### 8.6 Dron del artículo frente a Sentinel-2 (17-nov)
+### 11.6 Dron del artículo frente a Sentinel-2 (17-nov)
 
 El artículo base incluye índices de dron: DJI Matrice 300 con Micasense Altum, a 60 m, con vuelos a los 30 días después de siembra y luego cada 20. Los publica como medias por temporada × etapa × tratamiento (Fig. 7: NDVI, NDRE, OSAVI).
 - Se digitalizaron las 81 barras: `src/sira/digitalizar/fig7_dron.py` → `data/processed/dron_indices.csv`.
 - Validación contra las medias por etapa de la Tabla 4: error medio 0,006–0,011, máximo 0,016, con un sesgo leve hacia abajo (`reports/dron/validacion_dron_tabla4.csv`).
 
-**Lo que muestra el dron:** el tratamiento con el suelo más húmedo (CD) tiene la planta **menos vigorosa**. En GS3, etapa vegetativa, el NDVI es 0,60 en CD frente a 0,76 en MIRI y 0,72 en AWD+MIRI; en GS2, 0,76 frente a 0,84 y 0,79. En GS1 las diferencias son mínimas (el artículo las reporta no significativas). **Más agua en el suelo no implica más agua ni más vigor en la planta**, y eso explica por qué los índices no siguen la humedad a 20 cm (secciones 8.3–8.5).
+**Lo que muestra el dron:** el tratamiento con el suelo más húmedo (CD) tiene la planta **menos vigorosa**. En GS3, etapa vegetativa, el NDVI es 0,60 en CD frente a 0,76 en MIRI y 0,72 en AWD+MIRI; en GS2, 0,76 frente a 0,84 y 0,79. En GS1 las diferencias son mínimas (el artículo las reporta no significativas). **Más agua en el suelo no implica más agua ni más vigor en la planta**, y eso explica por qué los índices no siguen la humedad a 20 cm (secciones 11.3–8.5).
 
 **Satélite frente a dron, y rotación de tratamientos** (`scripts/dron_vs_satelite.py`, `reports/dron/`):
 - Se compara el NDVI y el NDRE de Sentinel-2 por franja y etapa (1–3 fechas despejadas por etapa) con el dron, usando solo las diferencias entre tratamientos dentro de cada etapa. Así se quita el crecimiento del cultivo.
@@ -438,10 +527,10 @@ El artículo base incluye índices de dron: DJI Matrice 300 con Micasense Altum,
 
 **Lectura:**
 - **Sentinel-2 reproduce las diferencias entre tratamientos que mide el dron** en GS2 y GS3 (r ≈ 0,87–0,92 con la asignación correcta). El satélite **sí ve la respuesta de la planta al manejo del riego**, aunque no vea la humedad del suelo a 20 cm. En GS1 el dron casi no muestra diferencias, así que no hay nada que reproducir.
-- **La rotación queda resuelta a favor de "oeste".** En GS2 coincide exactamente. En GS3 la posición de CD (oeste, la más clara en el dron) coincide; el orden de MIRI y AWD+MIRI en GS3 queda incierto, porque el dron casi no los separa fuera de la etapa vegetativa. El radar (sección 8.5) apuntaba a lo mismo.
+- **La rotación queda resuelta a favor de "oeste".** En GS2 coincide exactamente. En GS3 la posición de CD (oeste, la más clara en el dron) coincide; el orden de MIRI y AWD+MIRI en GS3 queda incierto, porque el dron casi no los separa fuera de la etapa vegetativa. El radar (sección 11.5) apuntaba a lo mismo.
 - **Implicación para el modelo:** un objetivo centrado en la planta (vigor y estado frente al lote mejor manejado, por etapa) sí es medible desde el satélite y tiene verificación independiente con el dron.
 
-### 8.7 ¿Distingue el satélite el régimen de riego fecha por fecha? (17-nov)
+### 11.7 ¿Distingue el satélite el régimen de riego fecha por fecha? (17-nov)
 
 **Prueba:** clasificar el régimen de cada franja (CD, MIRI o AWD+MIRI) en cada fecha despejada con píxeles puros de Sentinel-2. Rasgos: NDVI, NDWI, NDMI, MNDWI y STR, absolutos y relativos a la media del lote ese día, más los días desde siembra. Random Forest entrenado con 2 temporadas y probado en la 3ª. Como la rotación cambia la posición de cada tratamiento, el modelo no puede aprenderse la ubicación. Script: `scripts/clasificar_regimen.py`; resultados en `reports/regimen/`. El azar da 0,33.
 
@@ -452,10 +541,10 @@ El artículo base incluye índices de dron: DJI Matrice 300 con Micasense Altum,
 
 **Lectura:**
 - **Al nivel del azar.** El satélite **no distingue el régimen fecha por fecha** al pasar de una temporada a otra. En la matriz de confusión, CD y AWD+MIRI se confunden entre sí sistemáticamente.
-- El acuerdo con el dron de la sección 8.6 era **dentro de una misma temporada y en promedios por etapa**. Lo que diferencia a los regímenes cambia de temporada en temporada (en GS1 casi no hubo diferencias), así que no hay un patrón estable que aprender con 2 temporadas de entrenamiento.
+- El acuerdo con el dron de la sección 11.6 era **dentro de una misma temporada y en promedios por etapa**. Lo que diferencia a los regímenes cambia de temporada en temporada (en GS1 casi no hubo diferencias), así que no hay un patrón estable que aprender con 2 temporadas de entrenamiento.
 - **Consecuencia:** con estos datos, el satélite tampoco puede dar el "estado actual" del lote (régimen) como punto de partida del balance. Lo que sí sigue siendo medible desde satélite y clima es **el consumo de agua del cultivo** (Kc(NDVI) × ETo) y su pronóstico.
 
-### 8.8 Semáforo por consumo del cultivo frente a los riegos reales de MIRI (17-nov)
+### 11.8 Semáforo por consumo del cultivo frente a los riegos reales de MIRI (17-nov)
 
 **Prueba:** un programador que solo usa satélite y clima acumula el déficit Dr = Σ (Kc·ETo − α·lluvia). Cuando Dr llega a un umbral T, recomienda regar f·Dr mm. Se compara con los riegos que realmente se aplicaron a MIRI, el manejo óptimo del artículo. T, α y f se calibran con 2 temporadas y se prueban en la 3ª. Script: `scripts/semaforo_consumo.py`; resultados en `reports/semaforo/semaforo_consumo.csv`.
 
@@ -470,9 +559,9 @@ El artículo base incluye índices de dron: DJI Matrice 300 con Micasense Altum,
 - Todas las variantes reproducen el **total de riego de MIRI con un error de ~15–25 %**, pero **el satélite no mejora a la tabla FAO** y apenas a un calendario fijo.
 - Los parámetros calibrados cambian mucho de un pliegue a otro (T de 5 a 30 mm; f de 1,0 a 2,0). El programador no captura cómo se decidió regar MIRI, que se programó con inspección visual del suelo y un balance propio.
 - La coincidencia de fechas (riego real a ≤ 3 días del recomendado, 75–100 %) **no es informativa**: MIRI se regó cada 4–6 días, así que casi cualquier calendario acierta. El calendario fijo cubre el 90 % de los riegos reales.
-- **Conclusión de la sección 8:** en Nataima 2021–2022, el satélite **ve la respuesta de la planta al manejo dentro de una temporada** (8.6), pero **no aporta de forma medible** a la decisión de riego frente al clima y al calendario del cultivo: ni para la humedad del suelo (8.3–8.5), ni para el régimen por fecha (8.7), ni para la lámina recomendada (8.8). Con los datos de esta finca, el valor del satélite no queda demostrado para la decisión de riego.
+- **Conclusión de las pruebas 11.3–11.8:** en Nataima 2021–2022, el satélite **ve la respuesta de la planta al manejo dentro de una temporada** (11.6), pero **no aporta de forma medible** a la decisión de riego frente al clima y al calendario del cultivo: ni para la humedad del suelo (11.3–11.5), ni para el régimen por fecha (11.7), ni para la lámina recomendada (11.8). Con los datos de esta finca, el valor del satélite no queda demostrado para la decisión de riego.
 
-### 8.9 Modelo B como corrector satélite → dron, y revisión de GS1 (17-nov)
+### 11.9 Modelo B como corrector satélite → dron, y revisión de GS1 (17-nov)
 
 **Propuesta:** B traduce el índice de Sentinel-2 al índice que mediría el dron, que ve la planta a 60 m sin mezcla de suelo ni de diques. Se entrena con 2 temporadas y se prueba en la 3ª.
 
@@ -501,7 +590,7 @@ Quedan fuera esas 3 fechas de GS1 y una de GS2 (3-ene).
 **Lectura:**
 - **El control de calidad elimina la inversión de GS1:** ya no hay relación negativa, y el error queda igual a la línea base. GS1 sigue sin capacidad predictiva por dos motivos: solo quedan 3 fechas limpias (una por etapa), y el dron casi no muestra diferencias entre tratamientos ese año (el artículo las reporta no significativas).
 - **En GS2 y GS3, el NDRE corregido predice al dron** con intervalos de confianza por encima de cero. Es la relación satélite–campo más sólida del proyecto.
-- **El corrector predice el estado de la planta (vigor), no el agua.** La recomendación de cuánta agua y cuándo sigue saliendo del balance por consumo (8.8).
+- **El corrector predice el estado de la planta (vigor), no el agua.** La recomendación de cuánta agua y cuándo sigue saliendo del balance por consumo (11.8).
 
 **Versión 2: Sentinel-2 + Landsat y bootstrap por bloques móviles** (`scripts/corrector_dron_v2.py`, `reports/dron/corrector_dron_v2.csv`). La sección anterior usó solo Sentinel-2; lo acordado para B era Sentinel-2 + Landsat.
 - **Landsat 7/8/9** entra con NDVI (no tiene banda de borde rojo), por píxel de 30 m con ≥ 50 % en el lote. Su referencia del dron es la mezcla de los tratamientos que cubre, ponderada por área. El modelo incluye una constante por sensor.
@@ -524,17 +613,19 @@ Quedan fuera esas 3 fechas de GS1 y una de GS2 (3-ene).
 
 ---
 
-## 9. Próximos pasos
+## 12. Próximos pasos
 
-1. Analizar la ronda 1 del Corrector y decidir sus entradas.
-2. Ronda 2 del Corrector con Prithvi.
-3. Preparación de datos del Pronosticador: varios años de la ventana, con Spark.
-4. Ajustar Prithvi para rellenar nubes y validarlo con nubes falsas.
-5. Entrenar y validar el Pronosticador por horizonte.
-6. App (Lovable): mapa de calor, semáforo y botón "Regué hoy".
+1. **Entrenar el Corrector** con la validación cruzada anidada por temporada (§6.4) y los modelos candidatos (§6.5): la validación elige el modelo y la temporada de prueba se usa una sola vez.
+2. **Sumar fechas a GS1:** revisar las escenas HLS y Landsat parcialmente nubladas, con relleno de huecos espacial, para pasar de 3 fechas útiles de NDRE.
+3. **Ronda 2 del Corrector:** los componentes de Prithvi como entrada candidata. Se quedan solo si mejoran la validación.
+4. **Pronosticador:** preparación de datos con Spark (evidencia del curso), relleno de nubes con Prithvi validado con nubes falsas, y entrenamiento con el error medido por horizonte.
+5. **Balance por consumo:** mejorar el Kc. Una opción es validar la evapotranspiración satelital con las torres AmeriFlux de arroz en Arkansas (AWD frente a inundación).
+6. **App (Lovable):** mapa de estado del cultivo, semáforo de cuánta agua y cuándo, y nivel de confianza.
 
 **Limitaciones:**
-- La tabla de verdad es de un solo sitio, una variedad y un suelo. Fuera de Nataima, el Corrector se aplica bajo ese supuesto, y la app mostrará su nivel de confianza.
+- La verdad de campo es de un solo sitio, una variedad y un suelo, con 3 temporadas. Fuera de Nataima el Corrector se aplica bajo ese supuesto, y la app mostrará su nivel de confianza.
+- La referencia del dron son medias por etapa: 27 por índice.
+- La temporada es la unidad independiente; con 3, los intervalos de confianza son amplios.
 - El día de cada medición digitalizada tiene una incertidumbre de ±1 día.
 
 ---
@@ -552,3 +643,6 @@ Quedan fuera esas 3 fechas de GS1 y una de GS2 (3-ene).
 9. Funk, C. et al. (2015). The climate hazards infrared precipitation with stations (CHIRPS). *Scientific Data*, 2, 150066.
 10. Allen, R. G. et al. (1998). FAO-56: Crop evapotranspiration (ya en la propuesta como [32]; base de la ETo y del Kc).
 11. NASA POWER (power.larc.nasa.gov) · Microsoft Planetary Computer (planetarycomputer.microsoft.com).
+12. Jin, X. et al. (2026). Drainage duration variability and PALSAR-2 sensitivity to rice field water status: insights from large-scale in situ water-level observations. *Remote Sensing*, 18, 2136 (los arrozales drenan en ~19 h: el satélite rara vez ve el agua de riego).
+13. Martínez-Vega, R. R. et al. (2025), Fig. 7 y Tabla 4 (ya en la propuesta como [5]): índices de dron usados como referencia del Corrector.
+
