@@ -418,6 +418,29 @@ Con la rotación "este", la variante combinada da 0,10 / 0,14 / −0,18.
 - **Los índices ópticos no llevan información del riego reciente en Nataima.** Coincide con la ronda 1, donde los índices no siguieron la humedad del suelo.
 - Con los datos 2021–2022, el satélite **no reemplaza el registro de riego** para estimar la humedad a 20 cm.
 
+### 8.6 Dron del artículo frente a Sentinel-2 (17-nov)
+
+El artículo base incluye índices de dron: DJI Matrice 300 con Micasense Altum, a 60 m, con vuelos a los 30 días después de siembra y luego cada 20. Los publica como medias por temporada × etapa × tratamiento (Fig. 7: NDVI, NDRE, OSAVI).
+- Se digitalizaron las 81 barras: `src/sira/digitalizar/fig7_dron.py` → `data/processed/dron_indices.csv`.
+- Validación contra las medias por etapa de la Tabla 4: error medio 0,006–0,011, máximo 0,016, con un sesgo leve hacia abajo (`reports/dron/validacion_dron_tabla4.csv`).
+
+**Lo que muestra el dron:** el tratamiento con el suelo más húmedo (CD) tiene la planta **menos vigorosa**. En GS3, etapa vegetativa, el NDVI es 0,60 en CD frente a 0,76 en MIRI y 0,72 en AWD+MIRI; en GS2, 0,76 frente a 0,84 y 0,79. En GS1 las diferencias son mínimas (el artículo las reporta no significativas). **Más agua en el suelo no implica más agua ni más vigor en la planta**, y eso explica por qué los índices no siguen la humedad a 20 cm (secciones 8.3–8.5).
+
+**Satélite frente a dron, y rotación de tratamientos** (`scripts/dron_vs_satelite.py`, `reports/dron/`):
+- Se compara el NDVI y el NDRE de Sentinel-2 por franja y etapa (1–3 fechas despejadas por etapa) con el dron, usando solo las diferencias entre tratamientos dentro de cada etapa. Así se quita el crecimiento del cultivo.
+- Se prueban las 6 asignaciones posibles de tratamiento a franja en cada temporada.
+
+| Temporada | Mejor asignación (oeste/centro/este) | Pearson NDRE / NDVI | Rotación "oeste" | Rotación "este" |
+|---|---|---|---|---|
+| GS1 | (fija por la Fig. 1: MIRI / AWD+MIRI / CD) | 0,33 / 0,04 | — | — |
+| GS2 | **AWD+MIRI / CD / MIRI** | **0,87 / 0,89** | **es la mejor** | −0,38 / −0,48 |
+| GS3 | CD / AWD+MIRI / MIRI | 0,92 / 0,91 | 0,73 / 0,59 (2.ª) | −0,08 / 0,34 |
+
+**Lectura:**
+- **Sentinel-2 reproduce las diferencias entre tratamientos que mide el dron** en GS2 y GS3 (r ≈ 0,87–0,92 con la asignación correcta). El satélite **sí ve la respuesta de la planta al manejo del riego**, aunque no vea la humedad del suelo a 20 cm. En GS1 el dron casi no muestra diferencias, así que no hay nada que reproducir.
+- **La rotación queda resuelta a favor de "oeste".** En GS2 coincide exactamente. En GS3 la posición de CD (oeste, la más clara en el dron) coincide; el orden de MIRI y AWD+MIRI en GS3 queda incierto, porque el dron casi no los separa fuera de la etapa vegetativa. El radar (sección 8.5) apuntaba a lo mismo.
+- **Implicación para el modelo:** un objetivo centrado en la planta (vigor y estado frente al lote mejor manejado, por etapa) sí es medible desde el satélite y tiene verificación independiente con el dron.
+
 ---
 
 ## 9. Próximos pasos
