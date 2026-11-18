@@ -139,7 +139,7 @@ Ninguna fuente reproduce la lluvia diaria exacta del lote (correlación ≤ 0,42
 
 ### 6.1 Qué aprende
 
-**Variable objetivo:** el índice que mediría el dron (NDRE y NDVI de la Fig. 7) en cada franja o píxel y fecha. Es una regresión: el valor es continuo.
+**Variable objetivo:** el índice que mediría el dron (NDRE y NDVI de la Fig. 7) en cada franja o píxel y fecha. Es una regresión: el valor es continuo. Se entrena un corrector por índice.
 
 **Por qué esta variable:**
 - Es una medición de campo del cultivo a escala de planta: 60 m de altura, sin mezcla de suelo ni diques.
@@ -148,46 +148,118 @@ Ninguna fuente reproduce la lluvia diaria exacta del lote (correlación ≤ 0,42
 
 **Lo que no hace:** no mide agua. Cuánta agua aplicar y cuándo lo da el balance por consumo (§7).
 
-### 6.2 Datos y unidad de muestra
+### 6.2 Flujo de entrenamiento: los 8 pasos de la metodología
+
+El entrenamiento sigue, en orden, los 8 pasos obligatorios de la metodología de aprendizaje supervisado del curso. Cada caja dice qué entra, qué se hace y qué sale.
+
+```mermaid
+flowchart TB
+  subgraph P1["Paso 1 · Análisis exploratorio"]
+    direction TB
+    A1[("Sentinel-2 por franja: NDRE, NDVI, NDWI, NDMI<br/>Landsat 7/8/9 por píxel de 30 m: NDVI<br/>Dron, Fig. 7: 27 medias por índice<br/>Rotación de tratamientos: oeste")]
+    A2["Fechas por temporada y sensor<br/>Series de tiempo por franja<br/>Dispersión satélite vs dron<br/>Correlación entre entradas"]
+    A1 --> A2
+  end
+  subgraph P2["Paso 2 · Calidad de datos"]
+    direction TB
+    C1["Nubes: máscara SCL o QA<br/>Bruma: caída de NDVI > 0,10 que se recupera, o azul ≥ 0,075<br/>Pureza: S2 ≥ 90 % en la franja; Landsat ≥ 50 % en el lote<br/>Ventana: días 25 a 115 desde la siembra"]
+    C2["Emparejar cada imagen con el dron<br/>dron interpolado con PCHIP al día de la imagen<br/>Landsat: mezcla de tratamientos ponderada por área"]
+    C3[/"Tabla limpia: fecha × franja o píxel → índice del dron<br/>NDVI: 23 fechas, 141 pares · NDRE: 14 fechas, 42 pares"/]
+    C1 --> C2 --> C3
+  end
+  subgraph P3["Paso 3 · Partición del conjunto de datos"]
+    direction TB
+    D1["Prueba: 1 temporada sellada, no se mira hasta el paso 8"]
+    D2["Con las otras 2: entrenar con una, validar con la otra, en los dos sentidos"]
+    D3["Se repite con cada temporada como prueba<br/>Verificación cronológica: GS1 → GS2 → GS3"]
+    D1 --> D2 --> D3
+  end
+  subgraph P4["Paso 4 · Definición de métricas"]
+    M1["Principal, la que elige: RMSE de validación<br/>También: MAE, r y mejora frente a la línea base, que es la media del entrenamiento<br/>Secundaria: orden correcto de las 3 franjas en cada fecha<br/>Fijadas antes de ver resultados"]
+  end
+  subgraph P5["Paso 5 · Estandarización"]
+    E1["z = valor − media, dividido por la desviación<br/>media y desviación calculadas solo con el entrenamiento<br/>se aplican igual a validación y prueba"]
+  end
+  subgraph P6["Paso 6 · Selección de variables"]
+    V1["Conjuntos fijados de antemano, de menos a más:<br/>índice → + sensor → + relativo al lote → + días desde siembra → + NDWI y NDMI"]
+    V2["Se queda una variable solo si baja el RMSE de validación<br/>Control: Lasso e importancia por permutación"]
+    V1 --> V2
+  end
+  subgraph P7["Paso 7 · Ajuste y selección de modelos"]
+    F1["Candidatos: lineal · Ridge · Lasso · Huber · splines aditivos · Random Forest · XGBoost"]
+    F2["Hiperparámetros ajustados solo con entrenamiento y validación"]
+    F3["Gana el menor RMSE de validación<br/>Empate dentro del IC → el más simple<br/>Debe superar a la línea base"]
+    F1 --> F2 --> F3
+  end
+  subgraph P8["Paso 8 · Evaluación de modelos"]
+    G1["Reentrenar el elegido con las 2 temporadas<br/>Medir una sola vez en la temporada sellada"]
+    G2["IC 95 %: bootstrap por bloques móviles de 2 fechas + ruido del dron, 1000 repeticiones<br/>Errores por etapa y por sensor<br/>Estabilidad: cuántas veces gana el mismo modelo"]
+    G3[/"Corrector por índice con su nivel de confianza<br/>Versión de uso: reentrenada con las 3 temporadas"/]
+    G1 --> G2 --> G3
+  end
+  P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+```
+
+### 6.3 Paso 1 · Análisis exploratorio
+
+Antes de entrenar se describe lo que hay:
+- cuántas fechas útiles tiene cada temporada y cada sensor;
+- la serie de tiempo de cada índice por franja, junto a la del dron;
+- la dispersión entre el índice del satélite y el del dron, por temporada y sensor;
+- la correlación entre las entradas candidatas, para ver cuáles dicen lo mismo;
+- si las diferencias entre tratamientos que ve el dron también aparecen en el satélite.
+
+### 6.4 Paso 2 · Calidad de datos
 
 | Elemento | Detalle |
 |---|---|
 | Satélite | Sentinel-2 (NDRE y NDVI por franja; píxeles ≥ 90 % dentro) y Landsat 7/8/9 (NDVI por píxel de 30 m con ≥ 50 % dentro del lote) |
-| Fechas | Despejadas según la máscara de calidad y el control de bruma (§4), entre los días 25 y 115 de cada siembra |
+| Nubes y bruma | Máscara de calidad del producto, más el control de bruma de §4: se descarta una fecha si el NDVI del lote cae más de 0,10 frente a la anterior y a la siguiente, o si el azul del lote es ≥ 0,075 |
+| Fechas | Despejadas, entre los días 25 y 115 de cada siembra |
 | Referencia del dron | La media por etapa se ubica en el día medio de sus vuelos (30, 60 y 100 días) y se interpola con PCHIP por tratamiento. **Solo empareja fechas; no agrega información.** En Landsat, la referencia es la mezcla de los tratamientos que cubre el píxel, ponderada por área |
 | Asignación de tratamientos | Rotación "oeste" (§3) |
 | Tamaño | NDVI: 23 fechas y 141 pares franja o píxel × fecha. NDRE: 14 fechas y 42 pares |
 | Unidad independiente | **La fecha** dentro de cada temporada, y **la temporada** entre temporadas. Los píxeles de una misma fecha no son independientes |
 
-### 6.3 Entradas candidatas
+Cada fecha descartada queda registrada con su motivo.
 
-Cada una se queda solo si mejora el resultado en validación:
-- NDRE (Sentinel-2), NDVI (Sentinel-2 y Landsat) y una constante por sensor;
-- NDWI y NDMI;
-- cada índice relativo a la media del lote ese día;
-- días desde siembra o etapa;
-- componentes de Prithvi (ronda 2).
-
-No entran el nombre del tratamiento ni el número de temporada.
-
-### 6.4 Separación en entrenamiento, validación y prueba
+### 6.5 Paso 3 · Partición del conjunto de datos
 
 Hay 3 temporadas, y las fechas dentro de cada una están autocorrelacionadas. Por eso **nunca se separan fechas o píxeles al azar**: la separación es por temporada.
 
 **Esquema principal, validación cruzada anidada por temporada:**
-1. **Prueba:** una temporada queda sellada. No se usa para nada hasta el final.
-2. **Entrenamiento y validación:** con las otras dos, se entrena con una y se valida con la otra, en los dos sentidos. Con eso se elige el modelo y sus hiperparámetros.
-3. Con el modelo elegido se reentrena con las dos temporadas y se mide **una sola vez** en la de prueba.
+1. **Prueba:** una temporada queda sellada. No se usa para nada hasta el paso 8.
+2. **Entrenamiento y validación:** con las otras dos, se entrena con una y se valida con la otra, en los dos sentidos. Con eso se eligen variables, modelo e hiperparámetros.
+3. Con lo elegido se reentrena con las dos temporadas y se mide **una sola vez** en la de prueba.
 4. Se repite con cada temporada como prueba, y se reportan los 3 resultados de prueba.
 
 **Verificación cronológica** (como en producción, del pasado al futuro): entrenar con GS1, validar con GS2, probar con GS3.
 
-**Criterio de selección, fijado antes de ver resultados:**
-- gana el menor RMSE de validación;
-- si dos modelos quedan dentro del intervalo de confianza del otro, se elige el más simple;
-- el modelo final tiene que superar a la línea base (la media del entrenamiento) en la prueba.
+### 6.6 Paso 4 · Definición de métricas
 
-### 6.5 Modelos candidatos
+Se fijan antes de ver resultados:
+- **principal, la que elige el modelo:** RMSE en validación;
+- **para reportar:** RMSE, MAE y correlación de Pearson en la prueba, y la mejora frente a la línea base, que es predecir la media del entrenamiento;
+- **secundaria:** si el corrector ordena bien las 3 franjas en cada fecha, que es lo que la app muestra al agricultor (qué parte del lote está peor).
+
+### 6.7 Paso 5 · Estandarización
+
+Cada entrada se lleva a media 0 y desviación 1 con la media y la desviación **del entrenamiento solamente**, y esos mismos valores se aplican a validación y prueba. Así la prueba no filtra información al entrenamiento. Se hace dentro de la misma tubería del modelo, en cada partición. A los árboles no les cambia nada, pero se aplica igual para que todos los candidatos reciban lo mismo.
+
+### 6.8 Paso 6 · Selección de variables
+
+Las entradas candidatas son:
+- NDRE (Sentinel-2), NDVI (Sentinel-2 y Landsat) y una constante por sensor;
+- NDWI y NDMI;
+- cada índice relativo a la media del lote ese día;
+- días desde siembra;
+- componentes de Prithvi (ronda 2).
+
+No entran el nombre del tratamiento ni el número de temporada.
+
+Se prueban conjuntos fijados de antemano, de menos a más (índice solo, más sensor, más relativo al lote, más días desde siembra, más NDWI y NDMI). Una variable se queda **solo si baja el RMSE de validación**. Como control se miran los coeficientes que Lasso deja en cero y la importancia por permutación en validación. Con 10 a 20 fechas de entrenamiento no caben más de 2 o 3 entradas.
+
+### 6.9 Paso 7 · Ajuste y selección de modelos
 
 La familia **no se decide aquí, sino en la validación**:
 
@@ -196,40 +268,27 @@ La familia **no se decide aquí, sino en la validación**:
 | Regresión lineal (mínimos cuadrados) | Referencia simple; fue la usada en las pruebas de factibilidad (§11.9) |
 | Ridge y Lasso | Varias entradas correlacionadas con pocos datos |
 | Regresión robusta (Huber) | Fechas con nube residual |
-| GAM o splines | Relación no lineal suave entre el índice del satélite y el del dron |
+| Splines aditivos (tipo GAM) | Relación no lineal suave entre el índice del satélite y el del dron |
 | Random Forest | Interacciones (sensor × etapa) sin suponer una forma |
 | XGBoost | Igual que Random Forest; con pocos datos puede sobreajustar, y la validación lo dirá |
 | Regresión logística | Solo si se decide trabajar con clases de vigor (bajo, normal, alto) en vez del valor continuo |
 
-Los hiperparámetros (penalización, profundidad, número de árboles, tasa de aprendizaje) se ajustan **solo** con el par entrenamiento–validación.
+Los hiperparámetros (penalización, nudos, profundidad, número de árboles, tasa de aprendizaje) se ajustan **solo** con el par entrenamiento–validación.
 
-### 6.6 Métricas e incertidumbre
+**Criterio de selección, fijado antes de ver resultados:**
+- gana el menor RMSE de validación;
+- si dos modelos quedan dentro del intervalo de confianza del otro, se elige el más simple;
+- el modelo final tiene que superar a la línea base en la prueba.
 
-- **Métricas:** RMSE, MAE y correlación de Pearson en la temporada de prueba, frente a la línea base.
-- **Incertidumbre:** bootstrap por **bloques móviles** de 2 fechas consecutivas dentro de cada temporada, más ruido del dron según su error estándar (Tabla 4). Son 1000 repeticiones, de las que salen intervalos del 95 % y el porcentaje de repeticiones en que el modelo supera a la línea base.
-- **El bootstrap mide la incertidumbre; no genera datos de entrenamiento.**
+### 6.10 Paso 8 · Evaluación de modelos
 
-```mermaid
-flowchart TB
-  S2[("Sentinel-2: NDRE, NDVI por franja")]
-  L[("Landsat 7/8/9: NDVI por píxel 30 m")]
-  DR[("Dron (Fig. 7): NDVI, NDRE por temporada × etapa × tratamiento")]
-  ROT[("Rotación de tratamientos: oeste")]
-  S2 --> QC["Máscara de nubes + control de bruma"]
-  L --> QC
-  QC --> X["Entradas: índices, sensor, relativos al lote, etapa (candidatas)"]
-  DR --> Y["Referencia por fecha: dron interpolado (PCHIP);<br/>Landsat: mezcla ponderada por área"]
-  ROT --> Y
-  X --> T[/"Pares fecha × franja o píxel"/]
-  Y --> T
-  T --> CV["Validación cruzada anidada por temporada<br/>prueba sellada · entrenar 1 / validar 1 (dos sentidos)"]
-  CV --> M["Candidatos: lineal · Ridge/Lasso · Huber · GAM · RF · XGBoost"]
-  M --> SEL["Selección por RMSE de validación<br/>empate → el más simple"]
-  SEL --> TEST["Prueba en la temporada sellada<br/>RMSE, MAE, r vs línea base<br/>IC 95 %: bootstrap por bloques móviles"]
-  TEST --> B[/"Corrector elegido"/]
-```
+- El modelo elegido se reentrena con las dos temporadas y se mide una sola vez en la temporada sellada.
+- **Incertidumbre:** bootstrap por **bloques móviles** de 2 fechas consecutivas dentro de cada temporada, más ruido del dron según su error estándar (Tabla 4). Son 1000 repeticiones, de las que salen intervalos del 95 % y el porcentaje de repeticiones en que el modelo supera a la línea base. **El bootstrap mide la incertidumbre; no genera datos de entrenamiento.**
+- Errores por etapa (vegetativa, reproductiva, maduración) y por sensor.
+- **Estabilidad de la selección:** cuántas veces gana el mismo modelo si se repite la selección sobre remuestras.
+- La versión que usará la app se reentrena con las 3 temporadas. Su error esperado es el medido en las pruebas.
 
-### 6.7 Referencia de factibilidad (no es la selección final)
+### 6.11 Referencia de factibilidad (no es la selección final)
 
 Con una regresión lineal y el esquema de una temporada afuera (§11.9):
 
@@ -239,6 +298,10 @@ Con una regresión lineal y el esquema de una temporada afuera (§11.9):
 | NDVI (Sentinel-2 + Landsat) | r 0,58 [−0,39 a 0,86] | r 0,52 [−0,01 a 0,82] | r 0,79 [0,14 a 0,89] |
 
 GS1 tiene pocas fechas limpias y diferencias mínimas entre tratamientos (la Tabla 4 las marca "ns"). Es la temporada más difícil.
+
+### 6.12 Dónde se entrena
+
+En AWS EC2 on-demand, con tope de tiempo y paradas ante error que apagan la máquina y avisan de inmediato (§10). El plan detallado está en `docs/HANDOVER_modelo_B.md`.
 
 ---
 
@@ -312,7 +375,7 @@ flowchart TB
 - topes internos por etapa;
 - prueba corta en la propia máquina antes de la corrida larga;
 - ante cualquier final, sube a S3 el log, el estado y lo construido hasta ese momento;
-- código en `cloud/ronda1_b/`.
+- código en `cloud/ronda1_b/` (preparación de datos) y `cloud/modelo_b/` (entrenamiento del Corrector, con aviso inmediato al apagarse).
 
 **Pendiente:** dejar evidencia del procesamiento con **Spark** para la preparación de datos del Pronosticador, donde el volumen lo justifica (relleno de huecos por píxel sobre millones de píxeles).
 
@@ -615,7 +678,7 @@ Quedan fuera esas 3 fechas de GS1 y una de GS2 (3-ene).
 
 ## 12. Próximos pasos
 
-1. **Entrenar el Corrector** con la validación cruzada anidada por temporada (§6.4) y los modelos candidatos (§6.5): la validación elige el modelo y la temporada de prueba se usa una sola vez.
+1. **Entrenar el Corrector** con la validación cruzada anidada por temporada (§6.5) y los modelos candidatos (§6.9), siguiendo los 8 pasos de §6.2: la validación elige el modelo y la temporada de prueba se usa una sola vez.
 2. **Sumar fechas a GS1:** revisar las escenas HLS y Landsat parcialmente nubladas, con relleno de huecos espacial, para pasar de 3 fechas útiles de NDRE.
 3. **Ronda 2 del Corrector:** los componentes de Prithvi como entrada candidata. Se quedan solo si mejoran la validación.
 4. **Pronosticador:** preparación de datos con Spark (evidencia del curso), relleno de nubes con Prithvi validado con nubes falsas, y entrenamiento con el error medido por horizonte.
