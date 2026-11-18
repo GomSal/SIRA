@@ -609,12 +609,27 @@ def rmse_fecha(y, p, fid) -> float:
     return float(np.sqrt(np.mean(mse_fecha((np.asarray(y) - np.asarray(p)) ** 2, np.asarray(fid)))))
 
 
+def r_peso_fecha(y, p, fid) -> float:
+    """Pearson ponderado con el mismo peso total por fecha (cada fila pesa 1/filas de su fecha), coherente con el
+    RMSE por fecha: una fecha con muchos píxeles Landsat no cuenta más que una fecha de Sentinel-2 con 3 franjas."""
+    y, p, fid = np.asarray(y, float), np.asarray(p, float), np.asarray(fid)
+    if len(y) < 3:
+        return np.nan
+    _, inv, cnt = np.unique(fid, return_inverse=True, return_counts=True)
+    w = 1.0 / cnt[inv]
+    my, mp = np.average(y, weights=w), np.average(p, weights=w)
+    cov = np.average((y - my) * (p - mp), weights=w)
+    sy, sp = np.sqrt(np.average((y - my) ** 2, weights=w)), np.sqrt(np.average((p - mp) ** 2, weights=w))
+    return float(cov / (sy * sp)) if sy > 0 and sp > 0 else np.nan
+
+
 def metricas(y, p, fid, base: float, sensor=None, unidad=None) -> dict:
     y, p, fid = np.asarray(y, float), np.asarray(p, float), np.asarray(fid)
     m = {"rmse_fecha": rmse_fecha(y, p, fid), "rmse": float(np.sqrt(np.mean((y - p) ** 2))),
          "mae": float(np.mean(np.abs(y - p))), "r": float(np.corrcoef(y, p)[0, 1]) if len(y) > 2 and np.std(p) > 0 else np.nan,
          "rmse_base_fecha": rmse_fecha(y, np.full_like(y, base), fid), "rmse_base": float(np.sqrt(np.mean((y - base) ** 2))),
          "n_fechas": int(len(np.unique(fid))), "n_pares": int(len(y))}
+    m["r_peso_fecha"] = r_peso_fecha(y, p, fid)
     m["mejora_vs_base_pct"] = 100 * (1 - m["rmse_fecha"] / m["rmse_base_fecha"]) if m["rmse_base_fecha"] > 0 else np.nan
     if sensor is not None:
         from scipy.stats import kendalltau
@@ -870,8 +885,13 @@ def ks_efectivos(T: pd.DataFrame, dirs) -> list[int]:
     return ks
 
 
-def adelante(T, dirs, variante, inicio, cand, ks, n_max=4, min_mejora=0.01):
-    """Paso 6: selección hacia adelante con el modelo lineal, guiada por el RMSE de validación interna."""
+def adelante(T, dirs, variante, inicio, cand, ks, rng, n_tie, n_max=4):
+    """Paso 6: selección hacia adelante con el modelo lineal, guiada por el RMSE de validación interna.
+
+    Regla (corrida 2): la mejor candidata entra solo si el IC 95 % de la diferencia de RMSE de validación
+    (con ella − sin ella), por bloques móviles de las fechas de validación sin reentrenar, queda entero por debajo de 0.
+    Es la misma regla de empate del paso 7. La corrida 1 usaba "baja más de 1 %", que con ~25 candidatas y una sola
+    temporada de validación dejaba entrar variables por azar (sobreajuste a la validación)."""
     camino = []
     k = 0
     if variante == "B2":  # B2 = B1 + Prithvi: el bloque PCA entra desde el inicio; su k se elige aquí y se reajusta en el paso 7
@@ -887,25 +907,29 @@ def adelante(T, dirs, variante, inicio, cand, ks, n_max=4, min_mejora=0.01):
     sel, mejor = list(inicio), r0.rmse_val
     camino.append({"paso": 0, "agrega": "+".join(inicio) + (f"+prithvi_k{k}" if k else ""), "rmse_val": mejor})
     n_ent = len(sel) + (1 if k else 0)
+    r_cur = r0
     while n_ent < n_max:
         pruebas = []
         for c in cand:
             if c in sel:
                 continue
             r = evaluar(Cfg(variante, "lineal", (), tuple(sel + [c]), k), T, dirs)
-            if r is not None:
-                pruebas.append((r.rmse_val, c))
+            if r is not None and np.isfinite(r.rmse_val):
+                pruebas.append((r.rmse_val, c, r))
         if not pruebas:
             break
-        rm, c = min(pruebas)
-        if rm < mejor * (1 - min_mejora):
+        rm, c, r_new = min(pruebas, key=lambda z: (z[0], z[1]))
+        lo, hi = ic_diferencias([r_new], r_cur, n_tie, rng)[0]
+        if rm < mejor and hi < 0:
             sel.append(c)
-            camino.append({"paso": len(camino), "agrega": c, "rmse_val": rm, "rmse_antes": mejor})
-            mejor = rm
+            camino.append({"paso": len(camino), "agrega": c, "rmse_val": rm, "rmse_antes": mejor,
+                           "dif_ic95_inf": lo, "dif_ic95_sup": hi})
+            mejor, r_cur = rm, r_new
             n_ent += 1
         else:
-            camino.append({"paso": len(camino), "agrega": f"(ninguna: la mejor, {c}, baja {100 * (1 - rm / mejor):.1f} %)",
-                           "rmse_val": mejor})
+            camino.append({"paso": len(camino), "agrega": f"(ninguna: la mejor, {c}, baja {100 * (1 - rm / mejor):.1f} % "
+                                                        f"pero su IC 95 % [{lo:+.4f}; {hi:+.4f}] incluye 0)",
+                           "rmse_val": mejor, "dif_ic95_inf": lo, "dif_ic95_sup": hi})
             break
     return sel, k, camino
 
@@ -925,7 +949,7 @@ def seleccion_completa(T: pd.DataFrame, ind: str, dirs, n_tie: int, rng, arboles
         if var == "B3":
             vars_, k0, camino = [], 0, []
         else:
-            vars_, k0, camino = adelante(T, dirs, var, [ind.lower()], cand[var], ks)
+            vars_, k0, camino = adelante(T, dirs, var, [ind.lower()], cand[var], ks, rng, n_tie)
             if vars_ is None:
                 continue
         out["caminos"] += [{"variante": var, **c} for c in camino]
@@ -994,10 +1018,20 @@ def tarea_principal(T, ind, prueba, n_tie, arboles_rf, cronologica=False):
     ev_prueba = time.time_ns()
     base = float(tr.y.mean())
     met = metricas(te.y, p, te.fid, base, te.sensor.to_numpy())
-    pred = te[["temporada", "fecha", "fid", "das", "etapa", "sensor", "satelite", "unidad", "tratamiento", "y",
-               "tiene_hls"]].assign(pred=p, base=base, indice=ind, temporada_prueba=prueba, **resumen_cfg(gan.cfg))
+    # referencia obligatoria (corrida 2): recta con solo el índice del satélite (§6.11), fijada de antemano, en las
+    # mismas filas de prueba que lo elegido. No participa en la selección; solo se reporta al lado.
+    c0 = cfg_solo_indice(ind, T)
+    tr0 = T[T.temporada.isin([1, 2] if cronologica else entr)]
+    p0 = ajustar_predecir(c0, tr0, te)
+    met0 = metricas(te.y, p0, te.fid, float(tr0.y.mean()), te.sensor.to_numpy())
+    met0_todas = metricas(te_all.y, ajustar_predecir(c0, tr0, te_all), te_all.fid, float(tr0.y.mean()))
+    pred =te[["temporada", "fecha", "fid", "das", "etapa", "sensor", "satelite", "unidad", "tratamiento", "y",
+               "tiene_hls"]].assign(pred=p, base=base, pred_solo_indice=p0, indice=ind, temporada_prueba=prueba,
+                                    **resumen_cfg(gan.cfg))
     # comparaciones que siempre se reportan (después de la medición de lo elegido), en las mismas filas
-    comps = []
+    comps = [{"indice": ind, "temporada_prueba": prueba, "filas": "las del elegido", "modelo": nombre,
+              **resumen_cfg(c), **m_, "_pred": pp, "_y": te.y.to_numpy(), "_fid": te.fid.to_numpy()}
+             for nombre, c, m_, pp in (("elegido", gan.cfg, met, p), ("solo_indice", c0, met0, p0))]
     if not cronologica:
         h = te_all[te_all.tiene_hls]
         g = S["ganadores"]
@@ -1018,8 +1052,14 @@ def tarea_principal(T, ind, prueba, n_tie, arboles_rf, cronologica=False):
                               **resumen_cfg(cfgs[nombre] if isinstance(cfgs[nombre], Cfg) else cfgs[nombre].cfg),
                               **metricas(tabla.y, pp, tabla.fid, b, tabla.sensor.to_numpy()),
                               "_pred": pp, "_y": tabla.y.to_numpy(), "_fid": tabla.fid.to_numpy()})
-    return {"ind": ind, "prueba": prueba, "cronologica": cronologica, "S": S, "met": met, "pred": pred,
-            "comps": comps, "ev_sel": ev_sel, "ev_prueba": ev_prueba, "t_sel_s": t_sel - t0, "base": base}
+    return {"ind": ind, "prueba": prueba, "cronologica": cronologica, "S": S, "met": met, "met_solo": met0, "met_solo_todas": met0_todas,
+            "pred": pred, "comps": comps, "ev_sel": ev_sel, "ev_prueba": ev_prueba, "t_sel_s": t_sel - t0, "base": base}
+
+
+def cfg_solo_indice(ind: str, T: pd.DataFrame) -> Cfg:
+    """La recta de factibilidad de §6.11: el índice del satélite (+ constante por sensor si hay Landsat)."""
+    x = (ind.lower(),) + (("sensor_L",) if T.sensor_L.nunique() > 1 else ())
+    return Cfg("B1", "lineal", (), x, 0)
 
 
 def tarea_bootstrap(T, ind, prueba, cfg: Cfg, rep: int) -> dict:
@@ -1398,18 +1438,23 @@ def etapa_modelo(out: Path, a, qa: bool) -> dict:
     pred = pd.concat([r["pred"] for r in principal], ignore_index=True)
     pred.to_csv(out / "predicciones_prueba.csv", index=False)
     finitos(pred[["y", "pred", "base"]], "predicciones_prueba")
-    pr = pd.DataFrame([{"indice": r["ind"], "temporada_prueba": r["prueba"], **resumen_cfg(r["S"]["final"].cfg), **r["met"]}
+    pr = pd.DataFrame([{"indice": r["ind"], "temporada_prueba": r["prueba"], **resumen_cfg(r["S"]["final"].cfg), **r["met"],
+                        **{f"{k}_solo_indice": r["met_solo"][k] for k in ("rmse_fecha", "rmse", "mae", "r", "r_peso_fecha",
+                                                                           "pct_franja_mas_baja", "tau_kendall_medio")},
+                        "rmse_fecha_solo_indice_todas_las_filas": r["met_solo_todas"]["rmse_fecha"]}
                        for r in principal])
     pr.to_csv(out / "prueba.csv", index=False)
     finitos(pr[["rmse_fecha", "rmse", "mae", "rmse_base_fecha"]], "prueba")
-    log("prueba:\n" + pr[["indice", "temporada_prueba", "variante", "familia", "rmse_fecha", "rmse_base_fecha", "r",
-                          "mejora_vs_base_pct", "n_fechas"]].to_string(index=False))
+    log("prueba:\n" + pr[["indice", "temporada_prueba", "variante", "familia", "variables", "rmse_fecha",
+                          "rmse_fecha_solo_indice", "rmse_base_fecha", "r_peso_fecha", "mejora_vs_base_pct",
+                          "n_fechas"]].to_string(index=False))
     # comparaciones entre variantes (B2 vs B1, B3 vs B1, con vs sin riego), con IC de la diferencia (bloques, sin reentrenar)
     cv = comparaciones(principal, a.n_boot)
     cv.to_csv(out / "comparacion_variantes.csv", index=False)
     # cronológica
     cr = pd.DataFrame([{"indice": r["ind"], "esquema": "entrena GS1 → valida GS2 → reentrena GS1+GS2 → prueba GS3",
-                        **resumen_cfg(r["S"]["final"].cfg), "motivo": r["S"]["motivo_final"], **r["met"]}
+                        **resumen_cfg(r["S"]["final"].cfg), "motivo": r["S"]["motivo_final"], **r["met"],
+                        **{f"{k}_solo_indice": r["met_solo"][k] for k in ("rmse_fecha", "r", "r_peso_fecha")}}
                        for r in R if r["cronologica"]])
     cr.to_csv(out / "cronologica.csv", index=False)
     # errores por etapa y sensor
@@ -1529,7 +1574,8 @@ def controles_paso6(tablas, principal, n_perm) -> list[dict]:
 
 def comparaciones(principal, n_boot) -> pd.DataFrame:
     filas = []
-    pares = [("B2", "B1", "con HLS", "aporte de Prithvi (B1 entrenado con todas sus filas)"),
+    pares = [("elegido", "solo_indice", "las del elegido", "elegido frente a solo el índice del satélite (§6.11)"),
+             ("B2", "B1", "con HLS", "aporte de Prithvi (B1 entrenado con todas sus filas)"),
              ("B2", "B1_mismas_filas", "con HLS", "aporte de Prithvi (mismas filas de entrenamiento)"),
              ("B3", "B1", "con HLS", "Prithvi solo frente a B1"),
              ("B1", "B1_sin_riego", "todas", "aporte del riego"),
@@ -1587,12 +1633,38 @@ def modelos_uso(out: Path, tablas, principal, E, pr, a) -> None:
                 "veces_elegida": int(conteo.max()), "de": len(rs), "entrenado_con": "GS1 + GS2 + GS3",
                 "filas_entrenamiento": int(len(tr)), "fechas_entrenamiento": int(tr.fid.nunique()),
                 "entradas_requeridas": list(cfg.vars) + (["prithvi_1024 (HLS del mismo día ±1)"] if cfg.k else []),
-                "error_esperado": {"descripcion": "RMSE de prueba (peso igual por fecha) de la validación cruzada anidada",
-                                   **{f"GS{int(x.temporada_prueba)}": round(float(x.rmse_fecha), 4) for x in pp.itertuples()},
-                                   "media": round(float(pp.rmse_fecha.mean()), 4)},
+                "error_esperado": {
+                    "descripcion": ("RMSE de prueba (peso igual por fecha) del PROCEDIMIENTO completo (selección + ajuste) "
+                                    "en la validación cruzada anidada. Es el error esperado del procedimiento, no de esta "
+                                    "configuración: en cada temporada de prueba la selección pudo elegir otra (ver 'por_temporada'). "
+                                    "Evaluar esta configuración en las temporadas con que se eligió sería usar la prueba para elegir."),
+                    "por_temporada": {f"GS{int(x.temporada_prueba)}": {"rmse_fecha": round(float(x.rmse_fecha), 4),
+                                                                       "configuracion": f"{x.variante} {x.familia} [{x.variables}]"
+                                                                                        + (f" +P{int(x.k_prithvi)}" if x.k_prithvi else ""),
+                                                                       "igual_a_la_de_uso": cfgs.get(elegida) is not None and
+                                                                       f"{x.variante}|{x.familia}" == f"{cfg.variante}|{cfg.familia}"
+                                                                       and x.variables == ",".join(cfg.vars)}
+                                      for x in pp.itertuples()},
+                    "media": round(float(pp.rmse_fecha.mean()), 4)},
                 "versiones": versiones, "sha256_entradas": entradas,
                 "git_commit": os.environ.get("SIRA_GIT_COMMIT", ""), "semilla": SEMILLA}
         (dest / f"{ind.lower()}_meta.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False, default=str), encoding="utf-8")
+        # alternativa fijada de antemano: solo el índice (§6.11). Como no se eligió con los datos, su error de una
+        # temporada afuera sí es el error de esta misma configuración.
+        c0 = cfg_solo_indice(ind, T)
+        m0 = construir(c0).fit(T, T.y.to_numpy())
+        joblib.dump(m0, dest / f"{ind.lower()}_solo_indice.joblib")
+        meta0 = {"indice": ind, **resumen_cfg(c0), "variables": list(c0.vars), "entrenado_con": "GS1 + GS2 + GS3",
+                 "regla": "fijada de antemano (§6.11); no pasa por la selección",
+                 "error_esperado": {"descripcion": "RMSE de prueba (peso igual por fecha) de esta misma configuración, "
+                                                   "una temporada afuera",
+                                    **{f"GS{int(x.temporada_prueba)}": round(float(x.rmse_fecha_solo_indice_todas_las_filas), 4)
+                                       for x in pp.itertuples()},
+                                    "media": round(float(pp.rmse_fecha_solo_indice_todas_las_filas.mean()), 4)},
+                 "versiones": versiones, "sha256_entradas": entradas,
+                 "git_commit": os.environ.get("SIRA_GIT_COMMIT", ""), "semilla": SEMILLA}
+        (dest / f"{ind.lower()}_solo_indice_meta.json").write_text(json.dumps(meta0, indent=1, ensure_ascii=False, default=str),
+                                                                   encoding="utf-8")
 
 
 # ================================================================ QA: tiempos y proyección
