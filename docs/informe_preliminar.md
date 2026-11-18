@@ -139,86 +139,140 @@ Ninguna fuente reproduce la lluvia diaria exacta del lote (correlación ≤ 0,42
 
 ### 6.1 Qué aprende
 
-**Variable objetivo:** el índice que mediría el dron (NDRE y NDVI de la Fig. 7) en cada franja o píxel y fecha. Es una regresión: el valor es continuo. Se entrena un corrector por índice.
+El flujo de entrenamiento es el mismo de la propuesta (índices + Prithvi + clima + riego → modelo). **Lo único que cambia es la respuesta:** antes era la humedad TDR del artículo; ahora es **el índice que midió el dron** del mismo artículo (Fig. 7: NDVI, NDRE y OSAVI). Las entradas incluyen además NDRE y OSAVI.
 
-**Por qué esta variable:**
-- Es una medición de campo del cultivo a escala de planta: 60 m de altura, sin mezcla de suelo ni diques.
-- Responde al manejo del riego: CD tuvo menos vigor que MIRI y AWD+MIRI en GS2 y GS3.
-- El satélite sí la sigue (§11.6, §11.9), cosa que no ocurre con la humedad del suelo.
+**La lógica del sistema no cambia: agua + clima entran → la planta responde → sale la recomendación de agua.**
 
-**Lo que no hace:** no mide agua. Cuánta agua aplicar y cuándo lo da el balance por consumo (§7).
+| | Qué es | Dónde entra |
+|---|---|---|
+| Agua y clima (entrada) | Riego, lluvia (CHIRPS), ETo y radiación (NASA POWER) | Entradas candidatas del Modelo B |
+| Planta | Estado del cultivo visto desde el satélite: índices y Prithvi | Entradas del Modelo B. Su salida es el índice equivalente al del dron |
+| Agua (salida) | Consumo Kc × ETo − lluvia efectiva | El Kc sale del estado de la planta que da el Modelo B (§7) |
+
+**Variable objetivo:** el índice del dron (NDVI, NDRE y OSAVI) en cada franja o píxel y fecha. Es una regresión; se entrena un corrector por índice.
+
+**Por qué esta variable y no la humedad TDR:**
+- es una medición de campo del cultivo a escala de planta (60 m de altura, sin mezcla de suelo ni diques);
+- responde al riego: CD tuvo menos vigor que MIRI y AWD+MIRI en GS2 y GS3;
+- el satélite sí la sigue (§11.6, §11.9); la humedad del suelo, no (§11.1 a §11.5).
+
+**Qué puede explicar cada grupo de entradas** (no se descarta ninguno de antemano; lo decide la validación):
+- **Índices del satélite:** diferencias entre franjas y entre fechas.
+- **Riego:** diferencias entre franjas, porque cada tratamiento recibe distinta agua. En la app solo sirve si el agricultor reporta sus riegos, así que el modelo se evalúa con y sin riego.
+- **Clima:** es igual para las 3 franjas un mismo día. Explica diferencias entre fechas y temporadas (estrés por calor, lluvia, demanda de la atmósfera) y el agua de fondo bajo la planta, que el satélite de 10 a 30 m mezcla con el follaje y el dron no.
+- **Prithvi:** un bloque suyo mide 480 m y cubre todo el lote. Resume el estado del lote y su entorno en cada fecha, pero no separa franjas.
 
 ### 6.2 Flujo de entrenamiento: los 8 pasos de la metodología
 
-El entrenamiento sigue, en orden, los 8 pasos obligatorios de la metodología de aprendizaje supervisado del curso. Cada caja dice qué entra, qué se hace y qué sale.
+Es el mismo flujo de la propuesta, ordenado según los 8 pasos obligatorios del curso. Cada caja dice qué entra, qué se hace y qué sale.
 
 ```mermaid
 flowchart TB
+  subgraph FUENTES["Fuentes"]
+    direction LR
+    DRON[("Artículo Nataima<br/>dron Fig. 7: NDVI, NDRE, OSAVI<br/>por temporada × etapa × tratamiento<br/>riego diario Fig. 4 · días desde siembra")]
+    S2[("Sentinel-2 L2A<br/>píxeles de 10–20 m")]
+    LS[("Landsat 7/8/9 C2 L2<br/>píxeles de 30 m")]
+    HLS[("HLS = Landsat 8/9 + Sentinel-2<br/>30 m, 6 bandas")]
+    CHIRPS[("CHIRPS<br/>lluvia diaria")]
+    POWER[("NASA POWER<br/>temperatura, radiación,<br/>viento, humedad del aire")]
+  end
   subgraph P1["Paso 1 · Análisis exploratorio"]
-    direction TB
-    A1[("Sentinel-2 por franja: NDRE, NDVI, NDWI, NDMI<br/>Landsat 7/8/9 por píxel de 30 m: NDVI<br/>Dron, Fig. 7: 27 medias por índice<br/>Rotación de tratamientos: oeste")]
-    A2["Fechas por temporada y sensor<br/>Series de tiempo por franja<br/>Dispersión satélite vs dron<br/>Correlación entre entradas"]
-    A1 --> A2
+    EDA["Fechas útiles por temporada y sensor<br/>Series de índices por franja junto al dron<br/>Satélite vs dron · lluvia, ETo y riego por temporada<br/>Correlación entre entradas"]
   end
-  subgraph P2["Paso 2 · Calidad de datos"]
+  subgraph P2["Paso 2 · Calidad y preparación de datos"]
     direction TB
-    C1["Nubes: máscara SCL o QA<br/>Bruma: caída de NDVI > 0,10 que se recupera, o azul ≥ 0,075<br/>Pureza: S2 ≥ 90 % en la franja; Landsat ≥ 50 % en el lote<br/>Ventana: días 25 a 115 desde la siembra"]
-    C2["Emparejar cada imagen con el dron<br/>dron interpolado con PCHIP al día de la imagen<br/>Landsat: mezcla de tratamientos ponderada por área"]
-    C3[/"Tabla limpia: fecha × franja o píxel → índice del dron<br/>NDVI: 23 fechas, 141 pares · NDRE: 14 fechas, 42 pares"/]
-    C1 --> C2 --> C3
+    NUB["Quitar nubes y sombras (máscara de la imagen)<br/>Bruma: caída de NDVI > 0,10 que se recupera, o azul ≥ 0,075<br/>Pureza: S2 ≥ 90 % en la franja; Landsat ≥ 50 % en el lote<br/>Días 25 a 115 desde la siembra"]
+    IDX["Índices por píxel<br/>NDVI, NDRE, OSAVI, NDWI, NDMI, MNDWI, STR<br/>(NDRE solo Sentinel-2)"]
+    PRI["Prithvi-EO-2.0 congelado<br/>6 bandas HLS × hasta 4 fechas<br/>→ 1024 números por bloque de 480 m"]
+    CLI["Clima: lluvia acumulada 1, 3, 5 y 10 días<br/>ETo FAO-56 y su acumulado · lluvia − ETo"]
+    RIE["Riego acumulado de cada franja (Fig. 4)"]
+    REF["Referencia del dron en cada fecha<br/>PCHIP entre etapas, por tratamiento<br/>Landsat: mezcla ponderada por área"]
+    UNIR["Emparejar misma franja o píxel + misma fecha"]
+    TABLA[/"Tabla de entrenamiento<br/>una fila = franja o píxel × fecha<br/>entradas: índices + Prithvi + clima + riego + días<br/>respuesta: índice del dron"/]
+    NUB --> IDX
+    NUB --> PRI
+    IDX --> UNIR
+    PRI --> UNIR
+    CLI --> UNIR
+    RIE --> UNIR
+    REF --> UNIR
+    UNIR --> TABLA
   end
-  subgraph P3["Paso 3 · Partición del conjunto de datos"]
-    direction TB
-    D1["Prueba: 1 temporada sellada, no se mira hasta el paso 8"]
-    D2["Con las otras 2: entrenar con una, validar con la otra, en los dos sentidos"]
-    D3["Se repite con cada temporada como prueba<br/>Verificación cronológica: GS1 → GS2 → GS3"]
-    D1 --> D2 --> D3
+  subgraph P3["Paso 3 · Partición por temporada"]
+    PART["Prueba: 1 temporada sellada<br/>Con las otras 2: entrenar con una, validar con la otra, en los dos sentidos<br/>3 vueltas · verificación cronológica GS1 → GS2 → GS3"]
   end
   subgraph P4["Paso 4 · Definición de métricas"]
-    M1["Principal, la que elige: RMSE de validación<br/>También: MAE, r y mejora frente a la línea base, que es la media del entrenamiento<br/>Secundaria: orden correcto de las 3 franjas en cada fecha<br/>Fijadas antes de ver resultados"]
+    MET["Principal: RMSE de validación, peso igual por fecha<br/>Reporte: MAE, r y mejora frente a la línea base<br/>Secundaria: orden correcto de las 3 franjas en cada fecha"]
   end
   subgraph P5["Paso 5 · Estandarización"]
-    E1["z = valor − media, dividido por la desviación<br/>media y desviación calculadas solo con el entrenamiento<br/>se aplican igual a validación y prueba"]
+    EST["Media y desviación solo del entrenamiento<br/>PCA de Prithvi: 1024 → 10–20 números, ajustado solo con el entrenamiento"]
   end
   subgraph P6["Paso 6 · Selección de variables"]
-    V1["Conjuntos fijados de antemano, de menos a más:<br/>índice → + sensor → + relativo al lote → + días desde siembra → + NDWI y NDMI"]
-    V2["Se queda una variable solo si baja el RMSE de validación<br/>Control: Lasso e importancia por permutación"]
-    V1 --> V2
+    direction LR
+    VA["B1<br/>índices + clima + riego"]
+    VB["B2<br/>B1 + Prithvi"]
+    VC["B3<br/>Prithvi + cabeza pequeña"]
+    SV["Dentro de cada variante, una entrada se queda<br/>solo si baja el RMSE de validación<br/>Control: Lasso e importancia por permutación"]
+    VA --> SV
+    VB --> SV
+    VC --> SV
   end
   subgraph P7["Paso 7 · Ajuste y selección de modelos"]
-    F1["Candidatos: lineal · Ridge · Lasso · Huber · splines aditivos · Random Forest · XGBoost"]
-    F2["Hiperparámetros ajustados solo con entrenamiento y validación"]
-    F3["Gana el menor RMSE de validación<br/>Empate dentro del IC → el más simple<br/>Debe superar a la línea base"]
-    F1 --> F2 --> F3
+    MOD["Familias: lineal · Ridge · Lasso · Huber · splines · Random Forest · XGBoost<br/>Hiperparámetros solo con entrenamiento y validación<br/>Gana el menor RMSE de validación; empate → el más simple"]
   end
   subgraph P8["Paso 8 · Evaluación de modelos"]
-    G1["Reentrenar el elegido con las 2 temporadas<br/>Medir una sola vez en la temporada sellada"]
-    G2["IC 95 %: bootstrap por bloques móviles de 2 fechas + ruido del dron, 1000 repeticiones<br/>Errores por etapa y por sensor<br/>Estabilidad: cuántas veces gana el mismo modelo"]
-    G3[/"Corrector por índice con su nivel de confianza<br/>Versión de uso: reentrenada con las 3 temporadas"/]
-    G1 --> G2 --> G3
+    EVAL["Medir una sola vez en la temporada sellada<br/>IC 95 %: bootstrap por bloques móviles + ruido del dron<br/>Cuánto aporta Prithvi: B2 vs B1 · con y sin riego<br/>Errores por etapa y sensor · estabilidad de la selección"]
   end
-  P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+  FIN[/"Corrector elegido → estado de la planta por píxel<br/>→ Kc del balance de agua (§7)"/]
+  DRON --> EDA
+  S2 --> EDA
+  LS --> EDA
+  HLS --> EDA
+  CHIRPS --> EDA
+  POWER --> EDA
+  EDA --> NUB
+  EDA --> CLI
+  EDA --> RIE
+  EDA --> REF
+  TABLA --> PART --> MET --> EST
+  EST --> VA
+  EST --> VB
+  EST --> VC
+  SV --> MOD --> EVAL --> FIN
+  classDef dato fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+  classDef proceso fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
+  classDef producto fill:#E1F5EE,stroke:#0F6E56,color:#085041
+  class DRON,S2,LS,HLS,CHIRPS,POWER dato
+  class EDA,NUB,IDX,PRI,CLI,RIE,REF,UNIR,PART,MET,EST,VA,VB,VC,SV,MOD,EVAL proceso
+  class TABLA,FIN producto
 ```
 
 ### 6.3 Paso 1 · Análisis exploratorio
 
 Antes de entrenar se describe lo que hay:
-- cuántas fechas útiles tiene cada temporada y cada sensor;
+- cuántas fechas útiles tiene cada temporada y cada sensor (Sentinel-2, Landsat, HLS);
 - la serie de tiempo de cada índice por franja, junto a la del dron;
 - la dispersión entre el índice del satélite y el del dron, por temporada y sensor;
+- lluvia, ETo y riego por temporada y tratamiento;
 - la correlación entre las entradas candidatas, para ver cuáles dicen lo mismo;
 - si las diferencias entre tratamientos que ve el dron también aparecen en el satélite.
 
-### 6.4 Paso 2 · Calidad de datos
+### 6.4 Paso 2 · Calidad y preparación de datos
 
 | Elemento | Detalle |
 |---|---|
-| Satélite | Sentinel-2 (NDRE y NDVI por franja; píxeles ≥ 90 % dentro) y Landsat 7/8/9 (NDVI por píxel de 30 m con ≥ 50 % dentro del lote) |
+| Sentinel-2 | Índices por franja: píxeles ≥ 90 % dentro |
+| Landsat 7/8/9 | Índices por píxel de 30 m con ≥ 50 % dentro del lote |
+| HLS → Prithvi | Prithvi-EO-2.0 congelado con las 6 bandas HLS y hasta 4 fechas. Un bloque de 480 m cubre todo el lote: da un resumen del lote por fecha |
+| Índices | NDVI, NDRE (solo Sentinel-2), OSAVI, NDWI, NDMI, MNDWI y STR |
 | Nubes y bruma | Máscara de calidad del producto, más el control de bruma de §4: se descarta una fecha si el NDVI del lote cae más de 0,10 frente a la anterior y a la siguiente, o si el azul del lote es ≥ 0,075 |
 | Fechas | Despejadas, entre los días 25 y 115 de cada siembra |
+| Clima | CHIRPS (lluvia) y NASA POWER (ETo FAO-56), por día; acumulados de 1, 3, 5 y 10 días; lluvia − ETo |
+| Riego | Riego diario por tratamiento (Fig. 4, digitalizada), acumulado desde la siembra y en los últimos 5 y 10 días |
 | Referencia del dron | La media por etapa se ubica en el día medio de sus vuelos (30, 60 y 100 días) y se interpola con PCHIP por tratamiento. **Solo empareja fechas; no agrega información.** En Landsat, la referencia es la mezcla de los tratamientos que cubre el píxel, ponderada por área |
 | Asignación de tratamientos | Rotación "oeste" (§3) |
-| Tamaño | NDVI: 23 fechas y 141 pares franja o píxel × fecha. NDRE: 14 fechas y 42 pares |
+| Tamaño | NDVI: 23 fechas y 141 pares franja o píxel × fecha. NDRE: 14 fechas y 42 pares. OSAVI: como NDVI |
 | Unidad independiente | **La fecha** dentro de cada temporada, y **la temporada** entre temporadas. Los píxeles de una misma fecha no son independientes |
 
 Cada fecha descartada queda registrada con su motivo.
@@ -229,7 +283,7 @@ Hay 3 temporadas, y las fechas dentro de cada una están autocorrelacionadas. Po
 
 **Esquema principal, validación cruzada anidada por temporada:**
 1. **Prueba:** una temporada queda sellada. No se usa para nada hasta el paso 8.
-2. **Entrenamiento y validación:** con las otras dos, se entrena con una y se valida con la otra, en los dos sentidos. Con eso se eligen variables, modelo e hiperparámetros.
+2. **Entrenamiento y validación:** con las otras dos, se entrena con una y se valida con la otra, en los dos sentidos. Con eso se eligen variante, variables, modelo e hiperparámetros.
 3. Con lo elegido se reentrena con las dos temporadas y se mide **una sola vez** en la de prueba.
 4. Se repite con cada temporada como prueba, y se reportan los 3 resultados de prueba.
 
@@ -238,42 +292,47 @@ Hay 3 temporadas, y las fechas dentro de cada una están autocorrelacionadas. Po
 ### 6.6 Paso 4 · Definición de métricas
 
 Se fijan antes de ver resultados:
-- **principal, la que elige el modelo:** RMSE en validación;
+- **principal, la que elige el modelo:** RMSE en validación, con el mismo peso para cada fecha;
 - **para reportar:** RMSE, MAE y correlación de Pearson en la prueba, y la mejora frente a la línea base, que es predecir la media del entrenamiento;
-- **secundaria:** si el corrector ordena bien las 3 franjas en cada fecha, que es lo que la app muestra al agricultor (qué parte del lote está peor).
+- **secundaria:** si el corrector ordena bien las 3 franjas en cada fecha. Es lo que la app muestra al agricultor: qué parte del lote está peor.
 
 ### 6.7 Paso 5 · Estandarización
 
-Cada entrada se lleva a media 0 y desviación 1 con la media y la desviación **del entrenamiento solamente**, y esos mismos valores se aplican a validación y prueba. Así la prueba no filtra información al entrenamiento. Se hace dentro de la misma tubería del modelo, en cada partición. A los árboles no les cambia nada, pero se aplica igual para que todos los candidatos reciban lo mismo.
+- Cada entrada se lleva a media 0 y desviación 1 con la media y la desviación **del entrenamiento solamente**, y esos mismos valores se aplican a validación y prueba.
+- El PCA que comprime los 1024 números de Prithvi a 10–20 también se ajusta **solo con el entrenamiento**.
+- Todo va dentro de la misma tubería del modelo, en cada partición, para que la prueba no filtre información al entrenamiento.
 
 ### 6.8 Paso 6 · Selección de variables
 
-Las entradas candidatas son:
-- NDRE (Sentinel-2), NDVI (Sentinel-2 y Landsat) y una constante por sensor;
-- NDWI y NDMI;
-- cada índice relativo a la media del lote ese día;
-- días desde siembra;
-- componentes de Prithvi (ronda 2).
+Se comparan **tres variantes**, como en la propuesta:
 
-No entran el nombre del tratamiento ni el número de temporada.
+| Variante | Entradas | Qué mide |
+|---|---|---|
+| B1 | Índices + clima + riego + días desde siembra | El modelo sin Prithvi |
+| B2 | B1 + componentes de Prithvi | Cuánto aporta Prithvi sobre B1 |
+| B3 | Solo Prithvi + cabeza pequeña (lineal o red de una capa) | Prithvi solo, como en la receta GPP de NASA |
 
-Se prueban conjuntos fijados de antemano, de menos a más (índice solo, más sensor, más relativo al lote, más días desde siembra, más NDWI y NDMI). Una variable se queda **solo si baja el RMSE de validación**. Como control se miran los coeficientes que Lasso deja en cero y la importancia por permutación en validación. Con 10 a 20 fechas de entrenamiento no caben más de 2 o 3 entradas.
+- Dentro de cada variante, una entrada se queda **solo si baja el RMSE de validación**. Como control se miran los coeficientes que Lasso deja en cero y la importancia por permutación.
+- B2 y B3 solo existen en las fechas con HLS. Para que la comparación sea justa, B1, B2 y B3 se comparan en las mismas filas.
+- B1 también se evalúa sin riego, porque en la app el riego solo existe si el agricultor lo reporta.
+- No entran el nombre del tratamiento ni el número de temporada.
+- Con 10 a 20 fechas de entrenamiento, el modelo final no debería usar más de unas pocas entradas. La selección lo controla.
 
 ### 6.9 Paso 7 · Ajuste y selección de modelos
 
-La familia **no se decide aquí, sino en la validación**:
+Cada variante se prueba con varias familias. **La familia no se decide aquí, sino en la validación**:
 
 | Modelo | Por qué se prueba |
 |---|---|
 | Regresión lineal (mínimos cuadrados) | Referencia simple; fue la usada en las pruebas de factibilidad (§11.9) |
-| Ridge y Lasso | Varias entradas correlacionadas con pocos datos |
+| Ridge y Lasso | Varias entradas correlacionadas con pocos datos (clima, componentes de Prithvi) |
 | Regresión robusta (Huber) | Fechas con nube residual |
 | Splines aditivos (tipo GAM) | Relación no lineal suave entre el índice del satélite y el del dron |
-| Random Forest | Interacciones (sensor × etapa) sin suponer una forma |
+| Random Forest | Interacciones (sensor × etapa, lluvia × riego) sin suponer una forma |
 | XGBoost | Igual que Random Forest; con pocos datos puede sobreajustar, y la validación lo dirá |
 | Regresión logística | Solo si se decide trabajar con clases de vigor (bajo, normal, alto) en vez del valor continuo |
 
-Los hiperparámetros (penalización, nudos, profundidad, número de árboles, tasa de aprendizaje) se ajustan **solo** con el par entrenamiento–validación.
+Los hiperparámetros (penalización, nudos, profundidad, número de árboles, tasa de aprendizaje, número de componentes de Prithvi) se ajustan **solo** con el par entrenamiento–validación.
 
 **Criterio de selección, fijado antes de ver resultados:**
 - gana el menor RMSE de validación;
@@ -284,20 +343,21 @@ Los hiperparámetros (penalización, nudos, profundidad, número de árboles, ta
 
 - El modelo elegido se reentrena con las dos temporadas y se mide una sola vez en la temporada sellada.
 - **Incertidumbre:** bootstrap por **bloques móviles** de 2 fechas consecutivas dentro de cada temporada, más ruido del dron según su error estándar (Tabla 4). Son 1000 repeticiones, de las que salen intervalos del 95 % y el porcentaje de repeticiones en que el modelo supera a la línea base. **El bootstrap mide la incertidumbre; no genera datos de entrenamiento.**
+- **Comparaciones que se reportan siempre:** B2 frente a B1 (cuánto aporta Prithvi), B3 frente a B1, y B1 con y sin riego.
 - Errores por etapa (vegetativa, reproductiva, maduración) y por sensor.
 - **Estabilidad de la selección:** cuántas veces gana el mismo modelo si se repite la selección sobre remuestras.
 - La versión que usará la app se reentrena con las 3 temporadas. Su error esperado es el medido en las pruebas.
 
 ### 6.11 Referencia de factibilidad (no es la selección final)
 
-Con una regresión lineal y el esquema de una temporada afuera (§11.9):
+Con una regresión lineal, solo índices y el esquema de una temporada afuera (§11.9):
 
 | Índice | GS1 | GS2 | GS3 |
 |---|---|---|---|
 | NDRE (Sentinel-2) | r 0,20 (3 fechas) | r 0,72 [0,17 a 0,97] | r 0,95 [0,40 a 0,97] |
 | NDVI (Sentinel-2 + Landsat) | r 0,58 [−0,39 a 0,86] | r 0,52 [−0,01 a 0,82] | r 0,79 [0,14 a 0,89] |
 
-GS1 tiene pocas fechas limpias y diferencias mínimas entre tratamientos (la Tabla 4 las marca "ns"). Es la temporada más difícil.
+GS1 tiene pocas fechas limpias y diferencias mínimas entre tratamientos (la Tabla 4 las marca "ns"). Es la temporada más difícil. Clima, riego y Prithvi no se han probado todavía en el Corrector.
 
 ### 6.12 Dónde se entrena
 
@@ -678,12 +738,11 @@ Quedan fuera esas 3 fechas de GS1 y una de GS2 (3-ene).
 
 ## 12. Próximos pasos
 
-1. **Entrenar el Corrector** con la validación cruzada anidada por temporada (§6.5) y los modelos candidatos (§6.9), siguiendo los 8 pasos de §6.2: la validación elige el modelo y la temporada de prueba se usa una sola vez.
+1. **Entrenar el Corrector** siguiendo los 8 pasos de §6.2: índices + clima + riego (B1), más Prithvi (B2) y Prithvi con cabeza pequeña (B3), con la validación cruzada anidada por temporada (§6.5). La validación elige variante y modelo, y la temporada de prueba se usa una sola vez.
 2. **Sumar fechas a GS1:** revisar las escenas HLS y Landsat parcialmente nubladas, con relleno de huecos espacial, para pasar de 3 fechas útiles de NDRE.
-3. **Ronda 2 del Corrector:** los componentes de Prithvi como entrada candidata. Se quedan solo si mejoran la validación.
-4. **Pronosticador:** preparación de datos con Spark (evidencia del curso), relleno de nubes con Prithvi validado con nubes falsas, y entrenamiento con el error medido por horizonte.
-5. **Balance por consumo:** mejorar el Kc. Una opción es validar la evapotranspiración satelital con las torres AmeriFlux de arroz en Arkansas (AWD frente a inundación).
-6. **App (Lovable):** mapa de estado del cultivo, semáforo de cuánta agua y cuándo, y nivel de confianza.
+3. **Pronosticador:** preparación de datos con Spark (evidencia del curso), relleno de nubes con Prithvi validado con nubes falsas, y entrenamiento con el error medido por horizonte.
+4. **Balance por consumo:** mejorar el Kc. Una opción es validar la evapotranspiración satelital con las torres AmeriFlux de arroz en Arkansas (AWD frente a inundación).
+5. **App (Lovable):** mapa de estado del cultivo, semáforo de cuánta agua y cuándo, y nivel de confianza.
 
 **Limitaciones:**
 - La verdad de campo es de un solo sitio, una variedad y un suelo, con 3 temporadas. Fuera de Nataima el Corrector se aplica bajo ese supuesto, y la app mostrará su nivel de confianza.
