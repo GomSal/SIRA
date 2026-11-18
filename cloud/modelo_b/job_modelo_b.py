@@ -1596,23 +1596,27 @@ def modelos_uso(out: Path, tablas, principal, E, pr, a) -> None:
 
 
 # ================================================================ QA: tiempos y proyección
-def eficiencia_paralela(n_jobs: int) -> float:
-    from joblib import Parallel, delayed
-
-    def carga(_):
-        from sklearn.ensemble import RandomForestRegressor
-        rng = np.random.default_rng(0)
-        X = rng.normal(size=(100, 4))
-        t = time.time()
-        for _ in range(3):
-            RandomForestRegressor(200, random_state=0, n_jobs=1).fit(X, X[:, 0])
-        return time.time() - t
-
-    t1 = carga(0)
+def _carga_rf(_=0) -> float:
+    from sklearn.ensemble import RandomForestRegressor
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(100, 4))
     t = time.time()
-    Parallel(n_jobs=n_jobs)(delayed(carga)(i) for i in range(n_jobs))
-    tp = time.time() - t
-    return float(min(1.0, t1 / tp))  # fracción del ideal (n_jobs veces más rápido)
+    for _ in range(6):
+        RandomForestRegressor(500, random_state=0, n_jobs=1).fit(X, X[:, 0])
+    return time.time() - t
+
+
+def eficiencia_paralela(n_jobs: int) -> float:
+    """Fracción del ideal (n_jobs veces más rápido). Los procesos se arrancan antes de medir (el arranque no es
+    parte del trabajo real) y cada tarea dura unos segundos, como las del entrenamiento."""
+    from joblib import Parallel, delayed
+    with Parallel(n_jobs=n_jobs) as par:
+        par(delayed(_carga_rf)(i) for i in range(n_jobs))  # calentamiento: arranca los procesos
+        t1 = float(np.median(par(delayed(_carga_rf)(i) for i in range(1))))
+        t = time.time()
+        par(delayed(_carga_rf)(i) for i in range(n_jobs))
+        tp = time.time() - t
+    return float(min(1.0, t1 / tp))
 
 
 def main() -> int:
