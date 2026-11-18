@@ -472,6 +472,37 @@ El artículo base incluye índices de dron: DJI Matrice 300 con Micasense Altum,
 - La coincidencia de fechas (riego real a ≤ 3 días del recomendado, 75–100 %) **no es informativa**: MIRI se regó cada 4–6 días, así que casi cualquier calendario acierta. El calendario fijo cubre el 90 % de los riegos reales.
 - **Conclusión de la sección 8:** en Nataima 2021–2022, el satélite **ve la respuesta de la planta al manejo dentro de una temporada** (8.6), pero **no aporta de forma medible** a la decisión de riego frente al clima y al calendario del cultivo: ni para la humedad del suelo (8.3–8.5), ni para el régimen por fecha (8.7), ni para la lámina recomendada (8.8). Con los datos de esta finca, el valor del satélite no queda demostrado para la decisión de riego.
 
+### 8.9 Modelo B como corrector satélite → dron, y revisión de GS1 (17-nov)
+
+**Propuesta:** B traduce el índice de Sentinel-2 al índice que mediría el dron, que ve la planta a 60 m sin mezcla de suelo ni de diques. Se entrena con 2 temporadas y se prueba en la 3ª.
+
+**Por qué fallaba GS1** (`scripts/revisar_bruma.py`, `reports/control/gs1_color_verdadero.png`): la máscara de nubes (SCL) dejó pasar como "despejadas" tres imágenes que no lo estaban:
+- **7-jul** (bruma, NDVI 0,63 entre dos fechas de 0,74);
+- **11-ago** (nube fina sobre el lote, NDVI 0,41 y azul 0,133);
+- **15-sep** (nubosa).
+
+La de 11-ago hundía el promedio de la etapa reproductiva. **Control de calidad**, igual para las tres temporadas:
+- se descarta una fecha si el NDVI del lote cae > 0,10 frente a la anterior y a la siguiente;
+- o si el azul del lote es ≥ 0,075 entre los días 25 y 115.
+
+Quedan fuera esas 3 fechas de GS1 y una de GS2 (3-ene).
+
+**Resultado del corrector con control de calidad** (`scripts/corrector_dron.py`, `reports/dron/corrector_dron.csv`):
+
+| Nivel | Índice | GS1 | GS2 | GS3 |
+|---|---|---|---|---|
+| Medias por etapa (9 casillas) | NDRE | r 0,15 (antes −0,82) | **r 0,95** | **r 0,99**, RMSE 0,078 frente a 0,136 de la línea base |
+| Medias por etapa | NDVI | r −0,02 (antes −0,93) | r 0,85 | r 0,91, RMSE 0,076 frente a 0,105 |
+| Fecha a fecha (dron interpolado) | NDRE | r 0,20 [IC95 −0,85 a 0,88] | **r 0,72 [0,29 a 0,96]** | **r 0,95 [0,47 a 0,98]** |
+
+- **Serie de tiempo del dron:** cada media por etapa se ubica en el día medio de sus vuelos (30, 60 y 100 días) y se interpola con PCHIP por tratamiento. Así cada fecha de Sentinel-2 tiene su par. **La interpolación no agrega información:** sirve para emparejar fechas.
+- **Bootstrap** (1000 repeticiones): por bloques de fechas dentro de cada temporada, más ruido del dron según su error estándar (Tabla 4).
+
+**Lectura:**
+- **El control de calidad elimina la inversión de GS1:** ya no hay relación negativa, y el error queda igual a la línea base. GS1 sigue sin capacidad predictiva por dos motivos: solo quedan 3 fechas limpias (una por etapa), y el dron casi no muestra diferencias entre tratamientos ese año (el artículo las reporta no significativas).
+- **En GS2 y GS3, el NDRE corregido predice al dron** con intervalos de confianza por encima de cero. Es la relación satélite–campo más sólida del proyecto.
+- **El corrector predice el estado de la planta (vigor), no el agua.** La recomendación de cuánta agua y cuándo sigue saliendo del balance por consumo (8.8).
+
 ---
 
 ## 9. Próximos pasos
