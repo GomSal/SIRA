@@ -274,7 +274,10 @@ def etapa_de(das):
 # %%
 PRITHVI_OK = False
 PCS = None
+PDEV = DEV  # dispositivo de Prithvi; pasa a CPU si la GPU falla
 try:
+    if os.environ.get("SIRA_SIN_PRITHVI"):
+        raise RuntimeError("Prithvi desactivado (SIRA_SIN_PRITHVI)")
     import importlib.util
     from huggingface_hub import hf_hub_download
 
@@ -297,7 +300,7 @@ try:
     spec.loader.exec_module(pm)
     # el código oficial recalcula la codificación de posición en CPU cuando cambia el número de cuadros: se lleva al dispositivo
     _ipe = pm._interpolate_pos_encoding
-    pm._interpolate_pos_encoding = lambda *a_, **k_: _ipe(*a_, **k_).to(DEV)
+    pm._interpolate_pos_encoding = lambda *a_, **k_: _ipe(*a_, **k_).to(PDEV)
     kw = {k: cfg[k] for k in ("img_size", "patch_size", "in_chans", "embed_dim", "depth", "num_heads", "decoder_embed_dim",
                               "decoder_depth", "decoder_num_heads", "mlp_ratio", "coords_encoding", "coords_scale_learn",
                               "mask_ratio", "norm_pix_loss")}
@@ -309,7 +312,7 @@ try:
             del sd_[kk]
         faltan, sobran = MAE.load_state_dict(sd_, strict=False)
         assert all("pos_embed" in kk for kk in faltan) and not sobran, (faltan, sobran)
-    MAE = MAE.to(DEV).eval()
+    MAE = MAE.to(PDEV).eval()
     MEAN = np.array(cfg["mean"], np.float32)[:, None, None]
     STD = np.array(cfg["std"], np.float32)[:, None, None]
     hls = pd.read_csv(IN / "hls_fechas.csv", parse_dates=["fecha"])
@@ -330,16 +333,25 @@ try:
         return np.where(b == -9999, 0.0001, (b.astype(np.float32) - MEAN) / STD)
 
     def coords(fechas):
-        tc = torch.tensor([[[f.year, f.day_of_year] for f in fechas]], dtype=torch.float32, device=DEV)
-        lc = torch.tensor([[4.1895, -74.9621]], dtype=torch.float32, device=DEV)
+        tc = torch.tensor([[[f.year, f.day_of_year] for f in fechas]], dtype=torch.float32, device=PDEV)
+        lc = torch.tensor([[4.1895, -74.9621]], dtype=torch.float32, device=PDEV)
         return tc, lc
 
     # --- resumen (embedding) por bloque de 16 × 16 px (480 m) y fecha HLS; T = 1
     MAE.encoder.num_frames = 1
+    try:  # prueba con la primera fecha; si la GPU falla, Prithvi corre en CPU (más lento, pero no se salta)
+        b0, _ = cargar_hls(hls.id.iloc[0])
+        with torch.no_grad():
+            MAE.encoder.forward_features(torch.from_numpy(normal(b0)[:, None][None]).to(PDEV), *coords([hls.fecha.iloc[0]]))
+    except RuntimeError as e:
+        log(f"AVISO Prithvi en {PDEV} falló ({str(e)[:120]}); se usa CPU")
+        PDEV = "cpu"
+        MAE = MAE.to(PDEV)
+    log(f"Prithvi corre en {PDEV}")
     EMB, EMB_OK = [], []
     for r in hls.itertuples():
         b, limpio = cargar_hls(r.id)
-        x = torch.from_numpy(normal(b)[:, None][None]).to(DEV)
+        x = torch.from_numpy(normal(b)[:, None][None]).to(PDEV)
         with torch.no_grad():
             zt = MAE.encoder.forward_features(x, *coords([r.fecha]))[-1][0, 1:].float().cpu().numpy()  # (196, D)
         EMB.append(zt.astype(np.float16))
@@ -394,13 +406,13 @@ try:
             ocultos = [((1 - fr[i - 2][1].reshape(G14, PATCH, G14, PATCH).mean(axis=(1, 3))) > 0.3).ravel(),
                        ((1 - fr[i - 1][1].reshape(G14, PATCH, G14, PATCH).mean(axis=(1, 3))) > 0.3).ravel(), g.ravel()]
             oc = np.concatenate(ocultos)
-            ruido = torch.tensor(np.where(oc, 1.0, 0.0) + rng.random(oc.size) * 1e-3, dtype=torch.float32, device=DEV)[None]
+            ruido = torch.tensor(np.where(oc, 1.0, 0.0) + rng.random(oc.size) * 1e-3, dtype=torch.float32, device=PDEV)[None]
             n_keep = int((~oc).sum())
             ratio = 1 - (n_keep + 0.5) / oc.size
             MAE.encoder.random_masking = lambda s, r, noise=None, _n=ruido: orig_mask(s, r, noise=_n)
             x = np.stack([normal(fr[i - 2][0]), normal(fr[i - 1][0]), normal(b_t)], axis=1)[None]
             with torch.no_grad():
-                _, pred, _ = MAE(torch.from_numpy(x).to(DEV), *coords(list(hls.fecha[[i - 2, i - 1, i]])), mask_ratio=ratio)
+                _, pred, _ = MAE(torch.from_numpy(x).to(PDEV), *coords(list(hls.fecha[[i - 2, i - 1, i]])), mask_ratio=ratio)
                 rec = MAE.unpatchify(pred, image_size=(LADO, LADO)).float().cpu().numpy()[0][:, 2]  # C, H, W (cuadro 3)
             rec = rec * STD + MEAN
             MAE.encoder.random_masking = orig_mask
@@ -634,6 +646,27 @@ def ic(x):
     return f"{np.nanquantile(x, .025):+.4f} a {np.nanquantile(x, .975):+.4f}"
 
 
+def diebold_mariano(e2_a, e2_b, idx, rezagos=3):
+    """Prueba de Diebold–Mariano (1995) de igual exactitud de dos pronósticos, pérdida cuadrática.
+    Diferencia de pérdidas d = e²(a) − e²(b) promediada por bloque (partición × 10 días del origen: los pixeles de un
+    mismo día no son independientes), varianza de largo plazo de Newey–West con `rezagos` bloques (30 días = horizonte
+    máximo) y corrección de Harvey–Leybourne–Newbold (1997); dos colas, t de Student con T − 1 g. l.
+    Estadístico > 0 ⇒ el pronóstico b tiene menos error que a."""
+    from scipy import stats
+    fol = np.select([(E.f0.iloc[idx] >= a_) & (E.f0.iloc[idx] < b_) for a_, b_ in FOLDS + [(SELLO, FIN_TEST + pd.Timedelta(days=1))]],
+                    range(len(FOLDS) + 1), 9)
+    blo = fol * 100000 + (E.d0.to_numpy()[idx] // 10)
+    s = pd.Series(e2_a - e2_b).groupby(blo).mean().sort_index().to_numpy()
+    T, h = len(s), rezagos
+    m = s.mean()
+    c = s - m
+    gam = [np.dot(c[k:], c[:T - k]) / T for k in range(h + 1)]
+    lrv = gam[0] + 2 * sum((1 - k / (h + 1)) * gam[k] for k in range(1, h + 1))
+    dm = m / np.sqrt(max(lrv, 1e-300) / T)
+    dm *= np.sqrt((T + 1 - 2 * h + h * (h - 1) / T) / T)
+    return float(dm), float(2 * (1 - stats.t.cdf(abs(dm), T - 1))), T
+
+
 BV = bloques(VA_ALL)
 json.dump({"metrica_principal": "skill medio frente a persistencia en los horizontes 1, 3, 7, 15 y 30 días (bins 1–2, 3–5, 6–10, 11–20, 21–30)",
            "otras": ["RMSE", "MAE", "sesgo", "skill frente a climatología (curva por días desde siembra; si no hay siembra, media del pixel por mes)",
@@ -685,6 +718,8 @@ E2P = {i: (Y[i] - E[f"{i}0"].to_numpy()[VA_ALL]) ** 2 for i in ("ndvi", "ndmi")}
 # curva de aprendizaje: cuántos pixeles de entrenamiento hacen falta (misma regla: el menor no peor que el mejor)
 n_tot = min(N_PIX_MAX, len(perm))
 TAM = sorted({max(10, n_tot // 8), max(10, n_tot // 4), max(10, n_tot // 2), n_tot})
+if os.environ.get("SIRA_N_PIX_FIJO"):  # recálculo fuera de Kaggle con el N ya elegido
+    TAM = [int(os.environ["SIRA_N_PIX_FIJO"])]
 curva, e2c = [], {}
 for i in ("ndvi", "ndmi"):
     for n in TAM:
@@ -724,8 +759,11 @@ for i in ("ndvi", "ndmi"):
             pg = pred_val(lambda: xgb(), cols, f"y_{i}")
             e2g = (Y[i] - pg) ** 2
             gan = skill_medio(e2g, E2P[i], VA_ALL, BV) - skill_medio(e2a, E2P[i], VA_ALL, BV)
+            dm, p_dm, nblo = diebold_mariano(e2a, e2g, VA_ALL)
             fila = {"indice": i, "ronda": ronda, "grupo": g, "skill_medio": skill_medio(e2g, E2P[i], VA_ALL),
-                    "mejora": float(np.mean(gan)), "mejora_IC95": ic(gan), "entra": False}
+                    "mejora": float(np.mean(gan)), "mejora_IC95": ic(gan),
+                    "rmse_sin_grupo": float(np.sqrt(e2a.mean())), "rmse_con_grupo": float(np.sqrt(e2g.mean())),
+                    "dm_estadistico": dm, "dm_valor_p": p_dm, "dm_bloques": nblo, "entra": False}
             SELEC.append(fila)
             if np.quantile(gan, .025) > 0 and (mejor is None or fila["mejora"] > mejor[1]["mejora"]):
                 mejor = (g, fila, e2g)
@@ -738,6 +776,9 @@ for i in ("ndvi", "ndmi"):
     VARS[i] = [c for g in act for c in GRUPOS[g]]
     log(f"variables {i}: grupos {act}")
 guardar(pd.DataFrame(SELEC), "paso6_seleccion_variables.csv")
+if os.environ.get("SIRA_SOLO_PASO6"):
+    log("SOLO PASO 6 OK")
+    raise SystemExit(0)
 
 # %% [markdown]
 # ## Paso 7. Candidatos: ARIMAX, Random Forest, Gradient Boosting, XGBoost y GRU (+ persistencia y climatología)
@@ -1030,7 +1071,7 @@ try:
             return local
         destino = OUT / "repo" / nombre
         destino.parent.mkdir(parents=True, exist_ok=True)
-        url = "https://raw.githubusercontent.com/GomSal/SIRA/modelo-humedad/data/processed/modelo_a/geos/" + nombre
+        url = "https://raw.githubusercontent.com/GomSal/SIRA/f3ace6cc09bad80f3c889412c074ad4b6df89a0e/data/processed/modelo_a/geos/" + nombre
         destino.write_bytes(urllib.request.urlopen(url, timeout=300).read())
         log(f"GEOS-S2S tomado del repositorio: {nombre}")
         return destino
