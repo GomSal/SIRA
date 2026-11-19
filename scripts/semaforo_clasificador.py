@@ -42,13 +42,17 @@ from xgboost import XGBClassifier
 
 warnings.filterwarnings("ignore")
 RAIZ = Path(__file__).resolve().parents[1]
-OUT = RAIZ / "reports" / "semaforo_clasificador"
+import sys  # noqa: E402
+
+VARIANTE = sys.argv[1] if len(sys.argv) > 1 else "ndvi"  # "ndvi" (base) o "ndvi_ndmi"
+OUT = RAIZ / "reports" / ("semaforo_clasificador" if VARIANTE == "ndvi" else f"semaforo_clasificador_{VARIANTE}")
 OUT.mkdir(parents=True, exist_ok=True)
 SEM = 0
 CLASES = ["verde", "amarillo", "rojo"]
 CORTES_HUM = (27.1, 30.0)
 
-M = pd.read_csv(RAIZ / "reports/humedad_unificada/tabla_entrenamiento.csv")
+M = pd.read_csv(RAIZ / ("reports/humedad_unificada/tabla_entrenamiento.csv" if VARIANTE == "ndvi"
+                       else "reports/humedad_unificada/tabla_entrenamiento_ndmi.csv"))
 M = M.sort_values(["temporada", "tratamiento", "das"]).reset_index(drop=True)
 hum = M.vwc_pct.to_numpy()
 y = np.select([hum < CORTES_HUM[0], hum < CORTES_HUM[1]], [2, 1], 0)  # 0 verde, 1 amarillo, 2 rojo
@@ -62,6 +66,9 @@ BAL = [f"S_tau{t}" for t in (2, 5, 10, 20)] + [f"Dr_k{k}" for k in (0.2, 0.5, 0.
 TIEMPO = ["das", "etapa_vegetativa", "etapa_reproductiva", "etapa_maduracion"]
 COLS = RIEGO + LLUVIA + CLIMA + PLANTA + BAL + TIEMPO
 EXOG_ARIMAX = ["S_tau20", "S_tau5", "Dr_k0.5", "riego_5d", "dias_desde_riego", "eto_5d", "ndvi"]
+if VARIANTE == "ndvi_ndmi":  # NDMI de Sentinel-2 por franja, mismo procesamiento que el NDVI
+    COLS = COLS + ["ndmi"]
+    EXOG_ARIMAX = EXOG_ARIMAX + ["ndmi"]
 
 
 # ---------------------------------------------------------------- ARIMAX como clasificador

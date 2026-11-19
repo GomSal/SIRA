@@ -1,0 +1,37 @@
+prueba 1: elegido ARIMAX {"p": 1} | AUC val 0.75 | AUC prueba 0.85 | recall verde/amarillo/rojo 0.60/0.38/1.00
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 2: elegido Gradient Boosting {"max_depth": 3, "learning_rate": 0.03} | AUC val 0.82 | AUC prueba 0.77 | recall verde/amarillo/rojo 0.85/0.44/0.25
+prueba 3: elegido ARIMAX {"p": 2} | AUC val 0.81 | AUC prueba 0.65 | recall verde/amarillo/rojo 0.54/0.08/0.50
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 4: elegido ARIMAX {"p": 1} | AUC val 0.77 | AUC prueba 0.86 | recall verde/amarillo/rojo 0.77/0.08/1.00
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+
+Mejor AUC macro de validación por familia (promedio de las 4 particiones):
+modelo
+ARIMAX                 0.781
+XGBoost                0.764
+Random Forest          0.761
+Gradient Boosting      0.758
+regresión logística    0.715
+
+PRUEBA (cada medición una vez):
+  auc_macro              0.76  [0.69–0.83]
+  auc_verde              0.77  [0.69–0.85]
+  auc_amarillo           0.76  [0.69–0.82]
+  auc_rojo               0.75  [0.62–0.87]
+  recall_verde           0.69  [0.61–0.77]
+  recall_amarillo        0.21  [0.09–0.35]
+  recall_rojo            0.71  [0.46–0.92]
+  precision_verde        0.86  [0.79–0.93]
+  precision_amarillo     0.29  [0.13–0.46]
+  precision_rojo         0.22  [0.10–0.35]
+  exactitud_balanceada   0.54  [0.44–0.62]
+               pred verde  pred amarillo  pred rojo
+real verde             96             20         23
+real amarillo          13              9         20
+real rojo               3              2         12
+
+Modelo de uso (selección con todos los datos): ARIMAX {"p": 1} 0.78
