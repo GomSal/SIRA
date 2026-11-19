@@ -83,6 +83,7 @@ CRS = "EPSG:32618"
 MEDIA_M = 300 if QA else 2500          # ventana de 5 × 5 km (0,6 km en QA)
 INI, FIN = "2012-11-01", "2026-11-18"  # 10 años antes de la 1.ª validación (nov-2022) hasta hoy
 HILOS = 16
+BAJAR_GEOS = os.environ.get("SIRA_GEOS", "0") == "1"  # en Kaggle no: desde allá el portal de la NASA se atasca
 log(f"inicio · QA={QA} · Kaggle={EN_KAGGLE} · ventana {2 * MEDIA_M} m · {INI} → {FIN}")
 
 # %% [markdown]
@@ -433,6 +434,8 @@ def verificar(url, clave):
 # GEOS-S2S no detiene el notebook: si algo falla, queda en el log y lo demás se guarda igual.
 inits, G, fallos_g = [], pd.DataFrame(), []
 try:
+    if not BAJAR_GEOS:
+        raise RuntimeError("GEOS-S2S se baja aparte (scripts/modelo_a/bajar_geos.py) y el notebook 2 lo toma del repositorio")
     VARS_NRT = {"pr_sfc": "PRECTOTCORR", "t2mmax": "T2MMAX", "t2mmin": "T2MMIN"}
     inits = [("NRT/SubC/backup", x) for x in listar(f"{GEOS}/NRT/SubC/backup/", r'href="(20\d{6})/"')] + \
             [("NRT/SubC", x) for x in listar(f"{GEOS}/NRT/SubC/", r'href="(20\d{6})/"')]

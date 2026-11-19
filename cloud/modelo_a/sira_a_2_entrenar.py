@@ -1020,7 +1020,19 @@ E.iloc[TE][["pixel", "f0", "f1", "delta", "etapa1", "ndvi0", "ndmi0", "y_ndvi", 
 #     ETo por Hargreaves calibrada contra FAO-56; nada de esto usa la prueba.
 GEO_RES = []
 try:
-    dr = pd.read_csv(IN / "geos_drift.csv", parse_dates=["fecha"])
+    def geos_csv(nombre):
+        """GEOS-S2S: de la entrada si está; si no, del repositorio (rama modelo-humedad, se baja fuera de Kaggle)."""
+        local = IN / nombre
+        if local.exists() and local.stat().st_size > 100:
+            return local
+        destino = OUT / "repo" / nombre
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        url = "https://raw.githubusercontent.com/GomSal/SIRA/modelo-humedad/data/processed/modelo_a/geos/" + nombre
+        destino.write_bytes(urllib.request.urlopen(url, timeout=300).read())
+        log(f"GEOS-S2S tomado del repositorio: {nombre}")
+        return destino
+
+    dr = pd.read_csv(geos_csv("geos_drift.csv"), parse_dates=["fecha"])
     dr["mm"] = dr.inicio_mmdd.astype(str).str.zfill(4)
     ini_m = dr.mm.str[:2].astype(int)
     ini_d = dr.mm.str[2:].astype(int)
@@ -1049,7 +1061,7 @@ try:
     cal_h = cl.loc[SELLO - pd.DateOffset(years=ANIOS):SELLO - pd.Timedelta(days=1)].dropna(subset=["T2M_MAX", "T2M_MIN", "Ra", "eto"])
     HB, HA = np.polyfit(hg(cal_h.T2M_MAX, cal_h.T2M_MIN, cal_h.Ra), cal_h.eto, 1)
     RA = cl.Ra.to_numpy()
-    g = pd.read_csv(IN / "geos_nrt.csv", parse_dates=["fecha"])
+    g = pd.read_csv(geos_csv("geos_nrt.csv"), parse_dates=["fecha"])
     g["inicio"] = pd.to_datetime(g.inicio.astype(str))
     g["plazo"] = (g.fecha - g.inicio).dt.days
     g["mes"] = g.fecha.dt.month
