@@ -295,6 +295,9 @@ try:
     spec = importlib.util.spec_from_file_location("prithvi_mae", code_p)
     pm = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(pm)
+    # el código oficial recalcula la codificación de posición en CPU cuando cambia el número de cuadros: se lleva al dispositivo
+    _ipe = pm._interpolate_pos_encoding
+    pm._interpolate_pos_encoding = lambda *a_, **k_: _ipe(*a_, **k_).to(DEV)
     kw = {k: cfg[k] for k in ("img_size", "patch_size", "in_chans", "embed_dim", "depth", "num_heads", "decoder_embed_dim",
                               "decoder_depth", "decoder_num_heads", "mlp_ratio", "coords_encoding", "coords_scale_learn",
                               "mask_ratio", "norm_pix_loss")}
