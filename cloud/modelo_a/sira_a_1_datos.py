@@ -8,9 +8,10 @@
 # | Imágenes | Sentinel-2 L2A + Landsat 7/8/9 C2 L2 (Planetary Computer), nov-2012 → nov-2026 | NDVI, NDMI y azul por pixel de 10 m en una ventana de 5 × 5 km alrededor de Nataima, con la máscara de nubes ya aplicada |
 # | HLS | HLS v2 S30/L30 (Planetary Computer) | recorte de 224 × 224 px de 30 m para Prithvi (relleno de huecos y resumen) |
 # | Clima observado | NASA POWER (ETo FAO-56) + CHIRPS (ClimateSERV), 2001 → 2026 | `clima.csv` |
-# | Pronóstico | GEOS-S2S-3 NRT (NASA GMAO, portal NCCS), 5 miembros, celda del lote | `geos_nrt.csv` |
-# | Climatología del modelo | GEOS-S2S-3 Drift (hindcasts 2001–2020) | `geos_drift.csv` |
 # | ONI | NOAA CPC | `oni.csv` |
+#
+# **GEOS-S2S no se baja aquí:** no hace falta para entrenar, y desde Kaggle el portal de la NASA se atasca. Se baja
+# aparte (`scripts/modelo_a/bajar_geos.py`) y el notebook 2 lo toma del repositorio solo para la evaluación final.
 #
 # Salida: `/kaggle/working/datos_a/` (en local: `./salida_a1/`). Con `SIRA_QA=1` corre una prueba corta.
 
@@ -339,7 +340,8 @@ else:
 
 
 # %% [markdown]
-# ## 4. GEOS-S2S-3: pronósticos reales (NRT) y climatología de los hindcasts (Drift), en la celda del lote
+# ## 4. GEOS-S2S (desactivado en Kaggle)
+# Este bloque se salta en Kaggle (`BAJAR_GEOS = False`). Es el mismo código que usa `scripts/modelo_a/bajar_geos.py`.
 
 # %%
 import fsspec
