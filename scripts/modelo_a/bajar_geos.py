@@ -13,9 +13,10 @@ os.environ.setdefault("SIRA_OUT_A1", "data/processed/modelo_a/geos")
 # | Imágenes | Sentinel-2 L2A + Landsat 7/8/9 C2 L2 (Planetary Computer), nov-2012 → nov-2026 | NDVI, NDMI y azul por pixel de 10 m en una ventana de 5 × 5 km alrededor de Nataima, con la máscara de nubes ya aplicada |
 # | HLS | HLS v2 S30/L30 (Planetary Computer) | recorte de 224 × 224 px de 30 m para Prithvi (relleno de huecos y resumen) |
 # | Clima observado | NASA POWER (ETo FAO-56) + CHIRPS (ClimateSERV), 2001 → 2026 | `clima.csv` |
-# | Pronóstico | GEOS-S2S-3 NRT (NASA GMAO, portal NCCS), 5 miembros, celda del lote | `geos_nrt.csv` |
-# | Climatología del modelo | GEOS-S2S-3 Drift (hindcasts 2001–2020) | `geos_drift.csv` |
 # | ONI | NOAA CPC | `oni.csv` |
+#
+# **GEOS-S2S no se baja aquí:** no hace falta para entrenar, y desde Kaggle el portal de la NASA se atasca. Se baja
+# aparte (`scripts/modelo_a/bajar_geos.py`) y el notebook 2 lo toma del repositorio solo para la evaluación final.
 #
 # Salida: `/kaggle/working/datos_a/` (en local: `./salida_a1/`). Con `SIRA_QA=1` corre una prueba corta.
 
@@ -91,6 +92,7 @@ HILOS = 16
 BAJAR_GEOS = os.environ.get("SIRA_GEOS", "0") == "1"  # en Kaggle no: desde allá el portal de la NASA se atasca
 log(f"inicio · QA={QA} · Kaggle={EN_KAGGLE} · ventana {2 * MEDIA_M} m · {INI} → {FIN}")
 
+# Este bloque se salta en Kaggle (`BAJAR_GEOS = False`). Es el mismo código que usa `scripts/modelo_a/bajar_geos.py`.
 
 # %%
 import fsspec
@@ -107,12 +109,70 @@ def listar(url, patron):
     return sorted(set(re.findall(patron, html)))
 
 
+class ArchivoRemoto(io.RawIOBase):
+    """Archivo por HTTP con peticiones de rango síncronas (sin fsspec ni hilos internos: h5py + fsspec en varios hilos
+    se bloquea). La cabecera (primeros 256 KB) llega en una sola petición; el resto, por bloques de 64 KB."""
+
+    B = 2 ** 16
+
+    def __init__(self, url, cabeza=2 ** 18):
+        self.url, self.pos, self.bloques = url, 0, {}
+        datos, self.tam = self._rango(0, cabeza - 1)
+        for k in range(0, len(datos), self.B):
+            self.bloques[k // self.B] = datos[k:k + self.B]
+
+    def _rango(self, a, b):
+        for k in range(6):
+            try:
+                req = urllib.request.Request(self.url, headers={"Range": f"bytes={a}-{b}"})
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    cr = r.headers.get("Content-Range", "")
+                    return r.read(), int(cr.split("/")[-1]) if "/" in cr else None
+            except Exception:  # noqa: BLE001
+                if k == 5:
+                    raise
+                time.sleep(3 * (k + 1))
+
+    def readable(self):
+        return True
+
+    def seekable(self):
+        return True
+
+    def tell(self):
+        return self.pos
+
+    def seek(self, off, whence=0):
+        self.pos = off if whence == 0 else self.pos + off if whence == 1 else self.tam + off
+        return self.pos
+
+    def readinto(self, buf):
+        n = min(len(buf), max(0, self.tam - self.pos))
+        if n == 0:
+            return 0
+        b0, b1 = self.pos // self.B, (self.pos + n - 1) // self.B
+        faltan = [b for b in range(b0, b1 + 1) if b not in self.bloques]
+        if faltan:
+            datos, _ = self._rango(faltan[0] * self.B, min((faltan[-1] + 1) * self.B, self.tam) - 1)
+            for k, b in enumerate(range(faltan[0], faltan[-1] + 1)):
+                self.bloques[b] = datos[k * self.B:(k + 1) * self.B]
+        junto = b"".join(self.bloques[b] for b in range(b0, b1 + 1))
+        ini = self.pos - b0 * self.B
+        buf[:n] = junto[ini:ini + n]
+        self.pos += n
+        return n
+
+
+H5_LOCK = __import__("threading").Lock()  # h5py no es seguro entre hilos: una cabecera a la vez (es rápido)
+
+
 def capa(url, con_ref=False):
     """Lee SOLO la cabecera HDF5 de un archivo: dónde empieza cada día en bytes y qué celda es la del lote.
     Los archivos son float32 sin comprimir con un bloque por día (1, 361, 720), o contiguos (Drift)."""
     for k in range(5):
         try:
-            with fs.open(url, block_size=2 ** 16, cache_type="bytes") as f, h5py.File(f, "r") as h:
+            f = ArchivoRemoto(url)  # la red va fuera del candado; h5py solo lee de memoria
+            with H5_LOCK, h5py.File(f, "r") as h:
                 var = [q for q in h if h[q].ndim == 3][0]
                 d = h[var]
                 nt, ny, nx = d.shape

@@ -1,0 +1,45 @@
+[16:25:03 +     0s] inicio · QA=False · Kaggle=False · ventana 5000 m · 2012-11-01 → 2026-11-18
+[16:26:12 +    70s] GEOS-S2S NRT: 73 inicios (20250501 → 20261112) · 929 archivos
+[16:26:52 +   109s] lectura por rangos verificada contra h5py: pr_sfc_GMAOGEOS_20250501_ens01.nc4 · celda 4.0, -75.0
+[16:27:35 +   152s] lectura por rangos verificada contra h5py: t2mmax_GMAOGEOS_20260506_ens01.nc4 · celda 4.0, -75.0
+[16:28:14 +   191s] lectura por rangos verificada contra h5py: t2mmin_GMAOGEOS_20260506_ens01.nc4 · celda 4.0, -75.0
+[16:28:14 +   191s] GEOS NRT: 0 archivos ya leídos antes, faltan 929
+[16:31:40 +   397s] GEOS NRT 50/929 · fallos 0 · avance guardado
+[16:35:40 +   637s] GEOS NRT 100/929 · fallos 0 · avance guardado
+[16:41:00 +   957s] GEOS NRT 150/929 · fallos 0 · avance guardado
+[19:18:22 +     0s] inicio · QA=False · Kaggle=False · ventana 5000 m · 2012-11-01 → 2026-11-18
+[19:19:25 +    63s] GEOS-S2S NRT: 73 inicios (20250501 → 20261112) · 929 archivos
+[19:19:35 +    73s] lectura por rangos verificada contra h5py: pr_sfc_GMAOGEOS_20250501_ens01.nc4 · celda 4.0, -75.0
+[19:20:06 +   104s] lectura por rangos verificada contra h5py: t2mmax_GMAOGEOS_20260506_ens01.nc4 · celda 4.0, -75.0
+[19:20:14 +   112s] lectura por rangos verificada contra h5py: t2mmin_GMAOGEOS_20260506_ens01.nc4 · celda 4.0, -75.0
+[19:20:14 +   112s] GEOS NRT: 150 archivos ya leídos antes, faltan 779
+[19:20:18 +     0s] inicio · QA=False · Kaggle=False · ventana 5000 m · 2012-11-01 → 2026-11-18
+[19:21:21 +    64s] GEOS-S2S NRT: 73 inicios (20250501 → 20261112) · 929 archivos
+[19:21:29 +    71s] lectura por rangos verificada contra h5py: pr_sfc_GMAOGEOS_20250501_ens01.nc4 · celda 4.0, -75.0
+[19:21:42 +    85s] lectura por rangos verificada contra h5py: t2mmax_GMAOGEOS_20260506_ens01.nc4 · celda 4.0, -75.0
+[19:21:53 +    96s] lectura por rangos verificada contra h5py: t2mmin_GMAOGEOS_20260506_ens01.nc4 · celda 4.0, -75.0
+[19:21:53 +    96s] GEOS NRT: 150 archivos ya leídos antes, faltan 779
+[19:23:05 +   168s] GEOS NRT 50/779 · fallos 0 · avance guardado
+[19:24:04 +   226s] GEOS NRT 100/779 · fallos 0 · avance guardado
+[19:24:38 +   261s] GEOS NRT 150/779 · fallos 0 · avance guardado
+[19:25:55 +   337s] GEOS NRT 200/779 · fallos 0 · avance guardado
+[19:26:20 +   362s] GEOS NRT 250/779 · fallos 0 · avance guardado
+[19:27:28 +   431s] GEOS NRT 300/779 · fallos 0 · avance guardado
+[19:28:16 +   479s] GEOS NRT 350/779 · fallos 0 · avance guardado
+[19:28:59 +   522s] GEOS NRT 400/779 · fallos 0 · avance guardado
+[19:30:13 +   595s] GEOS NRT 450/779 · fallos 0 · avance guardado
+[19:30:47 +   629s] GEOS NRT 500/779 · fallos 0 · avance guardado
+[19:33:30 +   792s] GEOS NRT 550/779 · fallos 0 · avance guardado
+[19:35:17 +   900s] GEOS NRT 600/779 · fallos 0 · avance guardado
+[19:37:27 +  1029s] GEOS NRT 650/779 · fallos 0 · avance guardado
+[19:40:37 +  1220s] GEOS NRT 700/779 · fallos 0 · avance guardado
+[19:44:53 +  1475s] GEOS NRT 750/779 · fallos 0 · avance guardado
+[19:45:59 +  1541s] GEOS NRT 779/779 · fallos 0 · avance guardado
+[19:46:51 +  1593s] lectura por rangos verificada contra h5py: 1202.PRECTOTCORR.drift.01.nc4 · celda 4.0, -75.0
+[19:47:28 +  1630s] lectura por rangos verificada contra h5py: 1202.T2M.drift.01.nc4 · celda 4.0, -75.0
+[19:48:42 +  1704s] GEOS Drift 50/286 · fallos 0
+[19:49:51 +  1773s] GEOS Drift 100/286 · fallos 0
+[19:51:13 +  1856s] GEOS Drift 150/286 · fallos 0
+[19:52:36 +  1938s] GEOS Drift 200/286 · fallos 0
+[19:54:19 +  2042s] GEOS Drift 250/286 · fallos 0
+[19:55:17 +  2100s] GEOS Drift 286/286 · fallos 0
