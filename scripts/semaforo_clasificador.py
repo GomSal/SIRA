@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 from sklearn.base import clone
+from sklearn.decomposition import PCA
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix, roc_auc_score
@@ -44,16 +45,36 @@ warnings.filterwarnings("ignore")
 RAIZ = Path(__file__).resolve().parents[1]
 import sys  # noqa: E402
 
-VARIANTE = sys.argv[1] if len(sys.argv) > 1 else "ndvi"  # "ndvi" (base) o "ndvi_ndmi"
+# "ndvi" (base) | "ndvi_ndmi" | "ndvi_prithvi" (cada candidato con y sin Prithvi; la validación decide)
+# | "prithvi_obligatorio" (esquema cabeza sobre Prithvi: todos los candidatos llevan Prithvi)
+VARIANTE = sys.argv[1] if len(sys.argv) > 1 else "ndvi"
 OUT = RAIZ / "reports" / ("semaforo_clasificador" if VARIANTE == "ndvi" else f"semaforo_clasificador_{VARIANTE}")
 OUT.mkdir(parents=True, exist_ok=True)
 SEM = 0
 CLASES = ["verde", "amarillo", "rojo"]
 CORTES_HUM = (27.1, 30.0)
+CON_PRITHVI = VARIANTE in ("ndvi_prithvi", "prithvi_obligatorio")
+K_PCA = 3  # componentes de Prithvi (PCA ajustado solo con el entrenamiento de cada partición)
 
-M = pd.read_csv(RAIZ / ("reports/humedad_unificada/tabla_entrenamiento.csv" if VARIANTE == "ndvi"
-                       else "reports/humedad_unificada/tabla_entrenamiento_ndmi.csv"))
+M = pd.read_csv(RAIZ / ("reports/humedad_unificada/tabla_entrenamiento_ndmi.csv" if VARIANTE == "ndvi_ndmi"
+                       else "reports/humedad_unificada/tabla_entrenamiento.csv"))
 M = M.sort_values(["temporada", "tratamiento", "das"]).reset_index(drop=True)
+PCOLS = []
+if CON_PRITHVI:
+    # Prithvi-EO-2.0-300M-TL sobre HLS (bloque de 480 m que contiene el lote; un vector de 1024 por fecha, el mismo
+    # para las 3 franjas). Se lleva a diario por interpolación lineal en días desde siembra, como el NDVI.
+    E = pd.read_csv(RAIZ / "reports/modelo_b/prithvi_embeddings.csv")
+    PCOLS = [c for c in E if c.startswith("p") and c[1:].isdigit()]
+    E = E.groupby(["temporada", "das"], as_index=False)[PCOLS].mean()
+    dia = []
+    for t, g in M.groupby("temporada"):
+        rejilla = pd.DataFrame({"temporada": t, "das": np.arange(min(g.das.min(), E[E.temporada == t].das.min()),
+                                                                 max(g.das.max(), E[E.temporada == t].das.max()) + 1)})
+        r = rejilla.merge(E[E.temporada == t], on=["temporada", "das"], how="left")
+        r[PCOLS] = r[PCOLS].interpolate(limit_direction="both")
+        dia.append(r)
+    M = M.merge(pd.concat(dia), on=["temporada", "das"], how="left")
+    assert M[PCOLS].notna().all().all()
 hum = M.vwc_pct.to_numpy()
 y = np.select([hum < CORTES_HUM[0], hum < CORTES_HUM[1]], [2, 1], 0)  # 0 verde, 1 amarillo, 2 rojo
 G = M.grupo.to_numpy()
@@ -92,16 +113,17 @@ class ARIMAXClasificador:
 
     def _serie(self, Z, hum_obs, clave):
         # clave = (temporada, tratamiento, das) de cada fila; se arma la serie diaria completa con NaN en días sin dato
-        df = pd.DataFrame(Z, columns=EXOG_ARIMAX)
+        cols = [f"x{i}" for i in range(Z.shape[1])]
+        df = pd.DataFrame(Z, columns=cols)
         df["hum"] = hum_obs
         df[["t", "tr", "das"]] = pd.DataFrame(list(clave), index=df.index)
         endog, exog = [], []
         for (_, _), g in df.groupby(["t", "tr"]):
             g = g.sort_values("das")
             full = pd.DataFrame({"das": np.arange(g.das.min(), g.das.max() + 1)}).merge(g, on="das", how="left")
-            full[EXOG_ARIMAX] = full[EXOG_ARIMAX].interpolate(limit_direction="both")
+            full[cols] = full[cols].interpolate(limit_direction="both")
             endog += list(full.hum) + [np.nan] * 30
-            exog += full[EXOG_ARIMAX].values.tolist() + [[0.0] * len(EXOG_ARIMAX)] * 30
+            exog += full[cols].values.tolist() + [[0.0] * len(cols)] * 30
         return np.array(endog, float), np.array(exog, float)
 
     def predict_proba(self, X):
@@ -141,27 +163,45 @@ def candidatos():
                                                         n_jobs=4, verbosity=0)))
     for p in (1, 2):
         c.append(("ARIMAX", {"p": p}, lambda p=p: ARIMAXClasificador(p)))
+    if VARIANTE == "ndvi_prithvi":  # cada candidato, también con Prithvi
+        c = c + [(n + " + Prithvi", {**hp, "prithvi_pca": K_PCA}, f) for n, hp, f in c]
+    elif VARIANTE == "prithvi_obligatorio":
+        c = [(n + " + Prithvi", {**hp, "prithvi_pca": K_PCA}, f) for n, hp, f in c]
     return c
 
 
 CLAVE = list(zip(M.temporada, M.tratamiento, M.das))
 
 
+def matriz(nombre, m, idx, ajustar_pca=False):
+    """Entradas del candidato; con Prithvi agrega K_PCA componentes (PCA ajustado solo con fechas de entrenamiento)."""
+    base = nombre.replace(" + Prithvi", "")
+    cols = EXOG_ARIMAX if base == "ARIMAX" else COLS
+    X = M.loc[idx, cols].to_numpy(float)
+    if nombre.endswith(" + Prithvi"):
+        if ajustar_pca:
+            u = M.loc[idx].drop_duplicates(["temporada", "das"])[PCOLS].to_numpy()
+            m._pca = make_pipeline(StandardScaler(), PCA(K_PCA, random_state=SEM)).fit(u)
+        X = np.hstack([X, m._pca.transform(M.loc[idx, PCOLS].to_numpy())])
+    return base, X
+
+
 def ajustar(nombre, fabrica, idx):
     m = fabrica()
-    if nombre == "ARIMAX":
+    base, X = matriz(nombre, m, idx, ajustar_pca=True)
+    if base == "ARIMAX":
         m._clave = [CLAVE[i] for i in idx]
-        return m.fit(M.loc[idx, EXOG_ARIMAX].to_numpy(), y[idx], hum[idx])
-    X = M.loc[idx, COLS]
-    if nombre in ("Gradient Boosting", "XGBoost"):
+        return m.fit(X, y[idx], hum[idx])
+    if base in ("Gradient Boosting", "XGBoost"):
         return m.fit(X, y[idx], sample_weight=compute_sample_weight("balanced", y[idx]))
     return m.fit(X, y[idx])
 
 
 def proba(nombre, m, idx):
-    if nombre == "ARIMAX":
-        return m.predict_proba(M.loc[idx, EXOG_ARIMAX].to_numpy())
-    P = m.predict_proba(M.loc[idx, COLS])
+    base, X = matriz(nombre, m, idx)
+    if base == "ARIMAX":
+        return m.predict_proba(X)
+    P = m.predict_proba(X)
     out = np.zeros((len(idx), 3))
     out[:, m.classes_ if hasattr(m, "classes_") else m[-1].classes_] = P
     return out
@@ -256,6 +296,7 @@ Vall, gall = seleccionar(np.arange(len(M)), SEM + 99)
 Vall.drop(columns="_fab").round(4).to_csv(OUT / "validacion_modelo_de_uso.csv", index=False)
 (OUT / "modelo_de_uso.json").write_text(json.dumps({
     "elegido": gall.modelo, "hiperparametros": json.loads(gall.hiperparametros), "auc_macro_validacion": gall.auc_macro_val,
-    "entradas": EXOG_ARIMAX if gall.modelo == "ARIMAX" else COLS, "clases": {"verde": "≥ 30 %", "amarillo": "27,1–30 %", "rojo": "< 27,1 %"},
+    "entradas": (EXOG_ARIMAX if gall.modelo.startswith("ARIMAX") else COLS)
+                + ([f"prithvi_pc{i + 1}" for i in range(K_PCA)] if gall.modelo.endswith(" + Prithvi") else []), "clases": {"verde": "≥ 30 %", "amarillo": "27,1–30 %", "rojo": "< 27,1 %"},
     "error_esperado": "el de la prueba sellada (prueba_total.csv)"}, indent=1, ensure_ascii=False), encoding="utf-8")
 print("\nModelo de uso (selección con todos los datos):", gall.modelo, gall.hiperparametros, round(gall.auc_macro_val, 3))
