@@ -1,0 +1,16 @@
+{
+ "por_indice": {
+  "ndvi": {
+   "mejor_L": 13,
+   "L_mas_corto_no_peor": 8
+  },
+  "ndmi": {
+   "mejor_L": 16,
+   "L_mas_corto_no_peor": 6
+  }
+ },
+ "anios_atras_elegidos": 8,
+ "pixeles_muestra": 1500,
+ "ejemplos": 1817788,
+ "segundos": 5824
+}
