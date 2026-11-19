@@ -141,14 +141,15 @@ En producción solo se pronostican los **pixeles del predio**. La ventana grande
 
 | Lote | MVP (1 predio) | 100 predios | Por qué |
 |---|---|---|---|
-| **Entrenamiento histórico** (series por pixel, relleno, calibración Landsat → S2, ejemplos por horizonte) | pandas o Spark: **se mide** | **Spark** | 10¹⁰ filas no caben en una máquina; se reparte por `predio` y `fecha` |
+| **Entrenamiento histórico** (series por pixel, relleno, calibración Landsat → S2, ejemplos por horizonte) | pandas / numpy (**Spark no abarata**, §5.5) | **Spark** | 10¹⁰ filas no caben en una máquina; se reparte por `predio` y `fecha` |
 | **1. Imágenes** (diario) | pandas | **Spark** | Escenas de 100 lugares en paralelo; mismo código que el entrenamiento |
 | **2. GEOS-S2S** (cada 5 días) | Python simple | Un solo trabajo: lee **una vez** cada archivo global y saca las 100 celdas | Son 15 archivos de 80 MB por emisión, sin importar cuántos predios haya; Spark no aporta |
 | **3. Recalibración** (mensual) | Python simple | Spark o Python: agrupar por celda × horizonte × variable | Pocas filas (100 celdas × 30 días × 3 variables) |
 | **Predictor + semáforo** | pandas | **Spark** con el modelo copiado a cada nodo (*broadcast*) | 10⁷ predicciones por corrida; cada predio es independiente |
 
 **Conclusión de diseño:**
-- Spark va en el **entrenamiento histórico**, en el **lote diario de imágenes** y en la **inferencia por pixel** cuando hay muchos predios.
+- Spark va en el **entrenamiento histórico**, en el **lote diario de imágenes** y en la **inferencia por pixel** cuando hay muchos predios. La razón es la **memoria**: los datos dejan de caber en una máquina (§5.5).
+- En el **MVP de Nataima no se usa Spark**: la ecuación del §5.5 muestra que no abarata.
 - La **corrección de GEOS-S2S no lo necesita**: siempre son pocos datos, porque el archivo global se lee una vez para todos los predios.
 
 ### 5.3 Qué cambia en el almacenamiento con 100 predios
@@ -163,11 +164,51 @@ En producción solo se pronostican los **pixeles del predio**. La ventana grande
 - **El semáforo (B) se calibró con el suelo de Nataima**: capacidad de campo del 30 %. Cada predio nuevo necesita sus umbrales de suelo.
 - **El modelo predictor (A) se entrenó con arroz de la meseta de Ibagué y el Espinal.** En otras zonas o cultivos hay que revalidarlo.
 
-### 5.5 Cómo se mide en este proyecto
+### 5.5 ¿Abarata Spark? La ecuación de costo (decisión para el MVP)
 
-Según el handover del modelo A, §4:
-- el **mismo pipeline** en pandas (una máquina) y en PySpark;
-- se mide tiempo, costo y memoria pico a **3 tamaños**: un lote, 1 km² y la ventana completa;
-- con esa curva de crecimiento se **proyecta** el escenario de 100 predios, dicho como proyección y no como medición.
+La decisión se toma **antes** de usar Spark, con un modelo de costo. Detalle y cifras: `reports/modelo_a/estimacion/SPARK_ECUACION.md`.
 
-Si Spark no abarata el MVP, se dice. La arquitectura de 100 predios queda planteada igual.
+**1. Qué se mide.** Las dos opciones descargan las mismas imágenes, así que la descarga se cancela. Solo se compara la preparación de datos: nubes, bruma, índices, calibración y armado de ejemplos.
+
+| Símbolo | Qué es | Valor en Nataima |
+|---|---|---|
+| N | filas pixel·fecha | 3,5 × 10⁸ (10 años, 5 × 5 km a 10 m); ≈ 1,1 × 10⁸ despejadas |
+| w | tiempo de cómputo por fila en un núcleo | 160 ns (medido) |
+| c, η | núcleos y eficiencia paralela | 4 en Kaggle, η ≈ 0,8 |
+| T₀ | arranque de Java + Spark | ≈ 10–30 s (valor típico) |
+| s | paso de cada fila entre Python y Java | unos ns (valor típico) |
+| b, k | bytes por fila y copias de trabajo en pandas | 50 B, k ≈ 2,5 |
+| P | precio por hora de la máquina | — |
+
+**2. Tiempo de cada opción en una máquina:**
+
+  Python (numpy / pandas por bloques en paralelo):  T_py = N·w / (c·η)
+  Spark local:  T_spark = T₀ + N·w / (c·η) + N·s / c
+
+**3. Condición para que Spark abarate en una máquina:** T_spark < T_py ⇔ T₀ + N·s / c < 0.
+- **Imposible**, porque T₀ y s son siempre ≥ 0.
+- Spark hace el mismo cómputo y le suma su arranque y la serialización.
+
+**4. En un clúster de n máquinas:** costo = n·P·T_spark,n. Con precio lineal por máquina, la condición es n·T₀' + N·s / (c·η) < 0.
+- **También imposible.**
+- Repartir baja el tiempo, no el costo, y suma el arranque del clúster (T₀').
+
+**5. El único caso en que Spark abarata: la memoria.** Pandas necesita RAM ≥ N·b·k.
+- Si no cabe, hay que pagar una máquina más grande o trocear a mano.
+- Spark trabaja por particiones y desborda a disco, así que cabe en una máquina pequeña.
+
+  **Spark abarata ⇔ N·b·k > RAM disponible  y  P_grande·T_py > P_pequeña·T_spark**
+
+**6. Con los números de Nataima:**
+- Cómputo de preparación: 3,5 × 10⁸ × 160 ns ≈ **56 s** en un núcleo y ≈ **18 s** con 4. **Es menor que el solo arranque de Spark.**
+- Memoria: 1,1 × 10⁸ × 50 B × 2,5 ≈ **14 GB**, que **cabe** en una máquina de unos 30 GB.
+- **Decisión: el MVP no usa Spark.** Se entrena con pandas / numpy.
+
+**7. Cuándo sí:** cuando N·b·k supera la RAM, es decir ≳ 2 × 10⁸ filas despejadas en 30 GB. Eso es:
+- ≳ 45 km² con 10 años; o
+- la tesela completa de Sentinel-2 (≈ 5 × 10¹⁰ filas); o
+- el escenario de 100 predios (~10¹⁰).
+
+Ahí Spark es la arquitectura planteada (§5.2), por memoria y por reparto automático, no por menos operaciones.
+
+**Pendiente:** T₀ y s son valores típicos, no medidos. Medirlos solo mueve el umbral, no la conclusión, porque son ≥ 0.
