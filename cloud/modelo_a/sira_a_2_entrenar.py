@@ -86,7 +86,7 @@ N_PIX_MAX = 300 if QA else 6000
 N_PIX_EVAL = 150 if QA else 1500
 SIEMBRAS_NATAIMA = {1: "2021-05-27", 2: "2021-12-04", 3: "2022-07-09"}
 log(f"inicio · QA={QA} · dispositivo {DEV} · {NUC} núcleos · entrada {IN}")
-json.dump({"dispositivo": DEV, "nucleos": NUC, "torch": torch.__version__, "python": sys.version}, open(OUT / "entorno.json", "w"))
+json.dump({"dispositivo": DEV, "nucleos": NUC, "torch": torch.__version__, "python": sys.version}, open(OUT / "entorno.json", "w", encoding="utf-8"))
 
 # %% [markdown]
 # ## Datos del notebook 1
@@ -309,7 +309,9 @@ try:
     MAE = MAE.to(DEV).eval()
     MEAN = np.array(cfg["mean"], np.float32)[:, None, None]
     STD = np.array(cfg["std"], np.float32)[:, None, None]
-    hls = pd.read_csv(IN / "hls_fechas.csv", parse_dates=["fecha"]).sort_values("fecha").reset_index(drop=True)
+    hls = pd.read_csv(IN / "hls_fechas.csv", parse_dates=["fecha"])
+    # una escena por fecha (S30 viene en 2 teselas y S30/L30 pueden coincidir): la más despejada
+    hls = hls.sort_values(["fecha", "frac_despejado"], ascending=[True, False]).drop_duplicates("fecha").reset_index(drop=True)
     rej = json.load(open(IN / "hls_rejilla.json"))
     THX, THY = rej["transform"][2], rej["transform"][5]
     LADO, PATCH = rej["lado"], 16
@@ -637,7 +639,7 @@ json.dump({"metrica_principal": "skill medio frente a persistencia en los horizo
            "regla_variables": "entra un grupo solo si el IC 95 % de su mejora en skill medio excluye el 0",
            "regla_modelo": "mayor skill medio; empate (IC 95 % de la diferencia incluye el 0) → el más simple en el orden "
                            "ARIMAX, Random Forest, Gradient Boosting, XGBoost, GRU"},
-          open(OUT / "paso4_metricas.json", "w"), indent=1, ensure_ascii=False)
+          open(OUT / "paso4_metricas.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 
 # %% [markdown]
 # ## Paso 5 y 6. Grupos de variables, curva de aprendizaje y selección (XGBoost en GPU)
@@ -1348,10 +1350,10 @@ for i in ("ndvi", "ndmi"):
                        OUT / "modelos" / f"predictor_{i}_gru.pt")
         elif FABR[i][0] == "ARIMAX":
             json.dump({"beta": m.beta.tolist(), "phi": m.phi, "mu": m.mu, "mu_x": m.mu_x.tolist(), "sd_x": m.sd_x.tolist(),
-                       "exog": m.exog}, open(OUT / "modelos" / f"predictor_{i}_arimax.json", "w"))
+                       "exog": m.exog}, open(OUT / "modelos" / f"predictor_{i}_arimax.json", "w", encoding="utf-8"))
         else:
             joblib.dump(m.m, OUT / "modelos" / f"predictor_{i}.joblib", compress=3)
     except Exception as e:  # noqa: BLE001
         log(f"AVISO guardar modelo {i}: {e}")
-json.dump(meta_m, open(OUT / "modelos" / "meta.json", "w"), indent=1, ensure_ascii=False, default=str)
+json.dump(meta_m, open(OUT / "modelos" / "meta.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False, default=str)
 log(f"ENTRENAMIENTO OK en {(time.time() - T0) / 60:.0f} min · elegidos {meta_m['elegidos']}")

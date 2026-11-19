@@ -26,6 +26,13 @@ if EN_KAGGLE:
                     "rasterio", "h5py", "fsspec", "aiohttp", "requests"], check=True)
 
 # %%
+# Tiempos máximos de red: sin esto, una conexión que se queda colgada detiene el notebook para siempre.
+os.environ.update({"GDAL_HTTP_TIMEOUT": "60", "GDAL_HTTP_CONNECTTIMEOUT": "20", "GDAL_HTTP_MAX_RETRY": "3",
+                   "GDAL_HTTP_RETRY_DELAY": "5", "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
+                   "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".tif,.TIF,.tiff"})
+import socket  # noqa: E402
+
+socket.setdefaulttimeout(120)
 import concurrent.futures as cf
 import datetime as dt
 import io
@@ -51,6 +58,24 @@ def log(m):
     print(s, flush=True)
     LOG.write(s + "\n")
     LOG.flush()
+
+
+# Reanudar: si una versión anterior de este notebook dejó resultados y se agregaron como entrada (Add Input →
+# Notebook Output), se copian aquí y cada etapa ya terminada se salta. Lo mismo en local si la carpeta ya existe.
+if EN_KAGGLE:
+    import glob
+    import shutil
+    for prev in glob.glob("/kaggle/input/**/datos_a", recursive=True):
+        for f in Path(prev).rglob("*"):
+            dst = OUT / f.relative_to(prev)
+            if f.is_file() and not dst.exists():
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(f, dst)
+        log(f"reanudar: copiado lo de {prev}")
+
+
+def hecho(*nombres):
+    return all((OUT / n).exists() for n in nombres)
 
 
 LON, LAT = -74.9621, 4.1895
@@ -85,7 +110,7 @@ TRF = rasterio.transform.from_origin(x0 - MEDIA_M, y0 + MEDIA_M, 10, 10)
 
 
 def catalogo():
-    return pystac_client.Client.open("https://planetarycomputer.microsoft.com/api/stac/v1", modifier=pc.sign_inplace)
+    return pystac_client.Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")  # se firma cada URL justo al leerla (los permisos vencen)
 
 
 cat = catalogo()
@@ -108,7 +133,7 @@ log(f"imágenes: {len(s2u)} fechas Sentinel-2 · {len(ls)} escenas Landsat 7/8/9
 def leer(href, remuestreo=Resampling.nearest):
     for k in range(5):
         try:
-            with rasterio.open(href) as src, WarpedVRT(src, crs=CRS, transform=TRF, width=N, height=N,
+            with rasterio.open(pc.sign(href)) as src, WarpedVRT(src, crs=CRS, transform=TRF, width=N, height=N,
                                                       resampling=remuestreo, nodata=0) as v:
                 return v.read(1).astype(np.float32)
         except Exception:  # noqa: BLE001
@@ -147,27 +172,33 @@ def procesar(it):
                 nube_escena=p.get("eo:cloud_cover"), ndvi=f(ndvi), ndmi=f(ndmi), azul=f(azul))
 
 
-res, fallos = [], []
-with cf.ThreadPoolExecutor(HILOS) as ex:
-    fut = {ex.submit(procesar, it): it for it in items}
-    for k, fu in enumerate(cf.as_completed(fut), 1):
-        try:
-            res.append(fu.result())
-        except Exception as e:  # noqa: BLE001
-            fallos.append({"id": fut[fu].id, "error": re.sub(r"\?\S*", "?<token>", str(e))[:300]})
-        if k % 100 == 0 or k == len(items):
-            log(f"imágenes {k}/{len(items)} · fallos {len(fallos)}")
-res.sort(key=lambda d: (d["fecha"], d["sensor"], d["id"]))
-meta = pd.DataFrame([{k: v for k, v in d.items() if k not in ("ndvi", "ndmi", "azul")} for d in res])
-meta["pixeles_validos"] = [int(np.isfinite(d["ndvi"].astype(np.float32)).sum()) for d in res]
-np.savez_compressed(OUT / "cubo.npz", ndvi=np.stack([d["ndvi"] for d in res]), ndmi=np.stack([d["ndmi"] for d in res]),
-                    azul=np.stack([d["azul"] for d in res]), n=N, x0=x0 - MEDIA_M, y0=y0 + MEDIA_M, res=10)
-meta.to_csv(OUT / "cubo_fechas.csv", index=False)
-pd.DataFrame(fallos, columns=["id", "error"]).to_csv(OUT / "cubo_fallos.csv", index=False)
-del res
-if len(fallos) > 0.05 * len(items):
-    raise RuntimeError(f"demasiadas imágenes fallidas: {len(fallos)} de {len(items)}")
-log(f"imágenes listas: {len(meta)} · fallos {len(fallos)}")
+if not (hecho("cubo.npz", "cubo_fechas.csv")):
+    res, fallos = [], []
+    with cf.ThreadPoolExecutor(HILOS) as ex:
+        fut = {ex.submit(procesar, it): it for it in items}
+        for k, fu in enumerate(cf.as_completed(fut), 1):
+            try:
+                res.append(fu.result())
+            except Exception as e:  # noqa: BLE001
+                fallos.append({"id": fut[fu].id, "error": re.sub(r"\?\S*", "?<token>", str(e))[:300]})
+            if k % 50 == 0 or k == len(items):
+                log(f"imágenes {k}/{len(items)} · fallos {len(fallos)}")
+    res.sort(key=lambda d: (d["fecha"], d["sensor"], d["id"]))
+    meta = pd.DataFrame([{k: v for k, v in d.items() if k not in ("ndvi", "ndmi", "azul")} for d in res])
+    meta["pixeles_validos"] = [int(np.isfinite(d["ndvi"].astype(np.float32)).sum()) for d in res]
+    np.savez_compressed(OUT / "cubo.npz", ndvi=np.stack([d["ndvi"] for d in res]), ndmi=np.stack([d["ndmi"] for d in res]),
+                        azul=np.stack([d["azul"] for d in res]), n=N, x0=x0 - MEDIA_M, y0=y0 + MEDIA_M, res=10)
+    meta.to_csv(OUT / "cubo_fechas.csv", index=False)
+    pd.DataFrame(fallos, columns=["id", "error"]).to_csv(OUT / "cubo_fallos.csv", index=False)
+    del res
+    if len(fallos) > 0.05 * len(items):
+        raise RuntimeError(f"demasiadas imágenes fallidas: {len(fallos)} de {len(items)}")
+    log(f"imágenes listas: {len(meta)} · fallos {len(fallos)}")
+else:
+    meta = pd.read_csv(OUT / "cubo_fechas.csv")
+    fallos = pd.read_csv(OUT / "cubo_fallos.csv").to_dict("records") if hecho("cubo_fallos.csv") else []
+    log(f"imágenes: ya estaban ({len(meta)}), se reutilizan")
+
 
 # %% [markdown]
 # ## 2. HLS para Prithvi (recorte de 224 × 224 px de 30 m centrado en el lote)
@@ -185,7 +216,7 @@ def bajar_hls(it):
     for b in HLS_BANDAS[it.collection_id] + ["Fmask"]:
         for k in range(5):
             try:
-                with rasterio.open(it.assets[b].href) as src, WarpedVRT(
+                with rasterio.open(pc.sign(it.assets[b].href)) as src, WarpedVRT(
                         src, crs=CRS, transform=TRF_HLS, width=LADO, height=LADO, resampling=Resampling.nearest,
                         nodata=(255 if b == "Fmask" else -9999)) as v:
                     arr.append(v.read(1))
@@ -209,21 +240,26 @@ for c in ("hls2-s30", "hls2-l30"):
 hls_items.sort(key=lambda i: (i.datetime.date(), i.collection_id))
 if QA:
     hls_items = hls_items[-4:] if os.environ.get("SIRA_QA_TODAS", "0") != "1" else hls_items[-60:]
-hls_meta, hls_fallos = [], []
-with cf.ThreadPoolExecutor(HILOS) as ex:
-    fut = {ex.submit(bajar_hls, it): it for it in hls_items}
-    for k, fu in enumerate(cf.as_completed(fut), 1):
-        try:
-            r = fu.result()
-            if r:
-                hls_meta.append(r)
-        except Exception as e:  # noqa: BLE001
-            hls_fallos.append({"id": fut[fu].id, "error": re.sub(r"\?\S*", "?<token>", str(e))[:300]})
-        if k % 100 == 0 or k == len(hls_items):
-            log(f"HLS {k}/{len(hls_items)} · guardados {len(hls_meta)} · fallos {len(hls_fallos)}")
-pd.DataFrame(hls_meta).sort_values("fecha").to_csv(OUT / "hls_fechas.csv", index=False)
-pd.DataFrame(hls_fallos, columns=["id", "error"]).to_csv(OUT / "hls_fallos.csv", index=False)
-json.dump({"transform": list(TRF_HLS)[:6], "lado": LADO, "crs": CRS}, open(OUT / "hls_rejilla.json", "w"))
+if not (hecho("hls_fechas.csv", "hls_rejilla.json")):
+    hls_meta, hls_fallos = [], []
+    with cf.ThreadPoolExecutor(HILOS) as ex:
+        fut = {ex.submit(bajar_hls, it): it for it in hls_items}
+        for k, fu in enumerate(cf.as_completed(fut), 1):
+            try:
+                r = fu.result()
+                if r:
+                    hls_meta.append(r)
+            except Exception as e:  # noqa: BLE001
+                hls_fallos.append({"id": fut[fu].id, "error": re.sub(r"\?\S*", "?<token>", str(e))[:300]})
+            if k % 100 == 0 or k == len(hls_items):
+                log(f"HLS {k}/{len(hls_items)} · guardados {len(hls_meta)} · fallos {len(hls_fallos)}")
+    pd.DataFrame(hls_meta).sort_values("fecha").to_csv(OUT / "hls_fechas.csv", index=False)
+    pd.DataFrame(hls_fallos, columns=["id", "error"]).to_csv(OUT / "hls_fallos.csv", index=False)
+    json.dump({"transform": list(TRF_HLS)[:6], "lado": LADO, "crs": CRS}, open(OUT / "hls_rejilla.json", "w", encoding="utf-8"))
+else:
+    hls_meta = pd.read_csv(OUT / "hls_fechas.csv").to_dict("records")
+    log(f"HLS: ya estaba ({len(hls_meta)} recortes), se reutiliza")
+
 
 # %% [markdown]
 # ## 3. Clima observado: NASA POWER (ETo FAO-56) y CHIRPS (ClimateSERV)
@@ -263,38 +299,43 @@ def get_json(url, t=300):
             time.sleep(10 * (k + 1))
 
 
-par = "T2M_MAX,T2M_MIN,RH2M,WS2M,ALLSKY_SFC_SW_DWN,PRECTOTCORR"
-p = get_json(f"https://power.larc.nasa.gov/api/temporal/daily/point?parameters={par}&community=AG&longitude={LON}"
-             f"&latitude={LAT}&start=20010101&end={FIN.replace('-', '')}&format=JSON")["properties"]["parameter"]
-cl = pd.DataFrame({k: pd.Series(v) for k, v in p.items()})
-cl.index = pd.to_datetime(cl.index, format="%Y%m%d")
-cl = cl.replace(-999.0, np.nan)
-cl["eto"], cl["Ra"] = eto_fao56(cl.T2M_MAX, cl.T2M_MIN, cl.RH2M, cl.WS2M, cl.ALLSKY_SFC_SW_DWN, cl.index.day_of_year.to_numpy())
-d = 0.025
-geom = json.dumps({"type": "Polygon", "coordinates": [[[LON - d, LAT - d], [LON + d, LAT - d], [LON + d, LAT + d],
-                                                        [LON - d, LAT + d], [LON - d, LAT - d]]]})
-base = "https://climateserv.servirglobal.net/api/"
-lluvia = {}
-for a0 in range(2001, 2027, 6):
-    a1 = min(a0 + 5, 2026)
-    q = urllib.parse.urlencode({"datatype": 0, "begintime": f"01/01/{a0}",
-                                "endtime": f"12/31/{a1}" if a1 < 2026 else pd.Timestamp(FIN).strftime("%m/%d/%Y"),
-                                "intervaltype": 0, "operationtype": 5, "geometry": geom})
-    rid = get_json(base + "submitDataRequest/?" + q)[0]
-    for _ in range(360):
-        prog = get_json(base + f"getDataRequestProgress/?id={rid}")[0]
-        if prog in (100, 100.0, -1):
-            break
-        time.sleep(5)
-    for x in get_json(base + f"getDataFromRequest/?id={rid}", t=900)["data"]:
-        fx = pd.Timestamp(x["date"]) if "date" in x else pd.Timestamp(x["year"], x["month"], x["day"])
-        lluvia[fx] = x["value"]["avg"]
-    log(f"CHIRPS {a0}–{a1} listo")
-cl["lluvia"] = pd.Series(lluvia).sort_index().reindex(cl.index)
-cl.loc[cl.lluvia < -1, "lluvia"] = np.nan
-cl.index.name = "fecha"
-cl.to_csv(OUT / "clima.csv")
-log(f"clima: POWER {cl.index.min().date()}→{cl.index.max().date()} · CHIRPS hasta {cl.lluvia.last_valid_index().date()}")
+if not (hecho("clima.csv")):
+    par = "T2M_MAX,T2M_MIN,RH2M,WS2M,ALLSKY_SFC_SW_DWN,PRECTOTCORR"
+    p = get_json(f"https://power.larc.nasa.gov/api/temporal/daily/point?parameters={par}&community=AG&longitude={LON}"
+                 f"&latitude={LAT}&start=20010101&end={FIN.replace('-', '')}&format=JSON")["properties"]["parameter"]
+    cl = pd.DataFrame({k: pd.Series(v) for k, v in p.items()})
+    cl.index = pd.to_datetime(cl.index, format="%Y%m%d")
+    cl = cl.replace(-999.0, np.nan)
+    cl["eto"], cl["Ra"] = eto_fao56(cl.T2M_MAX, cl.T2M_MIN, cl.RH2M, cl.WS2M, cl.ALLSKY_SFC_SW_DWN, cl.index.day_of_year.to_numpy())
+    d = 0.025
+    geom = json.dumps({"type": "Polygon", "coordinates": [[[LON - d, LAT - d], [LON + d, LAT - d], [LON + d, LAT + d],
+                                                            [LON - d, LAT + d], [LON - d, LAT - d]]]})
+    base = "https://climateserv.servirglobal.net/api/"
+    lluvia = {}
+    for a0 in range(2001, 2027, 6):
+        a1 = min(a0 + 5, 2026)
+        q = urllib.parse.urlencode({"datatype": 0, "begintime": f"01/01/{a0}",
+                                    "endtime": f"12/31/{a1}" if a1 < 2026 else pd.Timestamp(FIN).strftime("%m/%d/%Y"),
+                                    "intervaltype": 0, "operationtype": 5, "geometry": geom})
+        rid = get_json(base + "submitDataRequest/?" + q)[0]
+        for _ in range(120):  # máximo 10 min por tramo
+            prog = get_json(base + f"getDataRequestProgress/?id={rid}")[0]
+            if prog in (100, 100.0, -1):
+                break
+            time.sleep(5)
+        for x in get_json(base + f"getDataFromRequest/?id={rid}", t=900)["data"]:
+            fx = pd.Timestamp(x["date"]) if "date" in x else pd.Timestamp(x["year"], x["month"], x["day"])
+            lluvia[fx] = x["value"]["avg"]
+        log(f"CHIRPS {a0}–{a1} listo")
+    cl["lluvia"] = pd.Series(lluvia).sort_index().reindex(cl.index)
+    cl.loc[cl.lluvia < -1, "lluvia"] = np.nan
+    cl.index.name = "fecha"
+    cl.to_csv(OUT / "clima.csv")
+    log(f"clima: POWER {cl.index.min().date()}→{cl.index.max().date()} · CHIRPS hasta {cl.lluvia.last_valid_index().date()}")
+else:
+    cl = pd.read_csv(OUT / "clima.csv", parse_dates=["fecha"]).set_index("fecha")
+    log("clima: ya estaba, se reutiliza")
+
 
 # %% [markdown]
 # ## 4. GEOS-S2S-3: pronósticos reales (NRT) y climatología de los hindcasts (Drift), en la celda del lote
@@ -304,7 +345,9 @@ import fsspec
 import h5py
 
 GEOS = "https://portal.nccs.nasa.gov/datashare/gmao/geos-s2s-3"
-fs = fsspec.filesystem("https")
+import aiohttp  # noqa: E402
+
+fs = fsspec.filesystem("https", client_kwargs={"timeout": aiohttp.ClientTimeout(total=180, sock_read=60)})
 
 
 def listar(url, patron):
@@ -312,91 +355,165 @@ def listar(url, patron):
     return sorted(set(re.findall(patron, html)))
 
 
-def leer_punto(url, var, dias):
-    """Serie de la celda más cercana al lote; var=None toma la única variable 3D del archivo. Con reintentos."""
-    for k in range(7):
+def capa(url):
+    """Lee SOLO la cabecera HDF5 de un archivo: dónde empieza cada día en bytes y qué celda es la del lote.
+    Los archivos son float32 sin comprimir con un bloque por día (1, 361, 720), o contiguos (Drift)."""
+    for k in range(5):
         try:
             with fs.open(url, block_size=2 ** 16, cache_type="bytes") as f, h5py.File(f, "r") as h:
-                if var is None:
-                    var = [q for q in h if h[q].ndim == 3][0]
+                var = [q for q in h if h[q].ndim == 3][0]
+                d = h[var]
+                nt, ny, nx = d.shape
+                assert d.dtype.str == "<f4" and d.compression is None, (d.dtype, d.compression)
+                if d.chunks is None:
+                    base, paso = d.id.get_offset(), ny * nx * 4
+                else:
+                    assert tuple(d.chunks) == (1, ny, nx), d.chunks
+                    base = d.id.get_chunk_info(0).byte_offset
+                    paso = d.id.get_chunk_info(1).byte_offset - base
                 lat, lon = h["lat"][:], h["lon"][:]
                 i, j = int(np.argmin(np.abs(lat - LAT))), int(np.argmin(np.abs(lon - LON)))
-                t = h["time"][:dias]
                 u = h["time"].attrs["units"]
                 u = u.decode() if isinstance(u, bytes) else u
                 t0 = dt.datetime.strptime(u.split("since ")[1][:19], "%Y-%m-%d %H:%M:%S")
-                v = h[var][:dias, i, j].astype(float)
-                return [t0 + dt.timedelta(minutes=float(m)) for m in t], v, float(lat[i]), float(lon[j])
+                t1 = float(h["time"][0])
+                ref = [float(x) for x in d[:3, i, j]]
+                return {"var": var, "base": base, "paso": paso, "i": i, "j": j, "nx": nx, "nt": nt,
+                        "t0": t0 + dt.timedelta(minutes=t1), "lat": float(lat[i]), "lon": float(lon[j]), "ref": ref}
         except Exception:  # noqa: BLE001
-            if k == 6:
+            if k == 4:
                 raise
             time.sleep(5 * (k + 1))
 
 
-VARS_NRT = {"pr_sfc": "PRECTOTCORR", "t2mmax": "T2MMAX", "t2mmin": "T2MMIN"}
-inits = [("NRT/SubC/backup", x) for x in listar(f"{GEOS}/NRT/SubC/backup/", r'href="(20\d{6})/"')] + \
-        [("NRT/SubC", x) for x in listar(f"{GEOS}/NRT/SubC/", r'href="(20\d{6})/"')]
-if QA:
-    inits = inits[-2:] if os.environ.get("SIRA_QA_TODAS", "0") != "1" else inits[:2] + inits[-6:]
-tareas = []
-for carpeta, ini in inits:
-    archivos = listar(f"{GEOS}/{carpeta}/{ini}/", r'href="([a-z0-9_]+_GMAOGEOS_\d{8}_ens\d\d\.nc4)"')
-    for a in archivos:
-        var = a.split("_GMAOGEOS")[0]
-        if var in VARS_NRT and (not QA or os.environ.get("SIRA_QA_TODAS", "0") == "1" or a.endswith("ens01.nc4")):
-            tareas.append((carpeta, ini, a, var))
-log(f"GEOS-S2S NRT: {len(inits)} inicios ({inits[0][1]} → {inits[-1][1]}) · {len(tareas)} archivos")
-
-
-def tarea_nrt(t):
-    carpeta, ini, a, var = t
-    fechas, v, la, lo = leer_punto(f"{GEOS}/{carpeta}/{ini}/{a}", None, 45)
-    miembro = int(a.split("_ens")[1][:2])
-    return [{"inicio": ini, "miembro": miembro, "variable": var, "fecha": f.strftime("%Y-%m-%d"), "valor": x,
-             "lat_celda": la, "lon_celda": lo} for f, x in zip(fechas, v)]
-
-
-filas, fallos_g = [], []
-with cf.ThreadPoolExecutor(8) as ex:
-    fut = {ex.submit(tarea_nrt, t): t for t in tareas}
-    for k, fu in enumerate(cf.as_completed(fut), 1):
+def leer_rangos(url, pos):
+    """Una sola petición HTTP con varios rangos de 4 bytes (uno por día): segundos en vez de minutos."""
+    for k in range(6):
         try:
-            filas += fu.result()
-        except Exception as e:  # noqa: BLE001
-            fallos_g.append({"archivo": "/".join(fut[fu][:3]), "error": str(e)[:300]})
-        if k % 100 == 0 or k == len(tareas):
-            log(f"GEOS NRT {k}/{len(tareas)} · fallos {len(fallos_g)}")
-G = pd.DataFrame(filas)
-G.to_csv(OUT / "geos_nrt.csv", index=False)
-MESES = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
-tareas_d = []
-for m in (MESES[:1] if QA else MESES):
-    for a in listar(f"{GEOS}/Drift/for_subc/{m}/", r'href="(\d{4}\.(?:PRECTOTCORR|T2M)\.drift\.\d\d\.nc4)"'):
-        tareas_d.append((m, a))
-if QA and os.environ.get("SIRA_QA_TODAS", "0") != "1":
-    tareas_d = tareas_d[:2]
+            req = urllib.request.Request(url, headers={"Range": "bytes=" + ",".join(f"{q}-{q + 3}" for q in pos)})
+            with urllib.request.urlopen(req, timeout=120) as r:
+                cuerpo, ct, st = r.read(), r.headers.get("Content-Type", ""), r.status
+            if st == 206 and "multipart" in ct:
+                vals = {int(m.group(1)): np.frombuffer(m.group(2), "<f4")[0]
+                        for m in re.finditer(rb"Content-Range: bytes (\d+)-\d+/\d+\r\n\r\n(.{4})", cuerpo, flags=re.S)}
+                return np.array([vals[q] for q in pos], float)
+            if st == 206 and len(pos) == 1:
+                return np.frombuffer(cuerpo[:4], "<f4").astype(float)
+            raise RuntimeError(f"respuesta inesperada {st} {ct}")
+        except Exception:  # noqa: BLE001
+            if k == 5:
+                raise
+            time.sleep(5 * (k + 1))
 
 
-def tarea_drift(t):
-    m, a = t
-    ini, var = a.split(".")[0], a.split(".")[1]
-    fechas, v, la, lo = leer_punto(f"{GEOS}/Drift/for_subc/{m}/{a}", var, 40)
-    return [{"inicio_mmdd": ini, "variable": var, "archivo": a, "fecha": f.strftime("%Y-%m-%d"), "valor": x}
-            for f, x in zip(fechas, v)]
+CAPAS = {}
 
 
-filas = []
-with cf.ThreadPoolExecutor(8) as ex:
-    fut = {ex.submit(tarea_drift, t): t for t in tareas_d}
-    for k, fu in enumerate(cf.as_completed(fut), 1):
-        try:
-            filas += fu.result()
-        except Exception as e:  # noqa: BLE001
-            fallos_g.append({"archivo": "/".join(fut[fu]), "error": str(e)[:300]})
-        if k % 50 == 0 or k == len(tareas_d):
-            log(f"GEOS Drift {k}/{len(tareas_d)} · fallos {len(fallos_g)}")
-pd.DataFrame(filas).to_csv(OUT / "geos_drift.csv", index=False)
-pd.DataFrame(fallos_g, columns=["archivo", "error"]).to_csv(OUT / "geos_fallos.csv", index=False)
+def posiciones(c, n):
+    return [c["base"] + k * c["paso"] + (c["i"] * c["nx"] + c["j"]) * 4 for k in range(min(n, c["nt"]))]
+
+
+def serie(url, clave, dias):
+    """Serie diaria de la celda del lote: cabecera propia de cada archivo (los de 2025 y 2026 tienen distinta
+    estructura interna) + una sola petición con los rangos de cada día."""
+    c = capa(url)
+    v = leer_rangos(url, posiciones(c, dias))
+    assert np.allclose(v[:3], c["ref"][:len(v[:3])], rtol=1e-6), (url, v[:3], c["ref"])
+    return c, v
+
+
+def verificar(url, clave):
+    """Lectura por rangos frente a h5py en un archivo de cada tipo; se detiene si no coincide."""
+    c = capa(url)
+    CAPAS[clave] = c
+    v = leer_rangos(url, posiciones(c, 3))
+    assert np.allclose(v, c["ref"], rtol=1e-6), (url, v, c["ref"])
+    log(f"lectura por rangos verificada contra h5py: {url.split('/')[-1]} · celda {c['lat']}, {c['lon']}")
+
+
+# GEOS-S2S no detiene el notebook: si algo falla, queda en el log y lo demás se guarda igual.
+inits, G, fallos_g = [], pd.DataFrame(), []
+try:
+    VARS_NRT = {"pr_sfc": "PRECTOTCORR", "t2mmax": "T2MMAX", "t2mmin": "T2MMIN"}
+    inits = [("NRT/SubC/backup", x) for x in listar(f"{GEOS}/NRT/SubC/backup/", r'href="(20\d{6})/"')] + \
+            [("NRT/SubC", x) for x in listar(f"{GEOS}/NRT/SubC/", r'href="(20\d{6})/"')]
+    if QA:
+        inits = inits[-2:] if os.environ.get("SIRA_QA_TODAS", "0") != "1" else inits[:2] + inits[-6:]
+    tareas = []
+    for carpeta, ini in inits:
+        for a in listar(f"{GEOS}/{carpeta}/{ini}/", r'href="([a-z0-9_]+_GMAOGEOS_\d{8}_ens\d\d\.nc4)"'):
+            var = a.split("_GMAOGEOS")[0]
+            if var in VARS_NRT and (not QA or os.environ.get("SIRA_QA_TODAS", "0") == "1" or a.endswith("ens01.nc4")):
+                tareas.append((carpeta, ini, a, var))
+    log(f"GEOS-S2S NRT: {len(inits)} inicios ({inits[0][1]} → {inits[-1][1]}) · {len(tareas)} archivos")
+    PARC = OUT / "geos_nrt_parcial.csv"  # avance guardado cada 50 archivos: si se corta, se retoma desde aquí
+    hechos = set(pd.read_csv(PARC).archivo) if PARC.exists() else set()
+    for var in VARS_NRT:
+        ej = next(t_ for t_ in tareas if t_[3] == var)
+        verificar(f"{GEOS}/{ej[0]}/{ej[1]}/{ej[2]}", var)
+
+
+    def tarea_nrt(t):
+        carpeta, ini, a, var = t
+        c, v = serie(f"{GEOS}/{carpeta}/{ini}/{a}", var, 45)
+        miembro = int(a.split("_ens")[1][:2])
+        f0 = dt.datetime.strptime(ini, "%Y%m%d")  # día k del pronóstico = inicio + k (media diaria)
+        return [{"archivo": a, "inicio": ini, "miembro": miembro, "variable": var,
+                 "fecha": (f0 + dt.timedelta(days=k)).strftime("%Y-%m-%d"), "valor": x,
+                 "lat_celda": c["lat"], "lon_celda": c["lon"]} for k, x in enumerate(v)]
+
+
+    pend = [t_ for t_ in tareas if t_[2] not in hechos]
+    log(f"GEOS NRT: {len(hechos)} archivos ya leídos antes, faltan {len(pend)}")
+    filas, fallos_g = [], []
+    with cf.ThreadPoolExecutor(12) as ex:
+        fut = {ex.submit(tarea_nrt, t_): t_ for t_ in pend}
+        for k, fu in enumerate(cf.as_completed(fut), 1):
+            try:
+                filas += fu.result()
+            except Exception as e:  # noqa: BLE001
+                fallos_g.append({"archivo": "/".join(fut[fu][:3]), "error": str(e)[:300]})
+            if k % 50 == 0 or k == len(pend):
+                if filas:
+                    pd.DataFrame(filas).to_csv(PARC, mode="a", header=not PARC.exists(), index=False)
+                filas = []
+                log(f"GEOS NRT {k}/{len(pend)} · fallos {len(fallos_g)} · avance guardado")
+    G = pd.read_csv(PARC) if PARC.exists() else pd.DataFrame()
+    G.to_csv(OUT / "geos_nrt.csv", index=False)
+    MESES = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+    if not hecho("geos_drift.csv"):
+        tareas_d = []
+        for m in (MESES[:1] if QA else MESES):
+            for a in listar(f"{GEOS}/Drift/for_subc/{m}/", r'href="(\d{4}\.(?:PRECTOTCORR|T2M)\.drift\.\d\d\.nc4)"'):
+                tareas_d.append((m, a))
+        if QA and os.environ.get("SIRA_QA_TODAS", "0") != "1":
+            tareas_d = tareas_d[:2]
+        for var in ("PRECTOTCORR", "T2M"):
+            ej = next(t_ for t_ in tareas_d if f".{var}." in t_[1])
+            verificar(f"{GEOS}/Drift/for_subc/{ej[0]}/{ej[1]}", "drift_" + var)
+
+        def tarea_drift(t):
+            m, a = t
+            ini, var = a.split(".")[0], a.split(".")[1]
+            c, v = serie(f"{GEOS}/Drift/for_subc/{m}/{a}", "drift_" + var, 28)  # 28 días: cabe en cualquier mes
+            return [{"inicio_mmdd": ini, "variable": var, "archivo": a,
+                     "fecha": (c["t0"] + dt.timedelta(days=k)).strftime("%Y-%m-%d"), "valor": x} for k, x in enumerate(v)]
+
+        filas = []
+        with cf.ThreadPoolExecutor(8) as ex:
+            fut = {ex.submit(tarea_drift, t_): t_ for t_ in tareas_d}
+            for k, fu in enumerate(cf.as_completed(fut), 1):
+                try:
+                    filas += fu.result()
+                except Exception as e:  # noqa: BLE001
+                    fallos_g.append({"archivo": "/".join(fut[fu]), "error": str(e)[:300]})
+                if k % 50 == 0 or k == len(tareas_d):
+                    log(f"GEOS Drift {k}/{len(tareas_d)} · fallos {len(fallos_g)}")
+        pd.DataFrame(filas).to_csv(OUT / "geos_drift.csv", index=False)
+    pd.DataFrame(fallos_g, columns=["archivo", "error"]).to_csv(OUT / "geos_fallos.csv", index=False)
+except Exception as e:  # noqa: BLE001
+    log(f"AVISO GEOS-S2S incompleto: {e} · {traceback.format_exc()[-1500:]}")
+
 
 # %% [markdown]
 # ## 5. ONI (NOAA CPC) y resumen
@@ -409,5 +526,5 @@ resumen = {"qa": QA, "ventana_m": 2 * MEDIA_M, "rejilla": N, "imagenes": int(len
            "imagenes_por_sensor": meta.groupby("plataforma").size().to_dict(), "fallos_imagenes": len(fallos),
            "hls": len(hls_meta), "geos_inicios": len(inits), "geos_filas": int(len(G)), "fallos_geos": len(fallos_g),
            "chirps_hasta": str(cl.lluvia.last_valid_index().date()), "minutos": round((time.time() - T0) / 60, 1)}
-json.dump(resumen, open(OUT / "resumen_datos.json", "w"), indent=1, ensure_ascii=False)
+json.dump(resumen, open(OUT / "resumen_datos.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 log("DATOS OK " + json.dumps(resumen, ensure_ascii=False))
