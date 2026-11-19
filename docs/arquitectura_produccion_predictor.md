@@ -89,6 +89,8 @@ flowchart TB
 | | `oro/pronostico_predictor/` | NDVI y NDMI por pixel, horizonte y miembro (+ rango) | `emision=` |
 | | `oro/semaforo/` | Clase y probabilidades por pixel, horizonte y escenario de riego | `emision=` |
 
+(Con 100 predios se agrega `predio=` delante de cada partición; ver §5.3.)
+
 **Llaves de unión:**
 - `pixel_id`;
 - `fecha_emision` (el día t en que se pronostica);
@@ -117,16 +119,55 @@ Fuentes: `https://portal.nccs.nasa.gov/datashare/gmao/geos-s2s-3/` y su `GEOS-S2
 
 ---
 
-## 5. Spark: por definir
+## 5. Spark: MVP de un predio frente a 100 predios
 
-**Aún no está decidido dónde se usa Spark.** Se decide con la medición del handover del modelo A, §4:
-- el mismo pipeline en pandas en una sola máquina y en PySpark;
-- se mide tiempo, costo y memoria pico;
-- a 3 tamaños de área: un lote, 1 km² y la ventana completa.
+**Idea central:** Spark es **procesamiento por lotes**. Sirve cuando el volumen crece: muchos predios, muchos pixeles y años de imágenes. El MVP tiene un solo predio, Nataima, y ahí probablemente no hace falta. Se diseña para un **escenario hipotético de 100 predios distribuidos por el mundo**, cada uno con sus imágenes, su clima y su pronóstico.
 
-**Candidatos naturales:**
-- el lote 1 (miles a millones de pixel·fecha);
-- la construcción de ejemplos por horizonte para entrenar;
-- la unión del clima con todos los pixeles, que en Spark es una unión con *broadcast*.
+### 5.1 Cuánto dato hay en cada escenario (órdenes de magnitud, estimados)
 
-Los lotes 2 y 3 son pequeños: una celda y 5 miembros. No necesitan Spark.
+Supuestos:
+- ventana de entrenamiento de 5 × 5 km por predio, a 10 m = 250 000 pixeles;
+- Sentinel-2 desde 2017 (unas 70 fechas por año) más Landsat (unas 45 por año);
+- predio de 10 ha = 1 000 pixeles.
+
+| Escenario | Histórico para entrenar (pixel·fecha) | Producción diaria (pixeles nuevos) | Pronósticos por corrida (pixel × 30 días × 5 miembros) |
+|---|---|---|---|
+| MVP: 1 predio | ~10⁸ | ~10⁵ (una escena de la ventana) | ~1,5 × 10⁵ (solo los pixeles del predio) |
+| 100 predios | ~10¹⁰ | ~10⁷ | ~1,5 × 10⁷ |
+
+En producción solo se pronostican los **pixeles del predio**. La ventana grande sirve para entrenar con más ejemplos.
+
+### 5.2 Dónde entra Spark en cada lote
+
+| Lote | MVP (1 predio) | 100 predios | Por qué |
+|---|---|---|---|
+| **Entrenamiento histórico** (series por pixel, relleno, calibración Landsat → S2, ejemplos por horizonte) | pandas o Spark: **se mide** | **Spark** | 10¹⁰ filas no caben en una máquina; se reparte por `predio` y `fecha` |
+| **1. Imágenes** (diario) | pandas | **Spark** | Escenas de 100 lugares en paralelo; mismo código que el entrenamiento |
+| **2. GEOS-S2S** (cada 5 días) | Python simple | Un solo trabajo: lee **una vez** cada archivo global y saca las 100 celdas | Son 15 archivos de 80 MB por emisión, sin importar cuántos predios haya; Spark no aporta |
+| **3. Recalibración** (mensual) | Python simple | Spark o Python: agrupar por celda × horizonte × variable | Pocas filas (100 celdas × 30 días × 3 variables) |
+| **Predictor + semáforo** | pandas | **Spark** con el modelo copiado a cada nodo (*broadcast*) | 10⁷ predicciones por corrida; cada predio es independiente |
+
+**Conclusión de diseño:**
+- Spark va en el **entrenamiento histórico**, en el **lote diario de imágenes** y en la **inferencia por pixel** cuando hay muchos predios.
+- La **corrección de GEOS-S2S no lo necesita**: siempre son pocos datos, porque el archivo global se lee una vez para todos los predios.
+
+### 5.3 Qué cambia en el almacenamiento con 100 predios
+
+- **Se agrega la llave `predio_id`** a todas las tablas de plata y oro, y la partición pasa a ser `predio=/fecha=`. Así cada predio se procesa sin leer los demás.
+- **Tabla nueva `oro/predios/`:** ubicación, polígono, celda de GEOS-S2S asignada, fecha de siembra y suelo.
+- **El clima sigue siendo por celda, no por predio.** Varios predios en la misma celda comparten la misma tabla de clima.
+
+### 5.4 Límites que el escenario de 100 predios destapa (no son de Spark)
+
+- **CHIRPS solo cubre tierra entre 50° S y 50° N.** Fuera de esa franja la lluvia observada tendría que salir de NASA POWER, con su sesgo medido.
+- **El semáforo (B) se calibró con el suelo de Nataima**: capacidad de campo del 30 %. Cada predio nuevo necesita sus umbrales de suelo.
+- **El modelo predictor (A) se entrenó con arroz de la meseta de Ibagué y el Espinal.** En otras zonas o cultivos hay que revalidarlo.
+
+### 5.5 Cómo se mide en este proyecto
+
+Según el handover del modelo A, §4:
+- el **mismo pipeline** en pandas (una máquina) y en PySpark;
+- se mide tiempo, costo y memoria pico a **3 tamaños**: un lote, 1 km² y la ventana completa;
+- con esa curva de crecimiento se **proyecta** el escenario de 100 predios, dicho como proyección y no como medición.
+
+Si Spark no abarata el MVP, se dice. La arquitectura de 100 predios queda planteada igual.
