@@ -1,0 +1,11 @@
+plataforma,indice,pares_pixel,a,b,r2,rmse_antes,rmse_despues,nota
+landsat-7,ndvi,168645,0.1062,0.8033,0.5543,0.1533,0.1474,
+landsat-7,ndmi,168645,-0.0001,0.8926,0.7501,0.0861,0.0813,
+landsat-8,ndvi,301744,-0.0346,0.9468,0.6515,0.1528,0.1354,
+landsat-8,ndmi,301744,-0.0123,0.8937,0.775,0.088,0.0775,
+landsat-9,ndvi,100265,-0.0066,0.9133,0.5397,0.1682,0.1542,
+landsat-9,ndmi,100265,-0.0167,0.9348,0.7538,0.0893,0.0823,
+landsat-4,ndvi,131411,,,,,,"cuantiles a L7 en 1999–2011 (131,411 valores L5, 811,564 L7) + recta L7→S2"
+landsat-4,ndmi,131411,,,,,,"cuantiles a L7 en 1999–2011 (131,411 valores L5, 811,564 L7) + recta L7→S2"
+landsat-5,ndvi,131411,,,,,,"cuantiles a L7 en 1999–2011 (131,411 valores L5, 811,564 L7) + recta L7→S2"
+landsat-5,ndmi,131411,,,,,,"cuantiles a L7 en 1999–2011 (131,411 valores L5, 811,564 L7) + recta L7→S2"
