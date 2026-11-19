@@ -18,3 +18,6 @@ docs/_preview.html
 data/s3/
 cloud/*/user_data.generado.sh
 cloud/*/ultima_corrida.json
+
+# Modelo predictor (A): datos pesados fuera del repo (salidas de Kaggle y pruebas locales)
+data/interim/modelo_a/
