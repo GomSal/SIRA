@@ -355,7 +355,7 @@ def listar(url, patron):
     return sorted(set(re.findall(patron, html)))
 
 
-def capa(url):
+def capa(url, con_ref=False):
     """Lee SOLO la cabecera HDF5 de un archivo: dónde empieza cada día en bytes y qué celda es la del lote.
     Los archivos son float32 sin comprimir con un bloque por día (1, 361, 720), o contiguos (Drift)."""
     for k in range(5):
@@ -377,7 +377,7 @@ def capa(url):
                 u = u.decode() if isinstance(u, bytes) else u
                 t0 = dt.datetime.strptime(u.split("since ")[1][:19], "%Y-%m-%d %H:%M:%S")
                 t1 = float(h["time"][0])
-                ref = [float(x) for x in d[:3, i, j]]
+                ref = [float(x) for x in d[:3, i, j]] if con_ref else None  # leer con h5py es lento (~40 s)
                 return {"var": var, "base": base, "paso": paso, "i": i, "j": j, "nx": nx, "nt": nt,
                         "t0": t0 + dt.timedelta(minutes=t1), "lat": float(lat[i]), "lon": float(lon[j]), "ref": ref}
         except Exception:  # noqa: BLE001
@@ -416,15 +416,14 @@ def posiciones(c, n):
 def serie(url, clave, dias):
     """Serie diaria de la celda del lote: cabecera propia de cada archivo (los de 2025 y 2026 tienen distinta
     estructura interna) + una sola petición con los rangos de cada día."""
-    c = capa(url)
+    c = capa(url)  # posiciones exactas desde la cabecera de ESTE archivo
     v = leer_rangos(url, posiciones(c, dias))
-    assert np.allclose(v[:3], c["ref"][:len(v[:3])], rtol=1e-6), (url, v[:3], c["ref"])
     return c, v
 
 
 def verificar(url, clave):
     """Lectura por rangos frente a h5py en un archivo de cada tipo; se detiene si no coincide."""
-    c = capa(url)
+    c = capa(url, con_ref=True)
     CAPAS[clave] = c
     v = leer_rangos(url, posiciones(c, 3))
     assert np.allclose(v, c["ref"], rtol=1e-6), (url, v, c["ref"])
