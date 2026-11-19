@@ -437,7 +437,7 @@ try:
     inits = [("NRT/SubC/backup", x) for x in listar(f"{GEOS}/NRT/SubC/backup/", r'href="(20\d{6})/"')] + \
             [("NRT/SubC", x) for x in listar(f"{GEOS}/NRT/SubC/", r'href="(20\d{6})/"')]
     if QA:
-        inits = inits[-2:] if os.environ.get("SIRA_QA_TODAS", "0") != "1" else inits[:2] + inits[-6:]
+        inits = inits[-2:] if os.environ.get("SIRA_QA_TODAS", "0") != "1" else inits[:2] + [x for x in inits if x[1].startswith("202607")][:3] + inits[-6:]
     tareas = []
     for carpeta, ini in inits:
         for a in listar(f"{GEOS}/{carpeta}/{ini}/", r'href="([a-z0-9_]+_GMAOGEOS_\d{8}_ens\d\d\.nc4)"'):

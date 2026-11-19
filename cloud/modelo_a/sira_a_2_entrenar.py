@@ -1055,6 +1055,9 @@ try:
     g["mes"] = g.fecha.dt.month
     g["plz"] = np.select([g.plazo.between(a, b) for a, b in PLZ], range(3), 2)
     gp = g.pivot_table(index=["inicio", "miembro", "fecha", "plazo", "mes", "plz"], columns="variable", values="valor").reset_index()
+    for v_ in ("pr_sfc", "t2mmax", "t2mmin"):
+        if v_ not in gp:
+            gp[v_] = np.nan
     gp["pr_raw"] = gp.pr_sfc * 86400
     gp["tx_raw"], gp["tn_raw"] = gp.t2mmax - 273.15, gp.t2mmin - 273.15
     gp["pr"] = gp.pr_raw * [fac.get(("pr", m, p), 1.0) for m, p in zip(gp.mes, gp.plz)]
@@ -1062,8 +1065,28 @@ try:
     gp["tx"], gp["tn"] = gp.tx_raw + dt_, gp.tn_raw + dt_
     gp["dia"] = (gp.fecha - BASE).dt.days
     ra = RA[np.clip(gp.dia, 0, len(RA) - 1)]
-    gp["eto"] = HA + HB * hg(gp.tx, gp.tn, ra)
-    gp["eto_raw"] = HA + HB * hg(gp.tx_raw, gp.tn_raw, ra)
+    # ETo pronosticada. El rango diario de GEOS-S2S en la celda del lote es ~1,9 °C frente a ~10,6 °C de POWER
+    # (la celda de 0,5° promedia cordillera), así que Hargreaves con Tmáx − Tmín sale muy baja. Se usa la parte de
+    # Hargreaves que sí sirve, la temperatura media: ETo = ETo climatológica del día (FAO-56, POWER, años de
+    # entrenamiento) × (Tmedia GEOS corregida + 17,8) / (Tmedia climatológica + 17,8).
+    per = cl.loc[SELLO - pd.DateOffset(years=ANIOS):SELLO - pd.Timedelta(days=1)]
+    CLIM_ETO = per.eto.groupby(per.index.day_of_year).mean()
+    CLIM_LL = per.lluvia.groupby(per.index.day_of_year).mean()
+    CLIM_T = ((per.T2M_MAX + per.T2M_MIN) / 2).groupby(per.index.day_of_year).mean()
+    doy_g = gp.fecha.dt.day_of_year
+    e_c, t_c = doy_g.map(CLIM_ETO).to_numpy(), doy_g.map(CLIM_T).to_numpy()
+    gp["eto"] = e_c * ((gp.tx + gp.tn) / 2 + 17.8) / (t_c + 17.8)
+    gp["eto_raw"] = e_c * ((gp.tx_raw + gp.tn_raw) / 2 + 17.8) / (t_c + 17.8)
+    rango = (gp.tx_raw - gp.tn_raw).mean()
+    log(f"GEOS-S2S: rango diario medio Tmáx − Tmín {rango:.1f} °C (POWER {(per.T2M_MAX - per.T2M_MIN).mean():.1f} °C); "
+        f"Hargreaves calibrada a,b = {HA:.2f}, {HB:.2f} solo como referencia")
+    # días sin la variable pronosticada (p. ej. los inicios de 2025 traen solo lluvia): climatología del
+    # entrenamiento por día del año, marcada como relleno
+    gp["eto_relleno"], gp["pr_relleno"] = gp.eto.isna(), gp.pr.isna()
+    gp["eto"] = gp.eto.fillna(doy_g.map(CLIM_ETO))
+    gp["pr"] = gp.pr.fillna(doy_g.map(CLIM_LL))
+    log(f"GEOS-S2S: {gp.inicio.nunique()} inicios · días sin temperatura pronosticada (ETo por climatología) "
+        f"{gp.eto_relleno.mean() * 100:.0f} % · sin lluvia {gp.pr_relleno.mean() * 100:.0f} %")
     # error del clima pronosticado (sumas de 10 días desde el día 5 del inicio), crudo frente a corregido
     ev = []
     for (ini, mb), q in gp.groupby(["inicio", "miembro"]):
@@ -1076,11 +1099,13 @@ try:
                 continue
             ev.append({"inicio": ini, "miembro": mb, "plazo": f"{a}–{b} d", "periodo": "2025 (antes de la prueba)" if ini < SELLO else "2026 (prueba)",
                        "lluvia_obs": suma(CLL, d0_, d1_), "lluvia_cruda": w_.pr_raw.sum(), "lluvia_corregida": w_.pr.sum(),
-                       "eto_obs": suma(CET, d0_, d1_), "eto_cruda": w_.eto_raw.sum(), "eto_corregida": w_.eto.sum()})
+                       "eto_obs": suma(CET, d0_, d1_),
+                       "eto_cruda": w_.eto_raw.sum() if not w_.eto_relleno.any() else np.nan,
+                       "eto_corregida": w_.eto.sum() if not w_.eto_relleno.any() else np.nan})
     EV = pd.DataFrame(ev)
     if len(EV):
         rs = EV.groupby(["periodo", "plazo"]).apply(lambda q: pd.Series({
-            "n": len(q), "sesgo_lluvia_cruda": (q.lluvia_cruda - q.lluvia_obs).mean(), "sesgo_lluvia_corregida": (q.lluvia_corregida - q.lluvia_obs).mean(),
+            "n": len(q), "n_con_eto": int(q.eto_corregida.notna().sum()), "sesgo_lluvia_cruda": (q.lluvia_cruda - q.lluvia_obs).mean(), "sesgo_lluvia_corregida": (q.lluvia_corregida - q.lluvia_obs).mean(),
             "mae_lluvia_cruda": (q.lluvia_cruda - q.lluvia_obs).abs().mean(), "mae_lluvia_corregida": (q.lluvia_corregida - q.lluvia_obs).abs().mean(),
             "sesgo_eto_cruda": (q.eto_cruda - q.eto_obs).mean(), "sesgo_eto_corregida": (q.eto_corregida - q.eto_obs).mean(),
             "mae_eto_corregida": (q.eto_corregida - q.eto_obs).abs().mean()})).reset_index()
@@ -1101,7 +1126,9 @@ try:
             ll_h, et_h, ll_30, et_30 = [], [], [], []
             for r in T2.itertuples():
                 dias = range(int(r.d0) + 1, int(r.d1) + 1)
-                vals = [tabla_g.get((r.inicio, mb, d_), (np.nan, np.nan)) for d_ in dias]
+                vals = [tabla_g.get((r.inicio, mb, d_)) or
+                        (CLIM_LL.get((BASE + pd.Timedelta(days=d_)).day_of_year, 0.0),
+                         CLIM_ETO.get((BASE + pd.Timedelta(days=d_)).day_of_year, ET.mean())) for d_ in dias]
                 lh = np.nansum([x[0] for x in vals])
                 eh = np.nansum([x[1] for x in vals])
                 ll_h.append(lh)
