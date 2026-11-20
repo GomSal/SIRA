@@ -1,0 +1,16 @@
+variante,metrica,valor,dif_vs_base,dif_IC95
+base (sin Prithvi),auc_macro,0.75,,
+base (sin Prithvi),recall_verde,0.662,,
+base (sin Prithvi),recall_amarillo,0.286,,
+base (sin Prithvi),recall_rojo,0.647,,
+base (sin Prithvi),exactitud_balanceada,0.532,,
+"con y sin Prithvi, decide la validación",auc_macro,0.739,-0.011,-0.041 a +0.016
+"con y sin Prithvi, decide la validación",recall_verde,0.683,0.022,+0.000 a +0.043
+"con y sin Prithvi, decide la validación",recall_amarillo,0.286,0.0,-0.068 a +0.071
+"con y sin Prithvi, decide la validación",recall_rojo,0.647,0.0,+0.000 a +0.000
+"con y sin Prithvi, decide la validación",exactitud_balanceada,0.539,0.007,-0.018 a +0.035
+Prithvi obligatorio (cabeza sobre Prithvi),auc_macro,0.709,-0.041,-0.092 a +0.006
+Prithvi obligatorio (cabeza sobre Prithvi),recall_verde,0.748,0.086,+0.025 a +0.149
+Prithvi obligatorio (cabeza sobre Prithvi),recall_amarillo,0.262,-0.024,-0.154 a +0.131
+Prithvi obligatorio (cabeza sobre Prithvi),recall_rojo,0.471,-0.176,-0.429 a +0.000
+Prithvi obligatorio (cabeza sobre Prithvi),exactitud_balanceada,0.494,-0.038,-0.137 a +0.046

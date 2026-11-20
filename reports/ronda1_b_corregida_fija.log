@@ -1,0 +1,45 @@
+[    0.1s] E1 reutilizado de ../../data/s3/ronda1_b/out: 5602 filas
+[    0.6s] E2 listo: ETo FAO-56 mediana 3.75 mm/d (p5 2.90, p95 4.96)
+[    0.8s] E3 listo: bordes OPTRAM {"L": {"i_seco": -0.6748050995812257, "s_seco": 4.706558840319718, "i_humedo": -1.3972607576969407, "s_humedo": 24.31564041876969, "n_bins": 36}, "S2": {"i_seco": 0.04314251815101728, "s_seco": 2.837113402840216, "i_humedo": -0.030547483216392973, "s_humedo": 14.182636486710747, "n_bins": 36}}
+[   10.1s] E4 listo: 1967 filas; por temporada {1: 635, 2: 652, 3: 680}; fechas 22; con medición a ≤2 días 1490
+[   11.1s] E5 listo:
+  grupo     entrada  spearman       p_valor  parcial_sin_ndmi_ndwi  mismo_dia   p_mismo_dia
+indices        ndmi    -0.070  6.706754e-03                    NaN     -0.071  6.078406e-03
+indices        ndwi    -0.001  9.582705e-01                    NaN     -0.112  1.499282e-05
+indices        ndvi    -0.108  2.891270e-05                 -0.330     -0.029  2.573177e-01
+indices       mndwi    -0.035  1.780772e-01                  0.036     -0.170  3.864732e-11
+ optram    optram_w    -0.185  6.776713e-13                 -0.147     -0.299  3.532996e-32
+  clima   lluvia_1d    -0.078  2.545310e-03                 -0.100        NaN           NaN
+  clima   lluvia_3d    -0.203  2.911073e-15                 -0.199        NaN           NaN
+  clima   lluvia_5d    -0.355  2.187713e-45                 -0.354        NaN           NaN
+  clima  lluvia_10d    -0.294  4.568747e-31                 -0.290        NaN           NaN
+  clima      eto_5d     0.194  3.768652e-14                  0.194     -0.022  3.870481e-01
+  clima     eto_10d     0.122  2.143174e-06                  0.155        NaN           NaN
+  clima  balance_5d    -0.348  1.052481e-43                 -0.345     -0.019  4.706688e-01
+  clima balance_10d    -0.291  1.546527e-30                 -0.287        NaN           NaN
+  etapa         das    -0.152  3.596013e-09                 -0.122        NaN           NaN
+  riego    riego_3d     0.338  3.050983e-41                  0.332      0.584 7.906482e-137
+  riego    riego_5d     0.577 6.334400e-133                  0.570      0.718 1.336466e-236
+  riego   riego_10d     0.610 1.823817e-152                  0.610      0.753 5.169790e-273
+[   69.4s] E6 listo:
+                  esquema           modelo  rmse   mae  f1_macro   n  rmse_ic95_inf  rmse_ic95_sup
+              cronologico        M4_+riego 3.079 2.483     0.457  21          2.268          3.775
+              cronologico M0_optram_lineal 4.185 3.592     0.229  21          3.739          4.646
+              cronologico        M3_+etapa 4.568 4.019     0.229  21          4.040          5.114
+              cronologico       M2_+optram 4.618 3.941     0.229  21          4.019          5.349
+              cronologico M1_indices_clima 4.841 4.158     0.229  21          4.215          5.584
+cronologico_landsat_pixel        M4_+riego 3.184 2.714     0.459  66            NaN            NaN
+cronologico_landsat_pixel M0_optram_lineal 3.276 2.557     0.303  66            NaN            NaN
+cronologico_landsat_pixel        M3_+etapa 3.456 2.962     0.303  66            NaN            NaN
+cronologico_landsat_pixel M1_indices_clima 3.720 2.972     0.303  66            NaN            NaN
+cronologico_landsat_pixel       M2_+optram 3.731 2.949     0.303  66            NaN            NaN
+               una_afuera       M2_+optram 3.710 2.887     0.336  36          2.916          4.337
+               una_afuera        M4_+riego 3.759 2.942     0.376  36          2.695          4.736
+               una_afuera        M3_+etapa 3.824 3.015     0.336  36          2.937          4.512
+               una_afuera M1_indices_clima 3.832 3.005     0.278  36          3.065          4.527
+               una_afuera M0_optram_lineal 4.292 3.368     0.264  36          3.250          5.187
+ una_afuera_landsat_pixel M0_optram_lineal 3.541 2.878     0.300 122            NaN            NaN
+ una_afuera_landsat_pixel        M3_+etapa 3.904 3.199     0.353 122            NaN            NaN
+ una_afuera_landsat_pixel        M4_+riego 4.065 3.288     0.383 122            NaN            NaN
+ una_afuera_landsat_pixel M1_indices_clima 4.102 3.231     0.365 122            NaN            NaN
+ una_afuera_landsat_pixel       M2_+optram 4.104 3.205     0.318 122            NaN            NaN

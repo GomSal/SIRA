@@ -1,0 +1,33 @@
+prueba 1: elegido ARIMAX {"p": 2} | AUC val 0.76 | AUC prueba 0.79 | recall verde/amarillo/rojo 0.54/0.25/1.00
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 2: elegido Gradient Boosting {"max_depth": 2, "learning_rate": 0.03} | AUC val 0.82 | AUC prueba 0.73 | recall verde/amarillo/rojo 0.74/0.33/0.25
+prueba 3: elegido ARIMAX {"p": 1} | AUC val 0.81 | AUC prueba 0.68 | recall verde/amarillo/rojo 0.57/0.31/0.50
+prueba 4: elegido ARIMAX {"p": 1} | AUC val 0.75 | AUC prueba 0.84 | recall verde/amarillo/rojo 0.80/0.25/0.80
+
+Mejor AUC macro de validación por familia (promedio de las 4 particiones):
+modelo
+ARIMAX                 0.772
+XGBoost                0.768
+Random Forest          0.760
+Gradient Boosting      0.760
+regresión logística    0.710
+
+PRUEBA (cada medición una vez):
+  auc_macro              0.75  [0.68–0.81]
+  auc_verde              0.77  [0.69–0.84]
+  auc_amarillo           0.73  [0.67–0.80]
+  auc_rojo               0.74  [0.62–0.85]
+  recall_verde           0.66  [0.58–0.75]
+  recall_amarillo        0.29  [0.17–0.41]
+  recall_rojo            0.65  [0.37–0.88]
+  precision_verde        0.86  [0.80–0.92]
+  precision_amarillo     0.32  [0.22–0.41]
+  precision_rojo         0.21  [0.09–0.35]
+  exactitud_balanceada   0.53  [0.43–0.61]
+               pred verde  pred amarillo  pred rojo
+real verde             92             23         24
+real amarillo          12             12         18
+real rojo               3              3         11
+
+Modelo de uso (selección con todos los datos): ARIMAX {"p": 1} 0.774

@@ -1,0 +1,16 @@
+{
+ "paso1_inicio": 0.5327322483062744,
+ "paso2_inicio": 2.9862871170043945,
+ "paso3_inicio": 8.836043119430542,
+ "paso4_inicio": 8.874969482421875,
+ "paso5_inicio": 8.87570834159851,
+ "paso6_inicio": 8.87615442276001,
+ "seleccion_s": 86.82134509086609,
+ "seleccion_media_s": 61.01583091417948,
+ "paso8_inicio": 175.52691650390625,
+ "bootstrap_s": 44.91049528121948,
+ "bootstrap_rep_s": 0.04176023499170939,
+ "estabilidad_s": 1089.9251103401184,
+ "estabilidad_rep_s": 37.82547923021846,
+ "total_modelo_s": 1324.04954123497
+}

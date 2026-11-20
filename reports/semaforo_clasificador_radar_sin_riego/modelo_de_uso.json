@@ -1,0 +1,24 @@
+{
+ "elegido": "ARIMAX",
+ "hiperparametros": {
+  "p": 2
+ },
+ "auc_macro_validacion": 0.6277244028418196,
+ "entradas": [
+  "S_tau20_sin_riego",
+  "S_tau5_sin_riego",
+  "Dr_k0.5_sin_riego",
+  "eto_5d",
+  "ndvi",
+  "vv_u",
+  "vh_u",
+  "d_vv",
+  "lluvia_entre_r"
+ ],
+ "clases": {
+  "verde": "≥ 30 %",
+  "amarillo": "27,1–30 %",
+  "rojo": "< 27,1 %"
+ },
+ "error_esperado": "el de la prueba sellada (prueba_total.csv)"
+}

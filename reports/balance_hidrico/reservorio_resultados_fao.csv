@@ -1,0 +1,4 @@
+kc,temporada_prueba,tau_dias,alfa_lluvia,kc_a,kc_b,rmse_mm,rmse_linea_base_mm,spearman,acierto_clase,acierto_clase_linea_base,n
+tabla FAO,1,30,0.5,,,5.74,7.68,0.57,0.74,0.79,80
+tabla FAO,2,45,0.5,,,4.33,4.34,0.52,0.69,0.73,48
+tabla FAO,3,45,0.25,,,4.65,6.28,0.73,0.56,0.56,70

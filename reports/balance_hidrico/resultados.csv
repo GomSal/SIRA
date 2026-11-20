@@ -1,0 +1,6 @@
+version,rotacion,n_mediciones,rmse_mm,rmse_linea_base_mm,spearman,acierto_clase,acierto_clase_linea_base
+A,-,198,9.25,6.51,0.04,0.36,0.69
+B,este,198,6.82,6.51,0.03,0.56,0.69
+B,oeste,198,6.82,6.51,0.03,0.56,0.69
+C,este,198,8.49,6.51,-0.06,0.44,0.69
+C,oeste,198,8.49,6.51,-0.06,0.44,0.69

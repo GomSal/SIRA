@@ -3,3 +3,21 @@ __pycache__/
 .env
 /SIRA/
 .ipynb_checkpoints/
+
+# --- modelo de humedad ---
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# copia del artículo con marca de agua de la editorial: no se redistribuye
+data/raw/martinez_vega_2025.pdf
+# temporales
+data/interim/_*.csv
+docs/_preview.html
+# datos pesados viven en S3 (ver README)
+data/s3/
+cloud/*/user_data.generado.sh
+cloud/*/ultima_corrida.json
+
+# Modelo predictor (A): datos pesados fuera del repo (salidas de Kaggle y pruebas locales)
+data/interim/modelo_a/

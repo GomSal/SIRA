@@ -1,0 +1,116 @@
+[{"stream_name":"stderr","time":8.136257266,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.136321393,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.136327891,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.13633199,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":8.769515368,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.769549354,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.76955546,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.769560239,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":20.979741524,"data":"[21:35:14 +   0.1 min] inicio · QA=False · dispositivo cuda · 4 núcleos · entrada /kaggle/input/notebooks/santiagovlezcasallas/sira-predictor-1/datos_a\n"}
+,{"stream_name":"stdout","time":28.125270459,"data":"[21:35:21 +   0.2 min] 1412 imágenes · rejilla 500×500 · clima hasta 2026-11-18 · CHIRPS hasta 2026-09-30\n"}
+,{"stream_name":"stdout","time":30.538975467,"data":"[21:35:24 +   0.3 min] pixeles con ≥50 obs S2: 249948 · agrícolas (sd NDVI ≥ 0,15): 143335 de 250000\n"}
+,{"stream_name":"stdout","time":30.987594292,"data":"[21:35:24 +   0.3 min] muestra: 6000 pixeles agrícolas + 125 del lote = 6119\n"}
+,{"stream_name":"stdout","time":31.608833076,"data":"[21:35:25 +   0.3 min] calibración Landsat → S2: landsat-7 ndvi R²=0.66 n=106491; landsat-7 ndmi R²=0.80 n=106491; landsat-8 ndvi R²=0.69 n=183393; landsat-8 ndmi R²=0.81 n=183393; landsat-9 ndvi R²=0.74 n=66487; landsat-9 ndmi R²=0.84 n=66487\n"}
+,{"stream_name":"stdout","time":32.249202774,"data":"[21:35:26 +   0.3 min] bruma: 280123 pixel·fecha descartados de 2966950 (9.4 %)\n"}
+,{"stream_name":"stdout","time":33.630368772,"data":"[21:35:27 +   0.3 min] siembras de Nataima detectadas: GS1: 50 % de pixeles, error mediano -7 d; GS2: 80 % de pixeles, error mediano +10 d; GS3: 71 % de pixeles, error mediano -2 d\n"}
+,{"stream_name":"stderr","time":34.633473728,"data":"Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n"}
+,{"stream_name":"stderr","time":34.633516754,"data":"\n"}
+,{"stream_name":"stderr","time":34.633522536,"data":"Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n"}
+,{"stream_name":"stdout","time":64.631550127,"data":"[21:35:58 +   0.8 min] Prithvi corre en cuda\n"}
+,{"stream_name":"stdout","time":111.329543765,"data":"[21:36:45 +   1.6 min] Prithvi: 348 fechas HLS con resumen; PCA 10 componentes = 0.44 de la varianza (PCA ajustado solo con fechas antes de 2022-11-18)\n"}
+,{"stream_name":"stdout","time":139.247531013,"data":"[21:37:13 +   2.1 min] relleno con nubes falsas (RMSE medio NDVI / NDMI · cobertura):\n"}
+,{"stream_name":"stdout","time":139.247571233,"data":"                        rmse_ndvi  rmse_ndmi  cobertura\n"}
+,{"stream_name":"stdout","time":139.247577662,"data":"metodo                                                 \n"}
+,{"stream_name":"stdout","time":139.247582436,"data":"Prithvi                     0.093      0.077      1.000\n"}
+,{"stream_name":"stdout","time":139.247586888,"data":"interpolación temporal      0.079      0.063      1.000\n"}
+,{"stream_name":"stdout","time":139.247601874,"data":"vecino espacial             0.245      0.210      1.000\n"}
+,{"stream_name":"stdout","time":139.247605458,"data":"último despejado            0.110      0.094      0.978\n"}
+,{"stream_name":"stdout","time":169.486333487,"data":"[21:37:43 +   2.6 min] ejemplos: 6,694,874 (pixeles 6119) · Δ mediana 16 d · con Prithvi 44 % · memoria ≈ 2.0 GB\n"}
+,{"stream_name":"stdout","time":184.702437729,"data":"[21:37:58 +   2.8 min] exploración lista; correlación (Spearman) del cambio de NDVI con lluvia_h +0.21, eto_h -0.09\n"}
+,{"stream_name":"stdout","time":459.58662103,"data":"[21:42:33 +   7.4 min] curva de aprendizaje: {'ndvi': 750, 'ndmi': 750} → se entrena con 750 pixeles\n"}
+,{"stream_name":"stdout","time":586.279562874,"data":"[21:44:40 +   9.5 min] variables ndvi: grupos ['base', 'fenologia', 'rezagos']\n"}
+,{"stream_name":"stdout","time":713.077585353,"data":"[21:46:46 +  11.7 min] variables ndmi: grupos ['base', 'fenologia', 'rezagos']\n"}
+,{"stream_name":"stdout","time":732.119117845,"data":"[21:47:05 +  12.0 min] GRU h=16 lr=0.001 lista\n"}
+,{"stream_name":"stdout","time":750.316908819,"data":"[21:47:24 +  12.3 min] GRU h=16 lr=0.003 lista\n"}
+,{"stream_name":"stdout","time":768.948547566,"data":"[21:47:42 +  12.6 min] GRU h=32 lr=0.001 lista\n"}
+,{"stream_name":"stdout","time":787.692001679,"data":"[21:48:01 +  12.9 min] GRU h=32 lr=0.003 lista\n"}
+,{"stream_name":"stdout","time":1180.153547026,"data":"[21:54:33 +  19.4 min] ndvi · ARIMAX {'p': 1, 'exog': 'fenologia'}: skill medio 0.047\n"}
+,{"stream_name":"stdout","time":1752.486494205,"data":"[22:04:06 +  29.0 min] ndvi · ARIMAX {'p': 1, 'exog': 'fenologia+clima'}: skill medio 0.074\n"}
+,{"stream_name":"stdout","time":1847.898500861,"data":"[22:05:41 +  30.6 min] ndvi · Random Forest {'min_samples_leaf': 5, 'max_features': 0.33, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.182\n"}
+,{"stream_name":"stdout","time":2026.257370054,"data":"[22:08:40 +  33.5 min] ndvi · Random Forest {'min_samples_leaf': 5, 'max_features': 0.6, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.194\n"}
+,{"stream_name":"stdout","time":2320.416944796,"data":"[22:13:34 +  38.4 min] ndvi · Random Forest {'min_samples_leaf': 5, 'max_features': 1.0, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.193\n"}
+,{"stream_name":"stdout","time":2396.049534559,"data":"[22:14:49 +  39.7 min] ndvi · Random Forest {'min_samples_leaf': 20, 'max_features': 0.33, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.169\n"}
+,{"stream_name":"stdout","time":2539.390953595,"data":"[22:17:13 +  42.1 min] ndvi · Random Forest {'min_samples_leaf': 20, 'max_features': 0.6, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.186\n"}
+,{"stream_name":"stdout","time":2771.044754791,"data":"[22:21:04 +  46.0 min] ndvi · Random Forest {'min_samples_leaf': 20, 'max_features': 1.0, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.187\n"}
+,{"stream_name":"stdout","time":2812.730083145,"data":"[22:21:46 +  46.6 min] ndvi · Gradient Boosting {'learning_rate': 0.1, 'max_leaf_nodes': 31, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.189\n"}
+,{"stream_name":"stdout","time":2861.099417934,"data":"[22:22:34 +  47.5 min] ndvi · Gradient Boosting {'learning_rate': 0.1, 'max_leaf_nodes': 63, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.188\n"}
+,{"stream_name":"stdout","time":2921.038807039,"data":"[22:23:34 +  48.5 min] ndvi · Gradient Boosting {'learning_rate': 0.1, 'max_leaf_nodes': 127, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.185\n"}
+,{"stream_name":"stdout","time":2967.178542269,"data":"[22:24:20 +  49.2 min] ndvi · Gradient Boosting {'learning_rate': 0.05, 'max_leaf_nodes': 31, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.191\n"}
+,{"stream_name":"stdout","time":3023.154924908,"data":"[22:25:16 +  50.2 min] ndvi · Gradient Boosting {'learning_rate': 0.05, 'max_leaf_nodes': 63, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.195\n"}
+,{"stream_name":"stdout","time":3092.81972485,"data":"[22:26:26 +  51.3 min] ndvi · Gradient Boosting {'learning_rate': 0.05, 'max_leaf_nodes': 127, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.195\n"}
+,{"stream_name":"stdout","time":3100.753437492,"data":"[22:26:34 +  51.4 min] ndvi · XGBoost {'max_depth': 4, 'learning_rate': 0.05, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.171\n"}
+,{"stream_name":"stdout","time":3108.615157237,"data":"[22:26:42 +  51.6 min] ndvi · XGBoost {'max_depth': 4, 'learning_rate': 0.1, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.173\n"}
+,{"stream_name":"stdout","time":3118.220253993,"data":"[22:26:51 +  51.7 min] ndvi · XGBoost {'max_depth': 6, 'learning_rate': 0.05, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.192\n"}
+,{"stream_name":"stdout","time":3127.64880166,"data":"[22:27:01 +  51.9 min] ndvi · XGBoost {'max_depth': 6, 'learning_rate': 0.1, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.183\n"}
+,{"stream_name":"stdout","time":3140.397903387,"data":"[22:27:14 +  52.1 min] ndvi · XGBoost {'max_depth': 8, 'learning_rate': 0.05, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.195\n"}
+,{"stream_name":"stdout","time":3153.024223929,"data":"[22:27:26 +  52.3 min] ndvi · XGBoost {'max_depth': 8, 'learning_rate': 0.1, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.174\n"}
+,{"stream_name":"stdout","time":3162.299657659,"data":"[22:27:36 +  52.5 min] ndvi · XGBoost {'max_depth': 6, 'learning_rate': 0.1, 'min_child_weight': 20, 'n_estimators': 400}: skill medio 0.180\n"}
+,{"stream_name":"stdout","time":3174.912366602,"data":"[22:27:48 +  52.7 min] ndvi · XGBoost {'max_depth': 8, 'learning_rate': 0.05, 'min_child_weight': 20, 'n_estimators': 400}: skill medio 0.195\n"}
+,{"stream_name":"stdout","time":3177.168253356,"data":"[22:27:50 +  52.7 min] ELEGIDO ndvi: Random Forest {'min_samples_leaf': 5, 'max_features': 0.6, 'max_samples': 0.1, 'n_estimators': 200} (skill medio 0.194; mejor absoluto Gradient Boosting; empatan ['Random Forest', 'Gradient Boosting', 'XGBoost', 'GRU'])\n"}
+,{"stream_name":"stdout","time":3530.399295026,"data":"[22:33:44 +  58.6 min] ndmi · ARIMAX {'p': 1, 'exog': 'fenologia'}: skill medio 0.046\n"}
+,{"stream_name":"stdout","time":3933.231792241,"data":"[22:40:26 +  65.3 min] ndmi · ARIMAX {'p': 1, 'exog': 'fenologia+clima'}: skill medio 0.071\n"}
+,{"stream_name":"stdout","time":4027.59630303,"data":"[22:42:01 +  66.9 min] ndmi · Random Forest {'min_samples_leaf': 5, 'max_features': 0.33, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.199\n"}
+,{"stream_name":"stdout","time":4207.588486587,"data":"[22:45:01 +  69.9 min] ndmi · Random Forest {'min_samples_leaf': 5, 'max_features': 0.6, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.204\n"}
+,{"stream_name":"stdout","time":4506.153531377,"data":"[22:49:59 +  74.9 min] ndmi · Random Forest {'min_samples_leaf': 5, 'max_features': 1.0, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.203\n"}
+,{"stream_name":"stdout","time":4583.028884028,"data":"[22:51:16 +  76.2 min] ndmi · Random Forest {'min_samples_leaf': 20, 'max_features': 0.33, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.190\n"}
+,{"stream_name":"stdout","time":4728.120495197,"data":"[22:53:41 +  78.6 min] ndmi · Random Forest {'min_samples_leaf': 20, 'max_features': 0.6, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.200\n"}
+,{"stream_name":"stdout","time":4963.12266901,"data":"[22:57:36 +  82.5 min] ndmi · Random Forest {'min_samples_leaf': 20, 'max_features': 1.0, 'max_samples': 0.1, 'n_estimators': 200}: skill medio 0.199\n"}
+,{"stream_name":"stdout","time":5005.357877491,"data":"[22:58:19 +  83.2 min] ndmi · Gradient Boosting {'learning_rate': 0.1, 'max_leaf_nodes': 31, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.195\n"}
+,{"stream_name":"stdout","time":5054.524238569,"data":"[22:59:08 +  84.0 min] ndmi · Gradient Boosting {'learning_rate': 0.1, 'max_leaf_nodes': 63, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.192\n"}
+,{"stream_name":"stdout","time":5114.268508833,"data":"[23:00:08 +  85.0 min] ndmi · Gradient Boosting {'learning_rate': 0.1, 'max_leaf_nodes': 127, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.186\n"}
+,{"stream_name":"stdout","time":5162.191679194,"data":"[23:00:55 +  85.8 min] ndmi · Gradient Boosting {'learning_rate': 0.05, 'max_leaf_nodes': 31, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.198\n"}
+,{"stream_name":"stdout","time":5219.479080942,"data":"[23:01:53 +  86.8 min] ndmi · Gradient Boosting {'learning_rate': 0.05, 'max_leaf_nodes': 63, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.199\n"}
+,{"stream_name":"stdout","time":5289.433751982,"data":"[23:03:03 +  87.9 min] ndmi · Gradient Boosting {'learning_rate': 0.05, 'max_leaf_nodes': 127, 'max_iter': 400, 'implementacion': 'sklearn HistGradientBoosting'}: skill medio 0.193\n"}
+,{"stream_name":"stdout","time":5297.378392726,"data":"[23:03:11 +  88.1 min] ndmi · XGBoost {'max_depth': 4, 'learning_rate': 0.05, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.186\n"}
+,{"stream_name":"stdout","time":5305.269191534,"data":"[23:03:19 +  88.2 min] ndmi · XGBoost {'max_depth': 4, 'learning_rate': 0.1, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.185\n"}
+,{"stream_name":"stdout","time":5314.885000072,"data":"[23:03:28 +  88.4 min] ndmi · XGBoost {'max_depth': 6, 'learning_rate': 0.05, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.200\n"}
+,{"stream_name":"stdout","time":5324.346880084,"data":"[23:03:38 +  88.5 min] ndmi · XGBoost {'max_depth': 6, 'learning_rate': 0.1, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.190\n"}
+,{"stream_name":"stdout","time":5337.075359642,"data":"[23:03:50 +  88.7 min] ndmi · XGBoost {'max_depth': 8, 'learning_rate': 0.05, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.197\n"}
+,{"stream_name":"stdout","time":5349.704438972,"data":"[23:04:03 +  88.9 min] ndmi · XGBoost {'max_depth': 8, 'learning_rate': 0.1, 'min_child_weight': 5, 'n_estimators': 400}: skill medio 0.179\n"}
+,{"stream_name":"stdout","time":5359.037255882,"data":"[23:04:12 +  89.1 min] ndmi · XGBoost {'max_depth': 6, 'learning_rate': 0.1, 'min_child_weight': 20, 'n_estimators': 400}: skill medio 0.188\n"}
+,{"stream_name":"stdout","time":5371.674362566,"data":"[23:04:25 +  89.3 min] ndmi · XGBoost {'max_depth': 8, 'learning_rate': 0.05, 'min_child_weight': 20, 'n_estimators': 400}: skill medio 0.200\n"}
+,{"stream_name":"stdout","time":5373.889631903,"data":"[23:04:27 +  89.3 min] ELEGIDO ndmi: Random Forest {'min_samples_leaf': 5, 'max_features': 0.6, 'max_samples': 0.1, 'n_estimators': 200} (skill medio 0.204; mejor absoluto Random Forest; empatan ['Random Forest', 'Gradient Boosting', 'XGBoost', 'GRU'])\n"}
+,{"stream_name":"stdout","time":5449.234799568,"data":"[23:05:42 +  90.6 min] PRUEBA ndvi (Random Forest): h1 skill +0.10, h3 skill +0.19, h7 skill +0.21, h15 skill +0.27, h30 skill +0.32\n"}
+,{"stream_name":"stdout","time":5525.554020428,"data":"[23:06:59 +  91.9 min] PRUEBA ndmi (Random Forest): h1 skill +0.02, h3 skill +0.21, h7 skill +0.20, h15 skill +0.28, h30 skill +0.33\n"}
+,{"stream_name":"stdout","time":5530.369722306,"data":"[23:07:04 +  91.9 min] GEOS-S2S tomado del repositorio: geos_drift.csv\n"}
+,{"stream_name":"stdout","time":5530.761860243,"data":"[23:07:04 +  91.9 min] GEOS-S2S tomado del repositorio: geos_nrt.csv\n"}
+,{"stream_name":"stdout","time":5530.898634294,"data":"[23:07:04 +  92.0 min] GEOS-S2S: rango diario medio Tmáx − Tmín 1.9 °C (POWER 10.3 °C); Hargreaves calibrada a,b = 0.14, 0.79 solo como referencia\n"}
+,{"stream_name":"stdout","time":5530.902139314,"data":"[23:07:04 +  92.0 min] GEOS-S2S: 70 inicios · días sin temperatura pronosticada (ETo por climatología) 47 % · sin lluvia 0 %\n"}
+,{"stream_name":"stdout","time":5532.581961024,"data":"[23:07:06 +  92.0 min] GEOS-S2S, error de sumas de 10 días:\n"}
+,{"stream_name":"stdout","time":5532.581988338,"data":"                  periodo   plazo     n  n_con_eto  sesgo_lluvia_cruda  sesgo_lluvia_corregida  mae_lluvia_cruda  mae_lluvia_corregida  sesgo_eto_cruda  sesgo_eto_corregida  mae_eto_corregida\n"}
+,{"stream_name":"stdout","time":5532.582004128,"data":"2025 (antes de la prueba) 15–24 d 125.0        0.0               32.19                   17.27             34.91                 21.86              NaN                  NaN                NaN\n"}
+,{"stream_name":"stdout","time":5532.58200697,"data":"2025 (antes de la prueba) 25–34 d 125.0        0.0               27.02                   13.73             29.64                 19.18              NaN                  NaN                NaN\n"}
+,{"stream_name":"stdout","time":5532.582009502,"data":"2025 (antes de la prueba)  5–14 d 125.0        0.0               22.40                   15.78             24.21                 19.00              NaN                  NaN                NaN\n"}
+,{"stream_name":"stdout","time":5532.582012108,"data":"            2026 (prueba) 15–24 d 234.0      150.0               29.28                   19.47             32.48                 24.09           -11.14                -5.86               5.95\n"}
+,{"stream_name":"stdout","time":5532.582014643,"data":"            2026 (prueba) 25–34 d 214.0      130.0               27.08                   17.78             30.74                 21.91           -11.38                -6.05               6.11\n"}
+,{"stream_name":"stdout","time":5532.582017138,"data":"            2026 (prueba)  5–14 d 244.0      160.0               23.96                   19.46             27.75                 24.41           -11.35                -6.14               6.31\n"}
+,{"stream_name":"stdout","time":6135.216660053,"data":"[23:17:08 + 102.0 min] GEOS-S2S: 107670 filas de prueba con pronóstico (2026-03-07 → 2026-09-15), 15 miembros\n"}
+,{"stream_name":"stdout","time":6193.893524266,"data":"[23:18:07 + 103.0 min] semáforo B hacia adelante:\n"}
+,{"stream_name":"stdout","time":6193.893556008,"data":"                                version   n  auc_macro  recall_rojo  recall_amarillo  exactitud_balanceada\n"}
+,{"stream_name":"stdout","time":6193.893561671,"data":"                         NDVI observado 198      0.766        0.765            0.286                 0.573\n"}
+,{"stream_name":"stdout","time":6193.89356656,"data":"              NDVI pronosticado h 1–2 d  35      0.739        0.667            0.250                 0.514\n"}
+,{"stream_name":"stdout","time":6193.893571594,"data":"              NDVI pronosticado h 3–5 d  67      0.706        0.750            0.125                 0.498\n"}
+,{"stream_name":"stdout","time":6193.893576449,"data":"             NDVI pronosticado h 6–10 d 112      0.741        0.857            0.346                 0.608\n"}
+,{"stream_name":"stdout","time":6193.893581277,"data":"            NDVI pronosticado h 11–20 d 199      0.761        0.842            0.256                 0.588\n"}
+,{"stream_name":"stdout","time":6193.893585987,"data":"            NDVI pronosticado h 21–30 d 192      0.751        0.938            0.214                 0.585\n"}
+,{"stream_name":"stdout","time":6193.893599736,"data":"NDVI pronosticado, todos los horizontes 605      0.749        0.857            0.252                 0.580\n"}
+,{"stream_name":"stdout","time":6203.725820497,"data":"[23:18:17 + 103.2 min] ENTRENAMIENTO OK en 103 min · elegidos {'ndvi': {'familia': 'Random Forest', 'hiperparametros': {'min_samples_leaf': 5, 'max_features': 0.6, 'max_samples': 0.1, 'n_estimators': 200}}, 'ndmi': {'familia': 'Random Forest', 'hiperparametros': {'min_samples_leaf': 5, 'max_features': 0.6, 'max_samples': 0.1, 'n_estimators': 200}}}\n"}
+,{"stream_name":"stderr","time":6209.301889717,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":6209.30193174,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":6209.459955519,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":6209.459979623,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":6210.259464443,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":6210.361156691,"data":"[NbConvertApp] Writing 166856 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":6212.98058691,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":6214.011409757,"data":"[NbConvertApp] Writing 845317 bytes to __results__.html\n"}
+]

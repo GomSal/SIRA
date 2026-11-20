@@ -1,0 +1,5 @@
+particion_prueba,n_prueba,elegido,hiperparametros,auc_macro_validacion,auc_macro,exactitud_balanceada,auc_verde,recall_verde,precision_verde,n_verde,auc_amarillo,recall_amarillo,precision_amarillo,n_amarillo,auc_rojo,recall_rojo,precision_rojo,n_rojo
+1,47,XGBoost,"{""max_depth"": 1, ""learning_rate"": 0.1, ""min_child_weight"": 3}",0.6527,0.6068,0.3667,0.819,0.6,0.913,35,0.5769,0.5,0.2105,8,0.4244,0.0,0.0,4
+2,47,XGBoost,"{""max_depth"": 3, ""learning_rate"": 0.1, ""min_child_weight"": 3}",0.6855,0.5169,0.3464,0.5882,0.7059,0.75,34,0.5205,0.3333,0.2143,9,0.4419,0.0,0.0,4
+3,52,Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.03}",0.6656,0.4832,0.3245,0.5613,0.7429,0.7222,35,0.4142,0.2308,0.2143,13,0.474,0.0,0.0,4
+4,52,XGBoost,"{""max_depth"": 3, ""learning_rate"": 0.03, ""min_child_weight"": 3}",0.6319,0.5972,0.3603,0.6067,0.9143,0.7111,35,0.5125,0.1667,0.2857,12,0.6723,0.0,,5
