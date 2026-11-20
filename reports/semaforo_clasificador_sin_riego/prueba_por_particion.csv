@@ -1,0 +1,5 @@
+particion_prueba,n_prueba,elegido,hiperparametros,auc_macro_validacion,auc_macro,exactitud_balanceada,auc_verde,recall_verde,precision_verde,n_verde,auc_amarillo,recall_amarillo,precision_amarillo,n_amarillo,auc_rojo,recall_rojo,precision_rojo,n_rojo
+1,47,ARIMAX,"{""p"": 2}",0.5671,0.5761,0.4119,0.531,0.4857,0.8095,35,0.6218,0.0,,8,0.5756,0.75,0.1154,4
+2,47,XGBoost,"{""max_depth"": 3, ""learning_rate"": 0.1, ""min_child_weight"": 3}",0.5566,0.366,0.2625,0.3462,0.6765,0.6765,34,0.3158,0.1111,0.0769,9,0.436,0.0,,4
+3,52,regresión logística,"{""C"": 0.03}",0.4911,0.3619,0.2936,0.3983,0.4,0.6364,35,0.3176,0.2308,0.1579,13,0.3698,0.25,0.0909,4
+4,52,ARIMAX,"{""p"": 1}",0.5366,0.4415,0.3048,0.4387,0.7143,0.6579,35,0.4604,0.0,,12,0.4255,0.2,0.0714,5

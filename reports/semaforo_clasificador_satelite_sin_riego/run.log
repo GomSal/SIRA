@@ -1,0 +1,33 @@
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 1: elegido Gradient Boosting {"max_depth": 1, "learning_rate": 0.1} | AUC val 0.64 | AUC prueba 0.40 | recall verde/amarillo/rojo 0.63/0.50/0.00
+prueba 2: elegido Gradient Boosting {"max_depth": 2, "learning_rate": 0.1} | AUC val 0.65 | AUC prueba 0.43 | recall verde/amarillo/rojo 0.62/0.33/0.00
+prueba 3: elegido Gradient Boosting {"max_depth": 1, "learning_rate": 0.1} | AUC val 0.53 | AUC prueba 0.48 | recall verde/amarillo/rojo 0.69/0.23/0.00
+prueba 4: elegido regresión logística {"C": 1.0} | AUC val 0.57 | AUC prueba 0.46 | recall verde/amarillo/rojo 0.69/0.00/0.20
+
+Mejor AUC macro de validación por familia (promedio de las 4 particiones):
+modelo
+Gradient Boosting      0.581
+XGBoost                0.570
+regresión logística    0.539
+ARIMAX                 0.529
+Random Forest          0.490
+
+PRUEBA (cada medición una vez):
+  auc_macro              0.43  [0.36–0.50]
+  auc_verde              0.48  [0.37–0.59]
+  auc_amarillo           0.44  [0.34–0.52]
+  auc_rojo               0.38  [0.25–0.51]
+  recall_verde           0.65  [0.53–0.77]
+  recall_amarillo        0.24  [0.09–0.43]
+  recall_rojo            0.06  [0.00–0.23]
+  precision_verde        0.71  [0.64–0.78]
+  precision_amarillo     0.20  [0.11–0.27]
+  precision_rojo         0.05  [0.00–0.14]
+  exactitud_balanceada   0.32  [0.26–0.37]
+               pred verde  pred amarillo  pred rojo
+real verde             91             32         16
+real amarillo          29             10          3
+real rojo               8              8          1
+
+Modelo de uso (selección con todos los datos): Gradient Boosting {"max_depth": 3, "learning_rate": 0.1} 0.545

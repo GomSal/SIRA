@@ -59,6 +59,60 @@ K_PCA = 3  # componentes de Prithvi (PCA ajustado solo con el entrenamiento de c
 M = pd.read_csv(RAIZ / ("reports/humedad_unificada/tabla_entrenamiento_ndmi.csv" if VARIANTE == "ndvi_ndmi"
                        else "reports/humedad_unificada/tabla_entrenamiento.csv"))
 M = M.sort_values(["temporada", "tratamiento", "das"]).reset_index(drop=True)
+SAT_AGUA = []
+RADAR = []
+if VARIANTE in ("radar_sin_riego", "radar_optico_sin_riego"):
+    # Radar Sentinel-1 RTC por franja (data/interim/radar_s1_franjas.csv, 18 pixeles por franja, 64 fechas 2021-04 →
+    # 2022-12). Causal: en cada día, la última pasada. El cambio se mide contra la pasada anterior de la MISMA órbita
+    # (otra órbita mira con otro ángulo). lluvia_entre_r: lluvia CHIRPS entre esas dos pasadas.
+    SIEMBRAS = {1: "2021-05-27", 2: "2021-12-04", 3: "2022-07-09"}
+    ROT = {1: ("MIRI", "AWD+MIRI", "CD"), 2: ("AWD+MIRI", "CD", "MIRI"), 3: ("CD", "MIRI", "AWD+MIRI")}
+    rd = pd.read_csv(RAIZ / "data/interim/radar_s1_franjas.csv", parse_dates=["fecha"])
+    rd["fis"] = rd.franja_fisica.map({"O": "oeste", "C": "centro", "E": "este"})
+    ll_r = pd.read_csv(RAIZ / "data/processed/modelo_b/clima_dia.csv", parse_dates=["fecha"]).set_index("fecha").lluvia.fillna(0)
+    nuevas = []
+    for (t, trat), g in M.groupby(["temporada", "tratamiento"]):
+        fis = dict(zip(ROT[t], ("oeste", "centro", "este")))[trat]
+        s = rd[rd.fis == fis].sort_values("fecha")
+        for i_, r in g.iterrows():
+            dia = pd.Timestamp(SIEMBRAS[t]) + pd.Timedelta(days=int(r.das) - 1)
+            u = s[s.fecha <= dia].iloc[-1]
+            a = s[(s.fecha < u.fecha) & (s.orbita == u.orbita)].iloc[-1]
+            nuevas.append({"i": i_, "vv_u": u.vv_db, "vh_u": u.vh_db, "vhvv_u": u.vh_vv_db, "edad_radar": (dia - u.fecha).days,
+                           "orbita_desc": float(u.orbita.startswith("desc")), "d_vv": u.vv_db - a.vv_db, "d_vh": u.vh_db - a.vh_db,
+                           "lluvia_entre_r": float(ll_r[(ll_r.index > a.fecha) & (ll_r.index <= u.fecha)].sum())})
+    N_ = pd.DataFrame(nuevas).set_index("i")
+    RADAR = list(N_.columns)
+    M = M.join(N_)
+if VARIANTE in ("satelite_sin_riego", "radar_optico_sin_riego"):
+    # Sin riego registrado: el estado del agua de cada franja sale del satélite (Sentinel-2, pixeles puros ≥ 90 %, misma
+    # QC que el NDVI). Causal: en cada día se usa la ÚLTIMA imagen despejada (no la siguiente), como en la app.
+    #   ndmi_u, mndwi_u, ndwi_u   último valor observado         edad_img  días desde esa imagen
+    #   d_ndmi, d_mndwi           cambio entre las dos últimas imágenes
+    #   lluvia_entre              lluvia CHIRPS entre esas dos imágenes ("subió el agua sin llover" → hubo riego)
+    SIEMBRAS = {1: "2021-05-27", 2: "2021-12-04", 3: "2022-07-09"}
+    ROT = {1: ("MIRI", "AWD+MIRI", "CD"), 2: ("AWD+MIRI", "CD", "MIRI"), 3: ("CD", "MIRI", "AWD+MIRI")}
+    FRAC = {"oeste": "frac_MIRI", "centro": "frac_AWD+MIRI", "este": "frac_CD"}
+    MALAS = {"2021-07-07", "2021-08-11", "2021-09-15", "2022-01-03"}
+    px = pd.read_csv(RAIZ / "data/processed/modelo_b/pixeles_lote_s2_landsat.csv", parse_dates=["fecha"])
+    px = px[(px.sensor == "S2") & (px[list(FRAC.values())].max(axis=1) >= 0.9) & ~px.fecha.dt.strftime("%Y-%m-%d").isin(MALAS)].copy()
+    px["fis"] = px[list(FRAC.values())].idxmax(axis=1).map({v: k for k, v in FRAC.items()})
+    px = px.groupby(["fecha", "fis"], as_index=False)[["ndmi", "mndwi", "ndwi"]].mean()
+    ll = pd.read_csv(RAIZ / "data/processed/modelo_b/clima_dia.csv", parse_dates=["fecha"]).set_index("fecha").lluvia.fillna(0)
+    nuevas = []
+    for (t, trat), g in M.groupby(["temporada", "tratamiento"]):
+        fis = dict(zip(ROT[t], ("oeste", "centro", "este")))[trat]
+        s = px[px.fis == fis].sort_values("fecha")
+        for i_, r in g.iterrows():
+            dia = pd.Timestamp(SIEMBRAS[t]) + pd.Timedelta(days=int(r.das) - 1)
+            prev = s[s.fecha <= dia]
+            u, a = prev.iloc[-1], prev.iloc[-2]
+            nuevas.append({"i": i_, "ndmi_u": u.ndmi, "mndwi_u": u.mndwi, "ndwi_u": u.ndwi, "edad_img": (dia - u.fecha).days,
+                           "d_ndmi": u.ndmi - a.ndmi, "d_mndwi": u.mndwi - a.mndwi,
+                           "lluvia_entre": float(ll[(ll.index > a.fecha) & (ll.index <= u.fecha)].sum())})
+    N_ = pd.DataFrame(nuevas).set_index("i")
+    SAT_AGUA = list(N_.columns)
+    M = M.join(N_)
 PCOLS = []
 if CON_PRITHVI:
     # Prithvi-EO-2.0-300M-TL sobre HLS (bloque de 480 m que contiene el lote; un vector de 1024 por fecha, el mismo
@@ -90,6 +144,17 @@ EXOG_ARIMAX = ["S_tau20", "S_tau5", "Dr_k0.5", "riego_5d", "dias_desde_riego", "
 if VARIANTE == "ndvi_ndmi":  # NDMI de Sentinel-2 por franja, mismo procesamiento que el NDVI
     COLS = COLS + ["ndmi"]
     EXOG_ARIMAX = EXOG_ARIMAX + ["ndmi"]
+if VARIANTE == "satelite_sin_riego":  # nada de riego registrado; balance sin riego + estado del agua visto por satélite
+    COLS = LLUVIA + CLIMA + PLANTA + [c for c in M if c.endswith("_sin_riego")] + TIEMPO + SAT_AGUA
+    EXOG_ARIMAX = ["S_tau20_sin_riego", "S_tau5_sin_riego", "Dr_k0.5_sin_riego", "eto_5d", "ndvi",
+                   "ndmi_u", "mndwi_u", "d_ndmi", "lluvia_entre"]
+if VARIANTE in ("radar_sin_riego", "radar_optico_sin_riego"):  # sin riego registrado; estado del agua por radar (+ óptico)
+    COLS = LLUVIA + CLIMA + PLANTA + [c for c in M if c.endswith("_sin_riego")] + TIEMPO + RADAR + SAT_AGUA
+    EXOG_ARIMAX = ["S_tau20_sin_riego", "S_tau5_sin_riego", "Dr_k0.5_sin_riego", "eto_5d", "ndvi",
+                   "vv_u", "vh_u", "d_vv", "lluvia_entre_r"] + (["ndmi_u", "mndwi_u"] if SAT_AGUA else [])
+if VARIANTE == "sin_riego":  # control: sin riego registrado y sin estado del agua por satélite
+    COLS = LLUVIA + CLIMA + PLANTA + [c for c in M if c.endswith("_sin_riego")] + TIEMPO
+    EXOG_ARIMAX = ["S_tau20_sin_riego", "S_tau5_sin_riego", "Dr_k0.5_sin_riego", "eto_5d", "ndvi"]
 
 
 # ---------------------------------------------------------------- ARIMAX como clasificador

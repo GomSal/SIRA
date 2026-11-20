@@ -1,0 +1,5 @@
+particion_prueba,n_prueba,elegido,hiperparametros,auc_macro_validacion,auc_macro,exactitud_balanceada,auc_verde,recall_verde,precision_verde,n_verde,auc_amarillo,recall_amarillo,precision_amarillo,n_amarillo,auc_rojo,recall_rojo,precision_rojo,n_rojo
+1,47,Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.1}",0.6423,0.4045,0.3762,0.6262,0.6286,0.8462,35,0.5,0.5,0.3077,8,0.0872,0.0,0.0,4
+2,47,Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.1}",0.6511,0.4299,0.317,0.4412,0.6176,0.7241,34,0.4357,0.3333,0.1667,9,0.4128,0.0,,4
+3,52,Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.1}",0.5315,0.4802,0.3055,0.6067,0.6857,0.6857,35,0.4694,0.2308,0.1875,13,0.3646,0.0,0.0,4
+4,52,regresión logística,"{""C"": 1.0}",0.5677,0.4572,0.2952,0.3496,0.6857,0.6316,35,0.4688,0.0,0.0,12,0.5532,0.2,0.0909,5
