@@ -38,6 +38,28 @@
 
 ## Prueba sellada (nov-2025 → sep-2026, una sola vez)
 
+**Métricas absolutas** (`entrenamiento_final/paso8_metricas_absolutas.csv`; 167 939 pares pixel·fecha de la prueba):
+
+| Índice | Horizonte | Quién | RMSE | MAE | MAPE | WAPE | R² |
+|---|---|---|---|---|---|---|---|
+| NDVI | 1 día | **modelo** | 0,083 | 0,060 | 14 % | 11 % | 0,90 |
+| | | persistencia | 0,092 | 0,066 | 15 % | 12 % | 0,88 |
+| NDVI | 7 días | **modelo** | 0,097 | 0,068 | 17 % | 12 % | 0,85 |
+| | | persistencia | 0,122 | 0,088 | 22 % | 16 % | 0,76 |
+| NDVI | 30 días | **modelo** | 0,146 | 0,111 | 29 % | 22 % | 0,70 |
+| | | persistencia | 0,213 | 0,156 | 45 % | 30 % | 0,35 |
+| NDVI | **todos** | **modelo** | **0,120** | **0,087** | **22 %** | **17 %** | **0,79** |
+| | | persistencia | 0,166 | 0,116 | 32 % | 22 % | 0,60 |
+| NDMI | **todos** | **modelo** | **0,093** | **0,068** | 31 % | 34 % | **0,77** |
+| | | persistencia | 0,130 | 0,090 | 39 % | 44 % | 0,54 |
+
+**Cómo leer las métricas:**
+- **MAPE** se calcula solo con |valor| ≥ 0,1. El NDMI cruza el 0, y cerca de 0 el porcentaje se dispara, así que para el NDMI vale más el **WAPE** (error absoluto total / valor absoluto total).
+- **El modelo explica 46–47 % de la varianza del cambio** del índice entre t y t+Δ, y 50–53 % a 30 días. Esa es la parte que la persistencia no puede explicar.
+- **A 1 día casi no hay mejora** (RMSE 0,083 frente a 0,092). Ese error ya es sobre todo **ruido de medición**: dos imágenes de días seguidos, con sensores o atmósfera distintos, difieren en ~0,08 de NDVI aunque la planta no cambie. Ningún modelo baja de ese piso sin mejorar la limpieza de las imágenes.
+
+**Skill** (= 1 − U de Theil) por horizonte:
+
 | Horizonte | NDVI: RMSE | NDVI: skill frente a persistencia | NDMI: RMSE | NDMI: skill frente a persistencia |
 |---|---|---|---|---|
 | 1 día | 0,083 | +0,10 [0,05–0,14] | 0,063 | +0,02 [−0,09–0,13] |
