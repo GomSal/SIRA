@@ -48,7 +48,13 @@ import sys  # noqa: E402
 # "ndvi" (base) | "ndvi_ndmi" | "ndvi_prithvi" (cada candidato con y sin Prithvi; la validación decide)
 # | "prithvi_obligatorio" (esquema cabeza sobre Prithvi: todos los candidatos llevan Prithvi)
 VARIANTE = sys.argv[1] if len(sys.argv) > 1 else "ndvi"
-OUT = RAIZ / "reports" / ("semaforo_clasificador" if VARIANTE == "ndvi" else f"semaforo_clasificador_{VARIANTE}")
+# Familia fija (opcional, 2.º argumento): misma separación y misma selección en validación, pero solo dentro de esa
+# familia (con y sin Prithvi si la variante lo permite). Sirve para comparar curvas ROC de todas las familias.
+FAMILIAS = {"logistica": "regresión logística", "rf": "Random Forest", "gb": "Gradient Boosting",
+            "xgb": "XGBoost", "arimax": "ARIMAX"}
+FAMILIA = FAMILIAS[sys.argv[2]] if len(sys.argv) > 2 else None
+OUT = RAIZ / "reports" / (("semaforo_clasificador" if VARIANTE == "ndvi" else f"semaforo_clasificador_{VARIANTE}")
+                          + (f"/familia_{sys.argv[2]}" if FAMILIA else ""))
 OUT.mkdir(parents=True, exist_ok=True)
 SEM = 0
 CLASES = ["verde", "amarillo", "rojo"]
@@ -232,6 +238,8 @@ def candidatos():
         c = c + [(n + " + Prithvi", {**hp, "prithvi_pca": K_PCA}, f) for n, hp, f in c]
     elif VARIANTE == "prithvi_obligatorio":
         c = [(n + " + Prithvi", {**hp, "prithvi_pca": K_PCA}, f) for n, hp, f in c]
+    if FAMILIA:
+        c = [x for x in c if x[0].replace(" + Prithvi", "") == FAMILIA]
     return c
 
 

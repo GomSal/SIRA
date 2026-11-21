@@ -1,0 +1,5 @@
+particion_prueba,n_prueba,elegido,hiperparametros,auc_macro_validacion,auc_macro,exactitud_balanceada,auc_verde,recall_verde,precision_verde,n_verde,auc_amarillo,recall_amarillo,precision_amarillo,n_amarillo,auc_rojo,recall_rojo,precision_rojo,n_rojo
+1,47,Random Forest + Prithvi,"{""max_depth"": 5, ""min_samples_leaf"": 3, ""prithvi_pca"": 3}",0.7203,0.8765,0.6036,0.8619,0.6857,0.96,35,0.8141,0.875,0.3333,8,0.9535,0.25,1.0,4
+2,47,Random Forest,"{""max_depth"": null, ""min_samples_leaf"": 3}",0.8186,0.7198,0.4199,0.7511,0.6765,0.7931,34,0.7164,0.3333,0.2143,9,0.6919,0.25,0.25,4
+3,52,Random Forest,"{""max_depth"": 5, ""min_samples_leaf"": 3}",0.8034,0.6091,0.4758,0.6235,0.5429,0.7308,35,0.6568,0.3846,0.3333,13,0.5469,0.5,0.1818,4
+4,52,Random Forest,"{""max_depth"": 5, ""min_samples_leaf"": 3}",0.7086,0.8399,0.5873,0.8168,0.8286,0.7838,35,0.7625,0.3333,0.4444,12,0.9404,0.6,0.5,5

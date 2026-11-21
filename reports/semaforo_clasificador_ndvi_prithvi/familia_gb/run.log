@@ -1,0 +1,28 @@
+prueba 1: elegido Gradient Boosting + Prithvi {"max_depth": 3, "learning_rate": 0.1, "prithvi_pca": 3} | AUC val 0.72 | AUC prueba 0.85 | recall verde/amarillo/rojo 0.77/0.62/0.25
+prueba 2: elegido Gradient Boosting + Prithvi {"max_depth": 2, "learning_rate": 0.03, "prithvi_pca": 3} | AUC val 0.83 | AUC prueba 0.75 | recall verde/amarillo/rojo 0.85/0.22/0.25
+prueba 3: elegido Gradient Boosting + Prithvi {"max_depth": 2, "learning_rate": 0.1, "prithvi_pca": 3} | AUC val 0.80 | AUC prueba 0.59 | recall verde/amarillo/rojo 0.57/0.23/0.00
+prueba 4: elegido Gradient Boosting {"max_depth": 3, "learning_rate": 0.1} | AUC val 0.73 | AUC prueba 0.79 | recall verde/amarillo/rojo 0.97/0.17/0.40
+
+Mejor AUC macro de validación por familia (promedio de las 4 particiones):
+modelo
+Gradient Boosting + Prithvi    0.767
+Gradient Boosting              0.760
+
+PRUEBA (cada medición una vez):
+  auc_macro              0.71  [0.62–0.79]
+  auc_verde              0.72  [0.64–0.81]
+  auc_amarillo           0.71  [0.65–0.78]
+  auc_rojo               0.69  [0.50–0.85]
+  recall_verde           0.79  [0.70–0.88]
+  recall_amarillo        0.29  [0.13–0.45]
+  recall_rojo            0.24  [0.07–0.42]
+  precision_verde        0.75  [0.68–0.83]
+  precision_amarillo     0.31  [0.18–0.46]
+  precision_rojo         0.33  [0.08–0.86]
+  exactitud_balanceada   0.44  [0.36–0.52]
+               pred verde  pred amarillo  pred rojo
+real verde            110             22          7
+real amarillo          29             12          1
+real rojo               8              5          4
+
+Modelo de uso (selección con todos los datos): Gradient Boosting + Prithvi {"max_depth": 3, "learning_rate": 0.1, "prithvi_pca": 3} 0.777

@@ -1,0 +1,5 @@
+particion_prueba,n_prueba,elegido,hiperparametros,auc_macro_validacion,auc_macro,exactitud_balanceada,auc_verde,recall_verde,precision_verde,n_verde,auc_amarillo,recall_amarillo,precision_amarillo,n_amarillo,auc_rojo,recall_rojo,precision_rojo,n_rojo
+1,47,regresión logística,"{""C"": 0.3}",0.6583,0.8011,0.6262,0.8619,0.6286,1.0,35,0.7564,0.5,0.3636,8,0.7849,0.75,0.2143,4
+2,47,regresión logística,"{""C"": 1.0}",0.7242,0.644,0.4003,0.7511,0.6176,0.875,34,0.5936,0.3333,0.2,9,0.5872,0.25,0.125,4
+3,52,regresión logística,"{""C"": 0.1}",0.7599,0.6003,0.4342,0.7244,0.5143,0.9474,35,0.6233,0.5385,0.4118,13,0.4531,0.25,0.0625,4
+4,52,regresión logística + Prithvi,"{""C"": 1.0, ""prithvi_pca"": 3}",0.7122,0.7671,0.4476,0.8487,0.9429,0.8049,35,0.7292,0.0,0.0,12,0.7234,0.4,0.25,5

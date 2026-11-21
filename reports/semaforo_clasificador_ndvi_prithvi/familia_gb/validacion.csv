@@ -1,0 +1,49 @@
+modelo,hiperparametros,auc_macro_val,recall_rojo_val,particion_prueba
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.03}",0.6733,0.1538,1
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.1}",0.6511,0.1538,1
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.03}",0.6863,0.0769,1
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.1}",0.6912,0.0,1
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.03}",0.7037,0.0769,1
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.1}",0.7099,0.0,1
+Gradient Boosting + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.693,0.2308,1
+Gradient Boosting + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.6931,0.1538,1
+Gradient Boosting + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.6984,0.1538,1
+Gradient Boosting + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.7044,0.0769,1
+Gradient Boosting + Prithvi,"{""max_depth"": 3, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.7087,0.0,1
+Gradient Boosting + Prithvi,"{""max_depth"": 3, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.7183,0.0769,1
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.03}",0.7801,0.4615,2
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.1}",0.7941,0.3077,2
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.03}",0.8195,0.4615,2
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.1}",0.8127,0.3077,2
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.03}",0.8143,0.3077,2
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.1}",0.814,0.2308,2
+Gradient Boosting + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.7952,0.3846,2
+Gradient Boosting + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.8158,0.4615,2
+Gradient Boosting + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.8274,0.4615,2
+Gradient Boosting + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.8243,0.4615,2
+Gradient Boosting + Prithvi,"{""max_depth"": 3, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.8234,0.3846,2
+Gradient Boosting + Prithvi,"{""max_depth"": 3, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.8138,0.3846,2
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.03}",0.7604,0.3846,3
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.1}",0.7479,0.3846,3
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.03}",0.7792,0.4615,3
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.1}",0.7674,0.4615,3
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.03}",0.7795,0.4615,3
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.1}",0.7701,0.4615,3
+Gradient Boosting + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.769,0.3846,3
+Gradient Boosting + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.7721,0.4615,3
+Gradient Boosting + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.7872,0.4615,3
+Gradient Boosting + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.7987,0.4615,3
+Gradient Boosting + Prithvi,"{""max_depth"": 3, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.781,0.4615,3
+Gradient Boosting + Prithvi,"{""max_depth"": 3, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.7825,0.4615,3
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.03}",0.7086,0.1667,4
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.1}",0.7176,0.1667,4
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.03}",0.7267,0.0833,4
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.1}",0.7234,0.0833,4
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.03}",0.7262,0.0833,4
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.1}",0.7303,0.0833,4
+Gradient Boosting + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.7005,0.1667,4
+Gradient Boosting + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.706,0.1667,4
+Gradient Boosting + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.7082,0.1667,4
+Gradient Boosting + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.7172,0.1667,4
+Gradient Boosting + Prithvi,"{""max_depth"": 3, ""learning_rate"": 0.03, ""prithvi_pca"": 3}",0.7253,0.1667,4
+Gradient Boosting + Prithvi,"{""max_depth"": 3, ""learning_rate"": 0.1, ""prithvi_pca"": 3}",0.7123,0.1667,4
