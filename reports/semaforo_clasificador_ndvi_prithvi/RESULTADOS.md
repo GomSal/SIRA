@@ -43,4 +43,18 @@ La diferencia es contra el semáforo base. El IC 95 % es pareado, por bootstrap 
 - **Por qué no aporta:** el vector de Prithvi es uno solo por fecha para el bloque de 480 m que contiene el lote. Es el mismo para CD, MIRI y AWD+MIRI, así que no puede decir cuál franja se está secando. Lo que separa las franjas es el riego y el NDVI de 10 m por franja. Además hay pocas fechas: en GS3 solo 2, a 60 días de distancia.
 - **Decisión** (regla de empate: si el IC de la diferencia incluye el 0, gana el más simple): **semáforo base, sin Prithvi**.
 - **Dónde sí está Prithvi:** en el Modelo A (relleno de nubes).
+## Comparación por familia y modelo oficial (21-nov-2026)
+
+Cada familia se corrió con la variante `ndvi_prithvi` y la familia fija (`scripts/semaforo_clasificador.py ndvi_prithvi <familia>`): mismas particiones, selección de hiperparámetros y de Prithvi en validación dentro de la familia, una medición por punto de la prueba. Curvas ROC: `roc_familias.csv` y `roc_auc.csv` (`scripts/roc_semaforo_familias.py`).
+
+| Familia | AUC-ROC prueba [IC 95 %] | Rojos detectados (de 17) | AUC validación (modelo de uso) |
+|---|---|---|---|
+| **ARIMAX** | **0,75 [0,68–0,81]** | **12** | 0,774 |
+| Random Forest | 0,74 [0,67–0,80] | 7 | 0,773 |
+| XGBoost | 0,73 [0,65–0,79] | 6 | 0,764 |
+| Gradient Boosting (+ Prithvi) | 0,71 [0,62–0,79] | 4 | 0,777 |
+| Regresión logística | 0,68 [0,60–0,75] | 7 | 0,717 |
+
+**Modelo B oficial: ARIMAX(1), sin Prithvi.** En validación empata con Gradient Boosting + Prithvi (0,774 frente a 0,777); por la regla de empate gana el más simple. En la prueba sellada es el de mejor AUC y el que más casos de humedad baja detecta.
+
 - **Qué haría falta para que Prithvi aporte en B:** salidas de Prithvi por pixel (30 m, con un decodificador), promediadas dentro de cada franja, no un vector por bloque de 480 m. Un parche de Prithvi (16×16 px HLS = 480 m) es más grande que una franja. Eso requiere volver a correr Prithvi.
