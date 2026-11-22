@@ -10,6 +10,8 @@ Semáforo de humedad del suelo por pixel de 10 m, de hoy a 30 días, para arroz.
 
 Los umbrales son de Martínez-Vega et al. 2025: capacidad de campo 30 % y déficit crítico 4,34 mm en 150 mm de raíz. Un punto de humedad equivale a 1,5 mm (1,5 L/m²).
 
+![Flujo del semáforo: modelos A y B, ecuaciones S y Dr, propagación con Dr FAO-56](diagrama_semaforo.svg)
+
 ## Las piezas: dos modelos y dos ecuaciones
 
 | Pieza | Qué hace | Se entrena | Archivo |
