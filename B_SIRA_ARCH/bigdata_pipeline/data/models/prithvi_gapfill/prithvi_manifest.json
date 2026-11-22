@@ -1,0 +1,21 @@
+{
+  "repositorio_hf": "ibm-nasa-geospatial/Prithvi-EO-2.0-300M-TL",
+  "revision": "63adbd39c271da4c42f447e69b1a7c91a338cdc9",
+  "rol_en_arquitectura_b": "SOLO_RELLENO_OPERATIVO_DE_NUBES_HOY",
+  "excluido_como_feature_de_A": true,
+  "excluido_como_feature_de_B": true,
+  "validacion_nubes_falsas_79_fechas_hls": {
+    "prithvi_solo_pasado": {
+      "rmse_ndvi": 0.093,
+      "rmse_ndmi": 0.077
+    },
+    "ultimo_despejado_solo_pasado": {
+      "rmse_ndvi": 0.11,
+      "rmse_ndmi": 0.094
+    },
+    "interpolacion_temporal_historico": {
+      "rmse_ndvi": 0.079,
+      "rmse_ndmi": 0.063
+    }
+  }
+}

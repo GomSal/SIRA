@@ -1,0 +1,77 @@
+{
+  "modelo": "ARIMAX(1) oficial sin Prithvi (commit ec84551)",
+  "origen": "Calibrado sobre 198 mediciones reales TDR Nataima (SIRA\\github)",
+  "entradas": [
+    "S_tau20",
+    "S_tau5",
+    "Dr_k0.5",
+    "riego_5d",
+    "dias_desde_riego",
+    "eto_5d",
+    "ndvi"
+  ],
+  "reentreno_etapa1_ganadoras": {
+    "S_tau45_a05": {
+      "auc_val": 0.786,
+      "spearman": 0.607
+    },
+    "S_tau60_a05": {
+      "auc_val": 0.79,
+      "spearman": 0.608
+    }
+  },
+  "cortes_humedad_pct": {
+    "rojo_menor_a": 27.1,
+    "amarillo_entre": [
+      27.1,
+      30.0
+    ],
+    "verde_mayor_igual_a": 30.0
+  },
+  "phi": 0.30775,
+  "k0": 32.3887,
+  "beta": [
+    3.104118,
+    -0.930921,
+    1.053654,
+    1.016133,
+    0.509984,
+    0.018081,
+    0.440971
+  ],
+  "sigma2": 8.72218,
+  "sd_err": 3.10397,
+  "mu_x": [
+    77.813175,
+    24.377832,
+    -3.983427,
+    27.558081,
+    4.186869,
+    20.429641,
+    0.762522
+  ],
+  "sd_x": [
+    53.530769,
+    25.555226,
+    9.037575,
+    25.07893,
+    8.745009,
+    2.497466,
+    0.084792
+  ],
+  "prior": [
+    0.70202,
+    0.212121,
+    0.085859
+  ],
+  "metricas_referencia_prueba_sellada": {
+    "auc_macro_sellada_repo": 0.754,
+    "ic95": [
+      0.678,
+      0.814
+    ],
+    "rojos_detectados": "12/17",
+    "recall_rojo_calibracion": 0.706
+  },
+  "creado_utc": "2026-11-22T04:20:44.445224+00:00"
+}

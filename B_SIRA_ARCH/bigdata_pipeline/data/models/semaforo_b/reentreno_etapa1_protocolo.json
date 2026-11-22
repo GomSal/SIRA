@@ -1,0 +1,5 @@
+{
+ "modelo_etapa1": "logística multinomial C=1, balanceada, x=[ecuación, lluvia_5d, eto_5d]",
+ "variantes": 17,
+ "regla_empate": "IC 95 % de la diferencia de AUC incluye 0 → la más cercana a τ=45, α=0,5"
+}

@@ -1,0 +1,94 @@
+{
+  "Comment": "SIRA B_SIRA_ARCH (Flujo Diario 05:00 a.m. COT · HEAD 8fde03d): Lote 1 Imagenes (sira-b-01) -> Lote 4AB Predictor A + Semaforo B con riego (sira-b-03) -> Lote 4C Semaforo C operativo sin riego (sira-b-04).",
+  "StartAt": "Lote_1_Imagenes_y_Features_A",
+  "States": {
+    "Lote_1_Imagenes_y_Features_A": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "sira-b-01-lote-imagenes-pixel",
+        "Arguments": {
+          "--input_bronce_s2": "s3://sira-b-lakehouse-929570730700/bronce/sentinel2/",
+          "--input_bronce_landsat": "s3://sira-b-lakehouse-929570730700/bronce/landsat/",
+          "--input_calibracion": "s3://sira-b-lakehouse-929570730700/models/calibracion_landsat_s2/calibracion_landsat_s2.parquet",
+          "--output_plata_indices_pixel": "s3://sira-b-lakehouse-929570730700/plata/indices_pixel/"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed",
+            "Glue.AWSGlueException",
+            "Glue.ConcurrentRunsExceededException"
+          ],
+          "IntervalSeconds": 20,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Lote_4AB_Predictor_A_y_Semaforo_B"
+    },
+    "Lote_4AB_Predictor_A_y_Semaforo_B": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "sira-b-03-lote-inferencia-ab",
+        "Arguments": {
+          "--input_plata_indices": "s3://sira-b-lakehouse-929570730700/plata/indices_pixel/",
+          "--input_plata_estado": "s3://sira-b-lakehouse-929570730700/plata/estado_hidrico_pixel/",
+          "--input_oro_geos_corregido": "s3://sira-b-lakehouse-929570730700/oro/geos_s2s_corregido/",
+          "--input_oro_predios": "s3://sira-b-lakehouse-929570730700/oro/predios/",
+          "--input_arimax_params_json": "s3://sira-b-lakehouse-929570730700/models/semaforo_b/arimax1_params.json",
+          "--output_oro_pronostico_a": "s3://sira-b-lakehouse-929570730700/oro/pronostico_predictor/",
+          "--output_oro_semaforo": "s3://sira-b-lakehouse-929570730700/oro/semaforo/",
+          "--skip_modelo_a": "false"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed",
+            "Glue.AWSGlueException",
+            "Glue.ConcurrentRunsExceededException"
+          ],
+          "IntervalSeconds": 20,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Lote_4C_Semaforo_C_Operativo_Sin_Riego"
+    },
+    "Lote_4C_Semaforo_C_Operativo_Sin_Riego": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "sira-b-04-lote-semaforo-c",
+        "Arguments": {
+          "--input_oro_pronostico_a": "s3://sira-b-lakehouse-929570730700/oro/pronostico_predictor/",
+          "--input_oro_geos_corregido": "s3://sira-b-lakehouse-929570730700/oro/geos_s2s_corregido/",
+          "--input_oro_curva_10anios": "s3://sira-b-lakehouse-929570730700/oro/curva_normal_10anios/",
+          "--input_oro_predios": "s3://sira-b-lakehouse-929570730700/oro/predios/",
+          "--input_bronce_semaforo_c_grid": "s3://sira-b-lakehouse-929570730700/bronce/semaforo_c_repo/pixeles_c_20286.parquet",
+          "--output_oro_semaforo_c_pixeles": "s3://sira-b-lakehouse-929570730700/oro/semaforo_c_pixeles/",
+          "--output_oro_semaforo_c_resumen": "s3://sira-b-lakehouse-929570730700/oro/semaforo_c_resumen/"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed",
+            "Glue.AWSGlueException",
+            "Glue.ConcurrentRunsExceededException"
+          ],
+          "IntervalSeconds": 20,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Flujo_Diario_Exitoso"
+    },
+    "Flujo_Diario_Exitoso": {
+      "Type": "Succeed"
+    }
+  }
+}

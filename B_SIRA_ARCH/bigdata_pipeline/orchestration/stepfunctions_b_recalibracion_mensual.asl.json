@@ -1,0 +1,38 @@
+{
+  "Comment": "SIRA B_SIRA_ARCH (Flujo Mensual Dia 1): Lote 3 Recalibracion de sesgo de GEOS-S2S-3 frente a CHIRPS + NASA POWER observados y generacion de nueva version de oro/correccion_coeficientes.",
+  "StartAt": "Lote_3_Recalibracion_Mensual_Clima",
+  "States": {
+    "Lote_3_Recalibracion_Mensual_Clima": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "sira-b-02-lote-clima-y-geos",
+        "Arguments": {
+          "--input_bronce_chirps": "s3://sira-b-lakehouse-929570730700/bronce/chirps/",
+          "--input_bronce_power": "s3://sira-b-lakehouse-929570730700/bronce/power/",
+          "--input_bronce_geos_nrt": "s3://sira-b-lakehouse-929570730700/bronce/geos_s2s/geos_s2s_nrt.parquet",
+          "--input_oro_coeficientes": "s3://sira-b-lakehouse-929570730700/oro/correccion_coeficientes/",
+          "--output_plata_clima_observado": "s3://sira-b-lakehouse-929570730700/plata/clima_observado/",
+          "--output_plata_geos_crudo": "s3://sira-b-lakehouse-929570730700/plata/geos_s2s_crudo/",
+          "--output_oro_geos_corregido": "s3://sira-b-lakehouse-929570730700/oro/geos_s2s_corregido/"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed",
+            "Glue.AWSGlueException",
+            "Glue.ConcurrentRunsExceededException"
+          ],
+          "IntervalSeconds": 20,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Recalibracion_Mensual_Exitosa"
+    },
+    "Recalibracion_Mensual_Exitosa": {
+      "Type": "Succeed"
+    }
+  }
+}

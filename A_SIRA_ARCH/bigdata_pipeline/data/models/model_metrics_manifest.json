@@ -1,0 +1,52 @@
+{
+  "project": "SIRA - Sistema Inteligente de Riego para Arroz (Equipo 10)",
+  "trained_at_utc": "2026-11-17T02:56:10.836039",
+  "ground_truth_samples": 198,
+  "validation_scheme": "Leave-One-Season-Out (GS1, GS2, GS3 - 3 folds)",
+  "champion_model": "Modelo_B_Indices_Clima_mas_Prithvi_RF",
+  "features": [
+    "ndmi_tuned_clima",
+    "ndwi_tuned_clima",
+    "ndvi_observado",
+    "mndwi_observado",
+    "lluvia_1d_mm",
+    "lluvia_3d_mm",
+    "lluvia_5d_mm",
+    "swi_total_lluvia_mas_riego_mm",
+    "eto_fao56_mm",
+    "atwd_5d_mm",
+    "deficit_presion_vapor",
+    "humedad_rel_2m_pct",
+    "presion_superficie_kpa",
+    "das",
+    "prithvi_pca_01",
+    "prithvi_pca_02",
+    "prithvi_pca_03"
+  ],
+  "loso_metrics": {
+    "Baseline_Sin_Tuning_Bruma": {
+      "RMSE_vwc_pct": 2.05,
+      "MAE_vwc_pct": 1.562,
+      "R2_score": 0.867,
+      "Macro_F1_clases": 0.773
+    },
+    "Modelo_A_Indices_Tuned_mas_Clima_RF": {
+      "RMSE_vwc_pct": 1.853,
+      "MAE_vwc_pct": 1.398,
+      "R2_score": 0.891,
+      "Macro_F1_clases": 0.821
+    },
+    "Modelo_B_Indices_Clima_mas_Prithvi_RF": {
+      "RMSE_vwc_pct": 1.882,
+      "MAE_vwc_pct": 1.419,
+      "R2_score": 0.888,
+      "Macro_F1_clases": 0.821
+    },
+    "Modelo_C_Prithvi_mas_Cabeza_Lineal": {
+      "RMSE_vwc_pct": 5.346,
+      "MAE_vwc_pct": 4.644,
+      "R2_score": 0.095,
+      "Macro_F1_clases": 0.255
+    }
+  }
+}

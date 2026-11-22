@@ -21,3 +21,8 @@ cloud/*/ultima_corrida.json
 
 # Modelo predictor (A): datos pesados fuera del repo (salidas de Kaggle y pruebas locales)
 data/interim/modelo_a/
+
+# --- Big Data AWS (seguridad y temporales) ---
+*accessKeys*.csv
+*_tmp_s3/
+*.egg-info/

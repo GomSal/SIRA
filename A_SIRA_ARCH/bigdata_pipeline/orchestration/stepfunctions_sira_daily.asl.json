@@ -1,0 +1,94 @@
+{
+  "Comment": "SIRA (Equipo 10) - Orquestacion Diaria Batch (05:00 a.m. COT): Tratamiento de Clima por Dia (CHIRPS + NASA POWER + IDEAM), Tuning de Bruma por Regresion Hidroclimatica, Emparejamiento Espaciotemporal (Paso 4) e Inferencia por Pixel de 10m en Capa Oro.",
+  "StartAt": "Paso_2c_2d_Clima_Por_Dia",
+  "States": {
+    "Paso_2c_2d_Clima_Por_Dia": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "sira-01-clima-por-dia",
+        "Arguments": {
+          "--input_chirps": "s3://sira-lakehouse-clima-929570730700/bronze/climate/chirps/",
+          "--input_nasa_power": "s3://sira-lakehouse-clima-929570730700/bronze/climate/nasa_power/",
+          "--input_ideam": "s3://sira-lakehouse-clima-929570730700/bronze/climate/ideam/",
+          "--output_silver_clima": "s3://sira-lakehouse-clima-929570730700/silver/clima_dia/",
+          "--output_silver_ideam": "s3://sira-lakehouse-clima-929570730700/silver/auditoria_ideam/"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed",
+            "Glue.AWSGlueException",
+            "Glue.ConcurrentRunsExceededException"
+          ],
+          "IntervalSeconds": 20,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Paso_4_Regresion_Bruma_y_Emparejamiento"
+    },
+    "Paso_4_Regresion_Bruma_y_Emparejamiento": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "sira-02-regresion-bruma-y-emparejamiento",
+        "Arguments": {
+          "--input_silver_clima": "s3://sira-lakehouse-clima-929570730700/silver/clima_dia/",
+          "--input_bronze_s2": "s3://sira-lakehouse-clima-929570730700/bronze/satellite/sentinel2_indices/",
+          "--input_bronze_prithvi": "s3://sira-lakehouse-clima-929570730700/bronze/satellite/prithvi_embeddings/",
+          "--input_bronze_campo": "s3://sira-lakehouse-clima-929570730700/bronze/ground_truth/nataima/nataima_diario.parquet",
+          "--input_bronze_catalog": "s3://sira-lakehouse-clima-929570730700/bronze/catalog/cat_parcelas_pixeles_nataima.parquet",
+          "--output_silver_s2": "s3://sira-lakehouse-clima-929570730700/silver/pixel_dia_sentinel2/",
+          "--output_silver_prithvi": "s3://sira-lakehouse-clima-929570730700/silver/prithvi_bloque_dia/",
+          "--output_silver_campo": "s3://sira-lakehouse-clima-929570730700/silver/campo_nataima/",
+          "--output_gold_regresion": "s3://sira-lakehouse-clima-929570730700/gold/regresion_clima_espectral/",
+          "--output_gold_entrenamiento": "s3://sira-lakehouse-clima-929570730700/gold/tabla_entrenamiento/"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed",
+            "Glue.AWSGlueException"
+          ],
+          "IntervalSeconds": 20,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Paso_8_Inferencia_Pixel_y_Verificacion_Oro"
+    },
+    "Paso_8_Inferencia_Pixel_y_Verificacion_Oro": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "sira-03-inferencia-y-verificacion-oro",
+        "Arguments": {
+          "--input_gold_entrenamiento": "s3://sira-lakehouse-clima-929570730700/gold/tabla_entrenamiento/",
+          "--input_silver_clima": "s3://sira-lakehouse-clima-929570730700/silver/clima_dia/",
+          "--input_bronze_catalog": "s3://sira-lakehouse-clima-929570730700/bronze/catalog/cat_parcelas_pixeles_nataima.parquet",
+          "--input_bronze_forecast": "s3://sira-lakehouse-clima-929570730700/bronze/forecast/open_meteo/forecast_7d.parquet",
+          "--output_gold_prediccion_pixel": "s3://sira-lakehouse-clima-929570730700/gold/prediccion_pixel_dia/",
+          "--output_gold_verificacion": "s3://sira-lakehouse-clima-929570730700/gold/verificacion_diaria/"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed",
+            "Glue.AWSGlueException"
+          ],
+          "IntervalSeconds": 20,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Pipeline_SIRA_Exitoso"
+    },
+    "Pipeline_SIRA_Exitoso": {
+      "Type": "Succeed"
+    }
+  }
+}

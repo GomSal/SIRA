@@ -1,0 +1,113 @@
+{
+  "Comment": "SIRA B_SIRA_ARCH (Flujo Cada 5 Dias · HEAD 8fde03d): Lote 2 GEOS-S2S-3 (sira-b-02) -> Actualizacion en PARALELO del Semaforo B con riego (sira-b-03) y Semaforo C operativo sin riego (sira-b-04).",
+  "StartAt": "Lote_2_GEOS_S2S_y_Correccion",
+  "States": {
+    "Lote_2_GEOS_S2S_y_Correccion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "sira-b-02-lote-clima-y-geos",
+        "Arguments": {
+          "--input_bronce_chirps": "s3://sira-b-lakehouse-929570730700/bronce/chirps/",
+          "--input_bronce_power": "s3://sira-b-lakehouse-929570730700/bronce/power/",
+          "--input_bronce_geos_nrt": "s3://sira-b-lakehouse-929570730700/bronce/geos_s2s/geos_s2s_nrt.parquet",
+          "--input_oro_coeficientes": "s3://sira-b-lakehouse-929570730700/oro/correccion_coeficientes/",
+          "--output_plata_clima_observado": "s3://sira-b-lakehouse-929570730700/plata/clima_observado/",
+          "--output_plata_geos_crudo": "s3://sira-b-lakehouse-929570730700/plata/geos_s2s_crudo/",
+          "--output_oro_geos_corregido": "s3://sira-b-lakehouse-929570730700/oro/geos_s2s_corregido/"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed",
+            "Glue.AWSGlueException",
+            "Glue.ConcurrentRunsExceededException"
+          ],
+          "IntervalSeconds": 20,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Actualizar_Semaforos_B_y_C_En_Paralelo"
+    },
+    "Actualizar_Semaforos_B_y_C_En_Paralelo": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Rama_Semaforo_B_ARIMAX",
+          "States": {
+            "Rama_Semaforo_B_ARIMAX": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::glue:startJobRun.sync",
+              "Parameters": {
+                "JobName": "sira-b-03-lote-inferencia-ab",
+                "Arguments": {
+                  "--input_plata_indices": "s3://sira-b-lakehouse-929570730700/plata/indices_pixel/",
+                  "--input_plata_estado": "s3://sira-b-lakehouse-929570730700/plata/estado_hidrico_pixel/",
+                  "--input_oro_geos_corregido": "s3://sira-b-lakehouse-929570730700/oro/geos_s2s_corregido/",
+                  "--input_oro_predios": "s3://sira-b-lakehouse-929570730700/oro/predios/",
+                  "--input_arimax_params_json": "s3://sira-b-lakehouse-929570730700/models/semaforo_b/arimax1_params.json",
+                  "--output_oro_pronostico_a": "s3://sira-b-lakehouse-929570730700/oro/pronostico_predictor/",
+                  "--output_oro_semaforo": "s3://sira-b-lakehouse-929570730700/oro/semaforo/",
+                  "--skip_modelo_a": "true"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "States.TaskFailed",
+                    "Glue.AWSGlueException",
+                    "Glue.ConcurrentRunsExceededException"
+                  ],
+                  "IntervalSeconds": 20,
+                  "MaxAttempts": 2,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Rama_Semaforo_C_Fisico_Sin_Riego",
+          "States": {
+            "Rama_Semaforo_C_Fisico_Sin_Riego": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::glue:startJobRun.sync",
+              "Parameters": {
+                "JobName": "sira-b-04-lote-semaforo-c",
+                "Arguments": {
+                  "--input_oro_pronostico_a": "s3://sira-b-lakehouse-929570730700/oro/pronostico_predictor/",
+                  "--input_oro_geos_corregido": "s3://sira-b-lakehouse-929570730700/oro/geos_s2s_corregido/",
+                  "--input_oro_curva_10anios": "s3://sira-b-lakehouse-929570730700/oro/curva_normal_10anios/",
+                  "--input_oro_predios": "s3://sira-b-lakehouse-929570730700/oro/predios/",
+                  "--input_bronce_semaforo_c_grid": "s3://sira-b-lakehouse-929570730700/bronce/semaforo_c_repo/pixeles_c_20286.parquet",
+                  "--output_oro_semaforo_c_pixeles": "s3://sira-b-lakehouse-929570730700/oro/semaforo_c_pixeles/",
+                  "--output_oro_semaforo_c_resumen": "s3://sira-b-lakehouse-929570730700/oro/semaforo_c_resumen/"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "States.TaskFailed",
+                    "Glue.AWSGlueException",
+                    "Glue.ConcurrentRunsExceededException"
+                  ],
+                  "IntervalSeconds": 20,
+                  "MaxAttempts": 2,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      ],
+      "Next": "Flujo_GEOS_Exitoso"
+    },
+    "Flujo_GEOS_Exitoso": {
+      "Type": "Succeed"
+    }
+  }
+}

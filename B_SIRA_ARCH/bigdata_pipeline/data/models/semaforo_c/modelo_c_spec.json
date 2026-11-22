@@ -1,0 +1,33 @@
+{
+  "nombre": "Modelo C — Semáforo Físico Operativo sin Riego Registrado",
+  "commit_origen": "1a592aa (scripts/operacion/semaforo_c.py)",
+  "requiere_entrenamiento": false,
+  "ecuacion": "Dr(t) = clip(Dr(t-1) - L_GEOS(t) + Ks * Kc(t) * ETo_GEOS(t)), drenaje k=0.5 si Dr < 0",
+  "kc_formula": "clip(1.0 * NDVI_A + 0.45, 0.6, 1.3)",
+  "parametros_suelo_nataima": {
+    "TAW_mm": 6.7,
+    "p": 0.65,
+    "RAW_mm": 4.355,
+    "Zr_mm": 150.0,
+    "DSAT_mm": 26.475,
+    "k_drenaje": 0.5,
+    "DR_ROJO_mm": 4.34
+  },
+  "inicializacion_dia0_ndmi": {
+    "Z_NORMAL": -0.67,
+    "Z_SECO": -1.28,
+    "curva": "paso1_curva_por_dias_desde_siembra.csv (10 años)"
+  },
+  "clases": {
+    "0": "suficiente (Dr <= 0 mm, >=30% VWC)",
+    "1": "media (0 < Dr <= 4.34 mm, 27.1-30% VWC)",
+    "2": "baja (Dr > 4.34 mm, <27.1% VWC)"
+  },
+  "control_anomalia_ndmi": {
+    "regla": "((NDMI_A + RMSE_A(delta) - mu_das) / sd_das) < -1.28",
+    "efecto_en_media": "degrada a baja (2)",
+    "efecto_en_suficiente": "activa marca morada: posible enfermedad o deficiencia nutricional"
+  },
+  "escenario_base": "sin_riego_desde_hoy",
+  "agregacion_miembros_geos": "mediana de Dr (DRM) sobre 5 miembros + probabilidad p_baja = mean(DR > 4.34)"
+}
