@@ -3,10 +3,11 @@
 Salida en app/datos/:
 - zonas.json: Tolima como zona habilitada (contorno de geoBoundaries ADM1, OSM), sus municipios con su centro
   (geoBoundaries ADM2, DANE) para el buscador, y la zona piloto donde hoy hay semáforo (límites de semaforo_c).
-- semaforo.json: el semáforo por pixel de 10 m en arreglos por columna (centro lat/lon, días desde siembra,
-  días hasta rojo y, por horizonte, color, déficit pintado, humedad equivalente y marca del NDMI).
+- semaforo.json (formato 2): el semáforo por pixel de 10 m (centro lat/lon, días desde siembra, días hasta rojo) y,
+  para cada uno de los 31 días de hoy a +30, color, déficit pintado (L/m²) y marca del NDMI. La humedad equivalente
+  es 30 − déficit/1,5.
 
-Lee reports/semaforo_c/ (resumen.json, pixeles.csv.gz), la rejilla del cubo de A (n, x0, y0) y
+Lee reports/semaforo_c/ (resumen.json, pixeles.csv.gz, diario.npz), la rejilla del cubo de A (n, x0, y0) y
 data/referencia/tolima/ (adm1.geojson, adm2.geojson).
 
     python scripts/operacion/exportar_app.py
@@ -81,7 +82,9 @@ z = np.load(CUBO)
 NG, X0, Y0 = int(z["n"]), float(z["x0"]), float(z["y0"])
 P = pd.read_csv(SEM / "pixeles.csv.gz")
 n_agricolas = len(P)
-P = P[(P[[f"clase_h{h}" for h in HORIZONTES]] >= 0).any(axis=1)].reset_index(drop=True)  # solo los que están en cultivo
+D = np.load(SEM / "diario.npz")
+en_cultivo = pd.Series((D["clase"] >= 0).any(1), index=D["pixel"])
+P = P[P.pixel.map(en_cultivo).fillna(False).astype(bool)].reset_index(drop=True)  # en cultivo algún día de 0 a 30
 fila, col = np.divmod(P.pixel.to_numpy(), NG)
 x, y = X0 + 10 * col + 5, Y0 - 10 * fila - 5  # centro del pixel en UTM 18N
 lon, lat = Transformer.from_crs("EPSG:32618", "EPSG:4326", always_xy=True).transform(x, y)
@@ -92,22 +95,33 @@ def r(v, d):
     return [None if pd.isna(a) else round(float(a), d) for a in v]
 
 
+# los 31 días por pixel, en el mismo orden de P
+pos = pd.Series(np.arange(len(D["pixel"])), index=D["pixel"]).reindex(P.pixel.to_numpy()).to_numpy()
+assert not np.isnan(pos).any(), "diario.npz no corresponde a pixeles.csv.gz"
+pos = pos.astype(int)
+CL, DEF, MAR = D["clase"][pos], D["deficit_mm"][pos], D["marca"][pos]
+for h in HORIZONTES:  # control: los 4 horizontes de pixeles.csv.gz son los mismos que en el diario
+    assert (CL[:, h] == P[f"clase_h{h}"].to_numpy()).all()
+    assert np.allclose(DEF[:, h], P[f"deficit_mm_h{h}"].to_numpy(), atol=0.006)
+NH = CL.shape[1]
 sem = {
+    "formato": 2,
     "hoy": R["hoy"], "geos_inicio": R["geos_inicio"], "miembros_geos": R["miembros_geos"],
-    "modelo_b": R["modelo_b"], "limites_latlon": R["limites_latlon"], "celda_m": 10,
-    "horizontes": [{"h": h["h"], "fecha": h["fecha"], "lluvia_mm": round(h["lluvia_mm_hasta_h"], 1),
-                    "eto_mm": round(h["eto_mm_hasta_h"], 1)} for h in R["horizontes"]],
+    "modelo_b": R["modelo_b"], "lluvia_hueco": R.get("lluvia_hueco"),
+    "limites_latlon": R["limites_latlon"], "celda_m": 10,
     "umbrales": {"rojo_dr_mm": 4.34, "verde_dr_mm": 0.0, "rojo_humedad_pct": 27.1, "verde_humedad_pct": 30.0,
                  "mm_por_punto": 1.5},
-    "pixeles": {
-        "n": len(P), "lat": r(lat, 6), "lon": r(lon, 6), "das_hoy": r(P.das_hoy, 0),
-        "dias_hasta_rojo": P.dias_hasta_baja.astype(int).tolist(),
-        **{f"clase_h{h}": P[f"clase_h{h}"].astype(int).tolist() for h in HORIZONTES},
-        **{f"deficit_mm_h{h}": r(P[f"deficit_mm_h{h}"], 2) for h in HORIZONTES},
-        **{f"humedad_pct_h{h}": r(P[f"humedad_pct_h{h}"], 1) for h in HORIZONTES},
-        **{f"marca_h{h}": P[f"marca_h{h}"].astype(int).tolist() for h in HORIZONTES},
-    },
+    "pixeles": {"n": len(P), "lat": r(lat, 6), "lon": r(lon, 6), "das_hoy": r(P.das_hoy, 0),
+                "dias_hasta_rojo": P.dias_hasta_baja.astype(int).tolist()},
+    # un elemento por día h = 0…30. clase: texto de n caracteres ('0' verde, '1' amarillo, '2' rojo, '-' sin cultivo);
+    # deficit_mm: L/m² por pixel (null sin cultivo); marca: índices de los píxeles con alarma del NDMI
+    "dias": [{"h": d["h"], "fecha": d["fecha"], "lluvia_mm": d["lluvia_mm_hasta_h"], "eto_mm": d["eto_mm_hasta_h"],
+              "clase": "".join("-" if c < 0 else str(c) for c in CL[:, d["h"]]),
+              "deficit_mm": [None if c < 0 else round(float(x), 2) for c, x in zip(CL[:, d["h"]], DEF[:, d["h"]])],
+              "marca": np.flatnonzero(MAR[:, d["h"]]).tolist()}
+             for d in R["diario"]],
 }
+assert len(sem["dias"]) == NH == 31
 (OUT / "semaforo.json").write_text(json.dumps(sem, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 print(f"zonas.json: Tolima {len(anillo)} vértices, {len(municipios)} municipios | "
       f"semaforo.json: {len(P)} pixeles en cultivo de {n_agricolas} agrícolas, hoy {R['hoy']}, "

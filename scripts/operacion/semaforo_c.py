@@ -57,6 +57,8 @@ ap.add_argument("--lon", type=float, default=-74.9621)
 ap.add_argument("--salida", default=str(RAIZ / "reports/semaforo_c"))
 ap.add_argument("--qa", action="store_true")
 ap.add_argument("--riego", default="CD", choices=["AWD+MIRI", "MIRI", "CD"], help="régimen supuesto hasta hoy")
+ap.add_argument("--lluvia_hueco", default="power", choices=["cero", "power"],
+                help="días sin CHIRPS (publica con ~1 mes de atraso): 0 mm o la lluvia de NASA POWER (PRECTOTCORR)")
 A = ap.parse_args()
 OUT = Path(A.salida)
 OUT.mkdir(parents=True, exist_ok=True)
@@ -298,7 +300,12 @@ EN0 = np.isfinite(DAS[:, 0])  # en cultivo hoy
 SOW = np.where(EN0, DHOY - np.nan_to_num(DAS[:, 0]), DHOY + 1).astype(int)  # día de siembra (das = 0 en A, día 1 en B)
 DIAS1 = np.arange(int(SOW[EN0].min()) if EN0.any() else DHOY, DHOY + 1)
 f1_ = BASE + pd.to_timedelta(DIAS1, unit="D")
-L1 = cl.lluvia.reindex(f1_).fillna(0).to_numpy()  # CHIRPS observado
+L1s = cl.lluvia.reindex(f1_)  # CHIRPS observado
+HUECO = int(L1s.isna().sum())
+if A.lluvia_hueco == "power":
+    L1s = L1s.fillna(cl.PRECTOTCORR.reindex(f1_))
+L1 = L1s.fillna(0).to_numpy()
+log(f"tramo 1: {len(f1_)} días · sin CHIRPS {HUECO} · relleno: {A.lluvia_hueco} · lluvia total {L1.sum():.0f} mm")
 E1 = cl.eto.reindex(f1_).ffill().bfill().to_numpy()  # ETo FAO-56 con NASA POWER observado
 NV1 = np.empty((len(DIAS1), NP))  # NDVI observado del pixel, llevado a diario (calibrado y sin bruma)
 for i, k in enumerate(pix_ok):
@@ -389,7 +396,16 @@ for h in (0, 7, 15, 30):
                                                 if ((CLASE[:, h] == 1) & (DIAS_BAJA >= h)).any() else None)
     fila["posible_enfermedad_o_deficiencia_nutricional"] = {"pct": round(100 * MARCA[:, h].sum() / max(n_c, 1), 1)}
     resumen["horizontes"].append(fila)
+resumen["lluvia_hueco"] = {"dias_sin_chirps": HUECO, "relleno": A.lluvia_hueco}
+# los 31 días: lluvia y ETo acumuladas (promedio de miembros GEOS) para el deslizador de la app
+resumen["diario"] = [{"h": h, "fecha": str((HOY + pd.Timedelta(days=h)).date()),
+                      "lluvia_mm_hasta_h": round(float(LL[:, :h].sum(1).mean()), 1) if h else 0.0,
+                      "eto_mm_hasta_h": round(float(ETO[:, :h].sum(1).mean()), 1) if h else 0.0}
+                     for h in range(HORIZONTE + 1)]
 json.dump(resumen, open(OUT / "resumen.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+# los 31 días por pixel (color, déficit pintado y marca del NDMI); la humedad equivalente es 30 − déficit/1,5
+np.savez_compressed(OUT / "diario.npz", pixel=IDX[pk], clase=CLASE.astype(np.int8), deficit_mm=DRP.astype(np.float32),
+                    marca=MARCA)
 filas = pd.DataFrame({"pixel": IDX[pk], "das_hoy": DAS[:, 0], "dias_hasta_baja": DIAS_BAJA})
 for h in (0, 7, 15, 30):
     filas[f"clase_h{h}"] = CLASE[:, h]

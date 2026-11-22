@@ -59,23 +59,30 @@ Usar el `.venv` del proyecto: tiene pyproj.
 - `mapa.html`: visor Leaflet sobre imagen satelital Esri, con un deslizador hoy / 7 / 15 / 30 días;
 - `semaforo_hXX.png`;
 - `resumen.json`, que incluye los días hasta "baja" sin riego;
-- `pixeles.csv.gz`, con humedad, déficit pintado, déficit de B sin margen, S₂₀, Dr de la ecuación y color por pixel y horizonte.
+- `pixeles.csv.gz`, con humedad, déficit pintado, déficit de B sin margen, S₂₀, Dr de la ecuación y color por pixel en hoy, +7, +15 y +30;
+- `diario.npz`, con color, déficit pintado y marca del NDMI de los 31 días.
 
 Los datos que se usan son los que ya existían: el cubo de A, `clima.csv` y GEOS-S2S. No cambió el almacenamiento.
 
 ## Resultado del 15-nov-2026 (zona de 400 ha alrededor de Nataima, 69 ha en cultivo)
 
+Lluvia observada del tramo 1: CHIRPS hasta el 30-sep; los 46 días que CHIRPS aún no publica (1-oct a 15-nov), con NASA POWER (ver decisiones).
+
 | Día | Verde | Amarillo | Rojo | Lluvia / ETo acumuladas (GEOS-S2S) |
 |---|---|---|---|---|
-| Hoy | 10 % | 84 % | 6 % | — |
+| Hoy | 99 % | 1 % | 0 % | — |
 | +7 | 0 % | 0 % | 100 % | 18 / 26 mm |
 | +15 | 0 % | 9 % | 91 % | 35 / 54 mm |
 | +30 | 0 % | 100 % | 0 % | 92 / 113 mm |
 
-Días hasta rojo sin riego:
-- 6 % ya hoy;
-- 90 % en 3–5 días;
-- 4 % en 6–30 días.
+Los 31 días están en `diario.npz` y en la app (barra deslizadora). Días hasta rojo sin riego:
+- 88 % en 3–5 días;
+- 11 % en 6–30 días;
+- 2 % no llega en 30 días.
+
+La alarma del NDMI marca el 36 % de los píxeles en cultivo hoy. Solo se dibuja sobre los verdes, y hoy casi todos lo son.
+
+Con la regla anterior (lluvia 0 en los días sin CHIRPS) hoy salía 10 % verde, 84 % amarillo y 6 % rojo. De +7 en adelante no cambia.
 
 **Por qué todo pasa a rojo en una semana.** La reserva útil del artículo (TAW 6,7 mm) alcanza para menos de dos días de consumo (Kc·ETo ≈ 4,3 mm/día). Sin riego, el balance la agota en días, sin importar el estado de partida. Por eso la información que distingue un pixel de otro es en cuántos días llega a rojo.
 
@@ -87,6 +94,7 @@ Días hasta rojo sin riego:
 | B solo hasta hoy; desde hoy propaga Dr_modificada | 22-nov | Pasarle al ARIMAX las entradas propagadas no seca el suelo: 30 días sin riego bajan μ solo 0,3 puntos, porque β de Dr y de "días desde riego" tienen el signo físico al revés (colinealidad). Reentrenar con solo S τ45 tampoco sigue los secados observados (`reports/b_reentreno/dinamica/`: ρ −0,08 [−0,29; 0,10]). Los datos de Nataima no pueden validar un secado aprendido: hay 2 días entre mediciones y el ruido del TDR es de ±4 puntos. La dinámica la pone la física (FAO-56). |
 | Margen solo en el arranque | 22-nov | Sin margen, B detecta 0 de 17 rojos, porque μ es una media encogida. Con margen detecta 9 de 17, con exactitud balanceada 0,53. Dr_modificada no está encogida, así que se pinta con los límites del artículo tal cual. |
 | Riego supuesto CD | 22-nov | Es el riego más común y accesible. El producto busca ahorrar agua frente a lo que hace la mayoría, así que se supone el riego más arcaico. Con AWD+MIRI el día 0 salía 100 % rojo. |
+| Días sin CHIRPS: lluvia de NASA POWER, no 0 mm | 22-nov | CHIRPS publica con más de un mes de atraso (el 22-nov su último dato era el 30-sep). Para la lluvia de 46 días, frente a CHIRPS en 2016–2026: rellenar con 0 se equivoca ~280 mm; la climatología, 56 mm; POWER (PRECTOTCORR), 51 mm (r 0,78, +7 %). Este año POWER da 297 mm del 1-oct al 14-nov. Con 0 mm, B veía 46 días de sequía y μ de hoy bajaba de 37,4 % a 32,5 %. |
 | Escenario sin riego desde hoy | 21-nov | Es el más universal: no depende de lo que haga cada agricultor. |
 
 Comparación de reglas de color para B en la prueba sellada, con las 198 mediciones:

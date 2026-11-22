@@ -50,7 +50,7 @@ fijos = {
 oro = {
     f"oro/semaforo_app/emision={emision}/semaforo.json": APP / "semaforo.json",
     **{f"oro/semaforo_app/emision={emision}/{p.name}": p
-       for p in sorted(SEM.glob("*")) if p.suffix in (".json", ".gz", ".png", ".html")},
+       for p in sorted(SEM.glob("*")) if p.suffix in (".json", ".gz", ".png", ".html", ".npz")},
     "oro/semaforo_app/zonas.json": APP / "zonas.json",
 }
 objetos = oro if A.solo_oro else {**fijos, **oro}

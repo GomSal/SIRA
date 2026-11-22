@@ -26,26 +26,26 @@
    "lluvia_mm_hasta_h": 0.0,
    "eto_mm_hasta_h": 0.0,
    "suficiente": {
-    "pct": 10.3,
-    "ha": 7.1,
+    "pct": 98.6,
+    "ha": 67.71,
     "deficit_L_m2_medio": 0.0,
     "agua_m3_zona": 0.0
    },
    "media": {
-    "pct": 83.6,
-    "ha": 57.39,
-    "deficit_L_m2_medio": 1.3,
-    "agua_m3_zona": 746.0,
-    "dias_hasta_baja_mediana": 5
+    "pct": 1.4,
+    "ha": 0.97,
+    "deficit_L_m2_medio": 0.63,
+    "agua_m3_zona": 6.0,
+    "dias_hasta_baja_mediana": 7
    },
    "baja": {
-    "pct": 6.1,
-    "ha": 4.19,
-    "deficit_L_m2_medio": 5.56,
-    "agua_m3_zona": 233.0
+    "pct": 0.0,
+    "ha": 0.0,
+    "deficit_L_m2_medio": 0.0,
+    "agua_m3_zona": 0.0
    },
    "posible_enfermedad_o_deficiencia_nutricional": {
-    "pct": 2.7
+    "pct": 35.7
    }
   },
   {
@@ -70,8 +70,8 @@
    "baja": {
     "pct": 100.0,
     "ha": 67.61,
-    "deficit_L_m2_medio": 6.64,
-    "agua_m3_zona": 4490.0
+    "deficit_L_m2_medio": 6.61,
+    "agua_m3_zona": 4471.0
    },
    "posible_enfermedad_o_deficiencia_nutricional": {
     "pct": 0.0
@@ -137,10 +137,202 @@
   }
  ],
  "dias_hasta_baja_sin_riego_pct": {
-  "ya hoy": 6.1,
+  "ya hoy": 0.0,
   "1-2 días": 0.0,
-  "3-5 días": 89.9,
-  "6-30 días": 4.0,
-  "no llega en 30 días": 0.0
- }
+  "3-5 días": 87.8,
+  "6-30 días": 10.7,
+  "no llega en 30 días": 1.6
+ },
+ "lluvia_hueco": {
+  "dias_sin_chirps": 46,
+  "relleno": "power"
+ },
+ "diario": [
+  {
+   "h": 0,
+   "fecha": "2026-11-15",
+   "lluvia_mm_hasta_h": 0.0,
+   "eto_mm_hasta_h": 0.0
+  },
+  {
+   "h": 1,
+   "fecha": "2026-11-16",
+   "lluvia_mm_hasta_h": 5.4,
+   "eto_mm_hasta_h": 3.8
+  },
+  {
+   "h": 2,
+   "fecha": "2026-11-17",
+   "lluvia_mm_hasta_h": 8.7,
+   "eto_mm_hasta_h": 7.5
+  },
+  {
+   "h": 3,
+   "fecha": "2026-11-18",
+   "lluvia_mm_hasta_h": 17.2,
+   "eto_mm_hasta_h": 11.0
+  },
+  {
+   "h": 4,
+   "fecha": "2026-11-19",
+   "lluvia_mm_hasta_h": 17.2,
+   "eto_mm_hasta_h": 14.7
+  },
+  {
+   "h": 5,
+   "fecha": "2026-11-20",
+   "lluvia_mm_hasta_h": 17.4,
+   "eto_mm_hasta_h": 18.2
+  },
+  {
+   "h": 6,
+   "fecha": "2026-11-21",
+   "lluvia_mm_hasta_h": 17.6,
+   "eto_mm_hasta_h": 21.8
+  },
+  {
+   "h": 7,
+   "fecha": "2026-11-22",
+   "lluvia_mm_hasta_h": 18.0,
+   "eto_mm_hasta_h": 25.6
+  },
+  {
+   "h": 8,
+   "fecha": "2026-11-23",
+   "lluvia_mm_hasta_h": 18.3,
+   "eto_mm_hasta_h": 29.2
+  },
+  {
+   "h": 9,
+   "fecha": "2026-11-24",
+   "lluvia_mm_hasta_h": 18.6,
+   "eto_mm_hasta_h": 32.7
+  },
+  {
+   "h": 10,
+   "fecha": "2026-11-25",
+   "lluvia_mm_hasta_h": 19.1,
+   "eto_mm_hasta_h": 36.4
+  },
+  {
+   "h": 11,
+   "fecha": "2026-11-26",
+   "lluvia_mm_hasta_h": 21.1,
+   "eto_mm_hasta_h": 40.0
+  },
+  {
+   "h": 12,
+   "fecha": "2026-11-27",
+   "lluvia_mm_hasta_h": 25.0,
+   "eto_mm_hasta_h": 43.4
+  },
+  {
+   "h": 13,
+   "fecha": "2026-11-28",
+   "lluvia_mm_hasta_h": 29.5,
+   "eto_mm_hasta_h": 47.1
+  },
+  {
+   "h": 14,
+   "fecha": "2026-11-29",
+   "lluvia_mm_hasta_h": 32.1,
+   "eto_mm_hasta_h": 50.8
+  },
+  {
+   "h": 15,
+   "fecha": "2026-11-30",
+   "lluvia_mm_hasta_h": 34.6,
+   "eto_mm_hasta_h": 54.3
+  },
+  {
+   "h": 16,
+   "fecha": "2026-12-01",
+   "lluvia_mm_hasta_h": 43.7,
+   "eto_mm_hasta_h": 58.5
+  },
+  {
+   "h": 17,
+   "fecha": "2026-12-02",
+   "lluvia_mm_hasta_h": 46.8,
+   "eto_mm_hasta_h": 62.6
+  },
+  {
+   "h": 18,
+   "fecha": "2026-12-03",
+   "lluvia_mm_hasta_h": 56.4,
+   "eto_mm_hasta_h": 66.3
+  },
+  {
+   "h": 19,
+   "fecha": "2026-12-04",
+   "lluvia_mm_hasta_h": 57.2,
+   "eto_mm_hasta_h": 69.9
+  },
+  {
+   "h": 20,
+   "fecha": "2026-12-05",
+   "lluvia_mm_hasta_h": 58.3,
+   "eto_mm_hasta_h": 73.8
+  },
+  {
+   "h": 21,
+   "fecha": "2026-12-06",
+   "lluvia_mm_hasta_h": 59.9,
+   "eto_mm_hasta_h": 77.7
+  },
+  {
+   "h": 22,
+   "fecha": "2026-12-07",
+   "lluvia_mm_hasta_h": 64.5,
+   "eto_mm_hasta_h": 81.6
+  },
+  {
+   "h": 23,
+   "fecha": "2026-12-08",
+   "lluvia_mm_hasta_h": 69.6,
+   "eto_mm_hasta_h": 85.5
+  },
+  {
+   "h": 24,
+   "fecha": "2026-12-09",
+   "lluvia_mm_hasta_h": 71.1,
+   "eto_mm_hasta_h": 89.4
+  },
+  {
+   "h": 25,
+   "fecha": "2026-12-10",
+   "lluvia_mm_hasta_h": 73.4,
+   "eto_mm_hasta_h": 93.3
+  },
+  {
+   "h": 26,
+   "fecha": "2026-12-11",
+   "lluvia_mm_hasta_h": 74.5,
+   "eto_mm_hasta_h": 97.1
+  },
+  {
+   "h": 27,
+   "fecha": "2026-12-12",
+   "lluvia_mm_hasta_h": 75.7,
+   "eto_mm_hasta_h": 101.2
+  },
+  {
+   "h": 28,
+   "fecha": "2026-12-13",
+   "lluvia_mm_hasta_h": 77.7,
+   "eto_mm_hasta_h": 105.1
+  },
+  {
+   "h": 29,
+   "fecha": "2026-12-14",
+   "lluvia_mm_hasta_h": 87.1,
+   "eto_mm_hasta_h": 108.8
+  },
+  {
+   "h": 30,
+   "fecha": "2026-12-15",
+   "lluvia_mm_hasta_h": 92.3,
+   "eto_mm_hasta_h": 112.5
+  }
+ ]
 }
