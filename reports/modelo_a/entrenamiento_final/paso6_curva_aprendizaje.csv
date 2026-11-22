@@ -1,9 +1,0 @@
-indice,pixeles,skill_medio,dif_vs_mejor_IC95,peor_signif
-ndvi,750,0.1808972,-0.0126 a +0.0032,False
-ndvi,1500,0.18578085,+0.0000 a +0.0000,False
-ndvi,3000,0.18310115,-0.0081 a +0.0018,False
-ndvi,6000,0.18573107,-0.0063 a +0.0052,False
-ndmi,750,0.19755323,+0.0000 a +0.0000,False
-ndmi,1500,0.19177608,-0.0159 a +0.0036,False
-ndmi,3000,0.18355213,-0.0246 a -0.0039,True
-ndmi,6000,0.18946762,-0.0213 a +0.0017,False

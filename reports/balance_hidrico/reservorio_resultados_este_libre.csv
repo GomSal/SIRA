@@ -1,4 +1,0 @@
-kc,temporada_prueba,tau_dias,alfa_lluvia,kc_a,kc_b,rmse_mm,rmse_linea_base_mm,spearman,acierto_clase,acierto_clase_linea_base,n
-NDVI este (libre),1,45,0.5,3.0,-0.4,5.71,7.68,0.57,0.72,0.79,80
-NDVI este (libre),2,90,0.5,3.0,0.8,4.45,4.34,0.6,0.71,0.73,48
-NDVI este (libre),3,60,0.25,3.0,-0.4,4.74,6.28,0.74,0.57,0.56,70

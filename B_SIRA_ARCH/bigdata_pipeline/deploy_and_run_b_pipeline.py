@@ -68,7 +68,22 @@ def get_boto3_session():
 
 
 def repo_file(rel: str) -> str:
-    return os.path.join(GITHUB_REPO, *rel.replace("\\", "/").split("/"))
+    """Busca primero en SIRA_REPO_PATH / clon de modelo-humedad y cae a copias locales en data/models/."""
+    rel_norm = rel.replace("\\", "/")
+    cand = os.path.join(GITHUB_REPO, *rel_norm.split("/"))
+    if os.path.exists(cand):
+        return cand
+    fallback_map = {
+        "reports/modelo_a/entrenamiento_final/paso8_geos_correccion.csv": os.path.join(MODELS_DIR, "pronosticador_a", "paso8_geos_correccion.csv"),
+        "reports/modelo_a/entrenamiento_final/paso8_geos_error_clima.csv": os.path.join(MODELS_DIR, "pronosticador_a", "paso8_geos_error_clima.csv"),
+        "reports/modelo_a/entrenamiento_final/paso8_metricas_absolutas.csv": os.path.join(MODELS_DIR, "pronosticador_a", "paso8_metricas_absolutas.csv"),
+        "reports/modelo_a/entrenamiento_final/paso8_semaforo_b_hacia_adelante.csv": os.path.join(MODELS_DIR, "pronosticador_a", "paso8_semaforo_b_hacia_adelante.csv"),
+        "reports/semaforo_clasificador_ndvi_prithvi/roc_auc.csv": os.path.join(MODELS_DIR, "semaforo_b", "roc_auc_familias.csv"),
+        "reports/b_reentreno/etapa1/resumen_por_variante.csv": os.path.join(MODELS_DIR, "semaforo_b", "reentreno_etapa1_resumen.csv"),
+    }
+    if rel_norm in fallback_map and os.path.exists(fallback_map[rel_norm]):
+        return fallback_map[rel_norm]
+    return cand
 
 
 def fit_arimax1_params_from_real_data() -> dict:

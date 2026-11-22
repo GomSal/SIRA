@@ -1,5 +1,0 @@
-particion_prueba,n_prueba,elegido,hiperparametros,auc_macro_validacion,auc_macro,exactitud_balanceada,auc_verde,recall_verde,precision_verde,n_verde,auc_amarillo,recall_amarillo,precision_amarillo,n_amarillo,auc_rojo,recall_rojo,precision_rojo,n_rojo
-1,47,ARIMAX,"{""p"": 1}",0.7536,0.8459,0.6583,0.8262,0.6,0.9545,35,0.8045,0.375,0.3,8,0.907,1.0,0.2667,4
-2,47,Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.03}",0.8188,0.7714,0.5158,0.8009,0.8529,0.8056,34,0.7982,0.4444,0.5,9,0.7151,0.25,0.3333,4
-3,52,ARIMAX,"{""p"": 2}",0.8139,0.6505,0.3733,0.6672,0.5429,0.7917,35,0.6331,0.0769,0.125,13,0.651,0.5,0.1,4
-4,52,ARIMAX,"{""p"": 1}",0.7677,0.8565,0.6183,0.8756,0.7714,0.9,35,0.7833,0.0833,0.2,12,0.9106,1.0,0.2941,5

@@ -132,7 +132,7 @@ Para subir cualquier archivo manualmente desde la interfaz:
    - **Options:** `Start fresh`
    - Clic en el **botón naranja `Create script`**.
 3. **En la pestaña superior `Script`:**
-   - Se pegó el código completo de [`bigdata_pipeline/spark_jobs/job_01_clima_por_dia.py`](../bigdata_pipeline/spark_jobs/job_01_clima_por_dia.py), el cual calcula con ventanas de Spark (`Window`) las lluvias acumuladas de 1, 3, 5, 7 y 15 días de CHIRPS, el índice $\text{SWI}$ y la ecuación **FAO-56 Penman-Monteith** con temperatura, radiación, viento, **humedad relativa (`RH2M`)** y **presión superficial (`PS`)**.
+   - Se pegó el código completo de [`bigdata_pipeline/spark_jobs/job_01_clima_por_dia.py`](bigdata_pipeline/spark_jobs/job_01_clima_por_dia.py), el cual calcula con ventanas de Spark (`Window`) las lluvias acumuladas de 1, 3, 5, 7 y 15 días de CHIRPS, el índice $\text{SWI}$ y la ecuación **FAO-56 Penman-Monteith** con temperatura, radiación, viento, **humedad relativa (`RH2M`)** y **presión superficial (`PS`)**.
 4. **En la pestaña superior `Job details`:**
    - **Name:** `sira-01-clima-por-dia`
    - **IAM Role:** Desplegable seleccionado en `sira-glue-service-role`
@@ -160,7 +160,7 @@ Para subir cualquier archivo manualmente desde la interfaz:
 
 ### Paso 4.3: Configuración del Trabajo 2 — `sira-02-regresion-bruma-y-emparejamiento` (*Tuning* de Bruma + Paso 4)
 Siguiendo el mismo menú (**ETL jobs** $\rightarrow$ **`Script editor`** $\rightarrow$ **`Create script`**):
-1. **Pestaña `Script`:** Código de [`bigdata_pipeline/spark_jobs/job_02_regresion_bruma_y_emparejamiento.py`](../bigdata_pipeline/spark_jobs/job_02_regresion_bruma_y_emparejamiento.py).
+1. **Pestaña `Script`:** Código de [`bigdata_pipeline/spark_jobs/job_02_regresion_bruma_y_emparejamiento.py`](bigdata_pipeline/spark_jobs/job_02_regresion_bruma_y_emparejamiento.py).
 2. **Pestaña `Job details`:**
    - **Name:** `sira-02-regresion-bruma-y-emparejamiento`
    - **IAM Role:** `sira-glue-service-role` | **Glue version:** `Glue 4.0` | **Worker type:** `G.1X` | **Workers:** `2` | **Timeout:** `20`.
@@ -184,7 +184,7 @@ Siguiendo el mismo menú (**ETL jobs** $\rightarrow$ **`Script editor`** $\right
 ---
 
 ### Paso 4.4: Configuración del Trabajo 3 — `sira-03-inferencia-y-verificacion-oro` (Inferencia a 10 m + Semáforo)
-1. **Pestaña `Script`:** Código de [`bigdata_pipeline/spark_jobs/job_03_inferencia_y_verificacion.py`](../bigdata_pipeline/spark_jobs/job_03_inferencia_y_verificacion.py).
+1. **Pestaña `Script`:** Código de [`bigdata_pipeline/spark_jobs/job_03_inferencia_y_verificacion.py`](bigdata_pipeline/spark_jobs/job_03_inferencia_y_verificacion.py).
 2. **Pestaña `Job details`:**
    - **Name:** `sira-03-inferencia-y-verificacion-oro`
    - **IAM Role:** `sira-glue-service-role` | **Glue version:** `Glue 4.0` | **Worker type:** `G.1X` | **Workers:** `2` | **Timeout:** `20`.
@@ -215,7 +215,7 @@ Siguiendo el mismo menú (**ETL jobs** $\rightarrow$ **`Script editor`** $\right
 2. En la ventana emergente *Choose a template*, se seleccionó el círculo **`Create from blank`**, se escribió el nombre **`sira-pipeline-clima-diario`**, se dejó el tipo **`Standard`** y se hizo clic en el **botón naranja `Continue`**.
 3. En el lienzo de **Workflow Studio**, en la barra superior central hay tres botones de modo: **`Design`**, **`Code`** y **`Config`**.
    - Se hizo clic en el botón **`Code`**.
-   - En el editor JSON se pegó el contenido exacto de [`bigdata_pipeline/orchestration/stepfunctions_sira_daily.asl.json`](../bigdata_pipeline/orchestration/stepfunctions_sira_daily.asl.json).
+   - En el editor JSON se pegó el contenido exacto de [`bigdata_pipeline/orchestration/stepfunctions_sira_daily.asl.json`](bigdata_pipeline/orchestration/stepfunctions_sira_daily.asl.json).
    - Al volver a hacer clic en **`Design`**, se visualizan los bloques conectados en secuencia con sus políticas de reintento (`Retry`):
      1. `Paso_2c_2d_Clima_Por_Dia` (`sira-01-clima-por-dia`)
      2. `Paso_4_Regresion_Bruma_y_Emparejamiento` (`sira-02-regresion-bruma-y-emparejamiento`)
@@ -286,7 +286,7 @@ En el **panel izquierdo del Query Editor** de Athena:
 
 ### Paso 7.3: Cómo Ejecutar las Consultas en Vivo durante la Sustentación
 1. En el panel central del **Editor** de Athena, haz clic en el botón **`+`** para abrir una pestaña de consulta limpia.
-2. Pega cualquiera de las 3 consultas al final de [`bigdata_pipeline/sql/ddl_and_analytics_athena.sql`](../bigdata_pipeline/sql/ddl_and_analytics_athena.sql).
+2. Pega cualquiera de las 3 consultas al final de [`bigdata_pipeline/sql/ddl_and_analytics_athena.sql`](bigdata_pipeline/sql/ddl_and_analytics_athena.sql).
 3. Haz clic en el **botón azul/naranja `Run`** (debajo del cuadro de código SQL).
 4. En menos de 2 segundos aparecerá en la parte inferior la tabla **Query results** con los indicadores reales calculados sobre S3.
 

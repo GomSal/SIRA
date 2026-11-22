@@ -1,5 +1,0 @@
-particion_prueba,n_prueba,elegido,hiperparametros,auc_macro_validacion,auc_macro,exactitud_balanceada,auc_verde,recall_verde,precision_verde,n_verde,auc_amarillo,recall_amarillo,precision_amarillo,n_amarillo,auc_rojo,recall_rojo,precision_rojo,n_rojo
-1,47,XGBoost + Prithvi,"{""max_depth"": 1, ""learning_rate"": 0.03, ""min_child_weight"": 8, ""prithvi_pca"": 3}",0.7318,0.8772,0.7417,0.8833,0.6,0.9545,35,0.8237,0.875,0.3333,8,0.9244,0.75,0.75,4
-2,47,XGBoost + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.03, ""min_child_weight"": 3, ""prithvi_pca"": 3}",0.8299,0.7129,0.469,0.7624,0.8235,0.7778,34,0.7018,0.3333,0.375,9,0.6744,0.25,0.3333,4
-3,52,XGBoost + Prithvi,"{""max_depth"": 2, ""learning_rate"": 0.03, ""min_child_weight"": 3, ""prithvi_pca"": 3}",0.7921,0.6375,0.402,0.6941,0.5714,0.7143,35,0.6923,0.3846,0.2632,13,0.526,0.25,0.2,4
-4,52,XGBoost,"{""max_depth"": 3, ""learning_rate"": 0.03, ""min_child_weight"": 3}",0.7442,0.8263,0.4452,0.8151,0.8857,0.7045,35,0.8042,0.25,0.4286,12,0.8596,0.2,1.0,5

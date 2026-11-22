@@ -1,7 +1,7 @@
 # 04_B — Manual de Uso y Guía de Lectura Detallada (`B_SIRA_ARCH` · HEAD `8fde03d`)
 
 **Proyecto:** SIRA — Sistema Inteligente de Riego para Arroz en el Alto Magdalena (Equipo 10, EAFIT)  
-**Repositorio GitHub Local:** [`la raíz del repositorio (`./`)`](../) (`GomSal/SIRA`, rama `modelo-humedad`, commit `8fde03d`)  
+**Repositorio GitHub Local:** [`la raíz del repositorio (`./`)`](https://github.com/GomSal/SIRA/tree/modelo-humedad) (`GomSal/SIRA`, rama `modelo-humedad`, commit `8fde03d`)  
 **Lakehouse AWS:** `s3://sira-b-lakehouse-929570730700/` · **Base de Datos Athena:** `sira_b_lakehouse_db` (**13 tablas**)
 
 > **Propósito de este documento:** Explicar en lenguaje claro **cómo saber leer cada pieza del sistema** (qué dice cada carpeta en S3, qué significa cada tabla y cada columna en Athena, cómo leer los mapas y colores del Semáforo C, cómo interpretar las respuestas JSON de la API) y entregar el **manual de uso completo** para actualizar, ejecutar y demostrar la plataforma.

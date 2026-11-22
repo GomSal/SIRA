@@ -3,13 +3,13 @@
 **Proyecto:** SIRA (Sistema Inteligente de Riego para Arroz en el Alto Magdalena)  
 **Equipo:** Equipo 10 — Maestría en Ciencia de Datos y Analítica (Universidad EAFIT)  
 ** Enfoque del Documento:** Subsistema de Ingesta, Procesamiento Distribuido, Almacenamiento Lakehouse y Regresión Hidroclimática (CHIRPS + NASA POWER + IDEAM) para el ajuste (*tuning*) de predicción de humedad del suelo por píxel ante bruma atmosférica y baja resolución satelital.  
-**Documentos Base:** [`sira_flujo_entrenamiento.html`](../sira_flujo_entrenamiento.html) · [`HANDOVER.md`](../HANDOVER.md) · [`s00271-025-01025-w.pdf`](../s00271-025-01025-w.pdf) (Martínez-Vega et al., 2025)
+**Documentos Base:** `sira_flujo_entrenamiento.html` · [`HANDOVER.md`](https://github.com/GomSal/SIRA/blob/main/HANDOVER.md) · `s00271-025-01025-w.pdf` (Martínez-Vega et al., 2025)
 
 ---
 
 ## 1. Contexto y Rol Estratégico de la Rama `"Clima por Día"`
 
-En el flujo de entrenamiento de SIRA ([`sira_flujo_entrenamiento.html`](../sira_flujo_entrenamiento.html)), el modelo de aprendizaje automático estima la **humedad volumétrica del suelo ($\text{VWC}$, medida con sonda TDR)** por píxel de 10 m integrando cuatro ramas de información en el nodo **`4. Emparejar`**:
+En el flujo de entrenamiento de SIRA (`sira_flujo_entrenamiento.html`), el modelo de aprendizaje automático estima la **humedad volumétrica del suelo ($\text{VWC}$, medida con sonda TDR)** por píxel de 10 m integrando cuatro ramas de información en el nodo **`4. Emparejar`**:
 1. **Verdad de campo (`Paper Nataima`):** 198 mediciones reales de humedad TDR a 20 cm de profundidad, láminas de riego diario y días después de la siembra ($\text{DAS}$) en tres temporadas agrícolas (`GS1`: mayo–septiembre 2021, `GS2`: diciembre 2021–abril 2022, `GS3`: julio–noviembre 2022) bajo tres tratamientos de riego: inundación continua en cascada (`CD`), entradas múltiples por politubo (`MIRI`) y secas y mojes alternos (`AWD+MIRI`).
 2. **Rama Óptica de Alta Resolución (`Sentinel-2 L2A`, 10–20 m):** Filtrado de nubes/sombras (`Paso 1a`) y cálculo de índices espectrales por píxel (`Paso 2a`: $\text{NDMI}$, $\text{NDWI}$, $\text{NDVI}$, $\text{MNDWI}$).
 3. **Rama de Modelo Fundacional (`HLS` 30 m + `Prithvi-EO-2.0`):** Filtrado de nubes (`Paso 1b`), extracción de 1.024 *embeddings* por bloque de $16 \times 16$ píxeles (`Paso 2b`) y reducción dimensional mediante PCA a 10–20 componentes (`Paso 3b`).
@@ -34,7 +34,7 @@ El proyecto enfrenta dos desafíos estructurales que el modelo puramente satelit
 
 ## 2. Evaluación Técnica y Selección de Fuentes Climáticas: CHIRPS vs. NASA POWER vs. IDEAM
 
-Para construir el nodo **`Clima por día`**, se evaluaron cuatro fuentes candidatas contrastándolas contra los registros reales de la estación meteorológica en sitio reportados en las Figuras 2 y 4 y la Tabla 2 de Martínez-Vega et al. (2025) ([`s00271-025-01025-w.pdf`](../s00271-025-01025-w.pdf)):
+Para construir el nodo **`Clima por día`**, se evaluaron cuatro fuentes candidatas contrastándolas contra los registros reales de la estación meteorológica en sitio reportados en las Figuras 2 y 4 y la Tabla 2 de Martínez-Vega et al. (2025) (`s00271-025-01025-w.pdf`):
 
 | Fuente de Datos | Variables Principales | Resolución Espacial y Temporal | Cobertura Histórica | Hallazgos de Validación frente a Nataima (`HANDOVER.md`) | Rol en la Arquitectura Big Data de SIRA |
 |---|---|---|---|---|---|
@@ -45,7 +45,7 @@ Para construir el nodo **`Clima por día`**, se evaluaron cuatro fuentes candida
 
 ### 2.1 Justificación Agronómica y Física de las Variables Climáticas en el Cultivo de Arroz
 
-De acuerdo con el estudio base de Nataima ([`s00271-025-01025-w.pdf`](../s00271-025-01025-w.pdf), p. 3 y p. 5–7):
+De acuerdo con el estudio base de Nataima (`s00271-025-01025-w.pdf`, p. 3 y p. 5–7):
 - **Propiedades hidráulicas del suelo en Nataima:** Textura franco-arenosa (*sandy loam*) con alta tasa de infiltración y percolación. Capacidad de Campo ($\text{FC}$) $\approx 30\%$, Punto de Marchitez Permanente ($\text{PWP}$) $\approx 26\%$, Saturación ($\text{SAT}$) $= 47,65\%$, Agua Fácilmente Disponible ($\text{TAW}$) $\approx 4\%$ ($0,0446\text{ v v}^{-1}$), profundidad radicular efectiva $Z_r = 150\text{ mm}$ y Déficit Hídrico Crítico ($\text{CWD}$) $= 4,34\text{ mm}$, lo que define el umbral crítico de estrés en **$30\% - (4,34 / 150) \approx 27,1\%\text{ VWC}$**.
 - **Desfase de la lluvia satelital diaria y necesidad de ventanas acumuladas (`Paso 2c`):** En el trópico andino, los aguaceros convectivos son altamente localizados (p. ej., el evento extremo de $113\text{ mm}$ en un solo día durante la etapa vegetativa de `GS1`, $87\text{ mm}$ en `GS2` y $67\text{ mm}$ en `GS3`). Como CHIRPS estima la lluvia a partir de la temperatura de tope de nube en celdas de $5,5\text{ km}$, un aguacero puntual puede registrarse repartido entre el día $t$ y los días $t-1$ o $t+1$. Además, la humedad del suelo a $20\text{ cm}$ de profundidad no depende únicamente de la lluvia de las últimas 24 horas, sino de la **memoria hídrica de los últimos 3 a 5 días**.
 - **Déficit Hídrico Atmosférico ($\text{AtWD}$, `Paso 2d`):** El artículo de Nataima mide el riesgo de sequía atmosférica mediante el índice de Purcell et al. (2003): la diferencia entre el promedio móvil de 5 días de $\text{ET}_o$ ($\text{mm}$) y el promedio móvil de 5 días de lluvia ($\text{mm}$). Replicar exactamente esta métrica con NASA POWER y CHIRPS garantiza coherencia física total entre el entrenamiento histórico (2021–2022) y la inferencia actual (2026+).
@@ -425,7 +425,7 @@ Para resolver el cuello de botella de resolución espacial ($30\text{ m}$ en HLS
 
 ## 7. Orquestación del Pipeline Diario (5:00 a.m.) y Ciclos de Verificación
 
-Tal como establece [`HANDOVER.md`](../HANDOVER.md) (§5 y §6), la humedad del suelo varía en escala de días, no de segundos. Por ello, **no se requiere infraestructura de streaming (Kafka/Kinesis)**; la arquitectura opera mediante un **pipeline en lotes (*batch*) diario a las 5:00 a.m.** orquestado con **Amazon EventBridge Scheduler** y **AWS Step Functions**:
+Tal como establece [`HANDOVER.md`](https://github.com/GomSal/SIRA/blob/main/HANDOVER.md) (§5 y §6), la humedad del suelo varía en escala de días, no de segundos. Por ello, **no se requiere infraestructura de streaming (Kafka/Kinesis)**; la arquitectura opera mediante un **pipeline en lotes (*batch*) diario a las 5:00 a.m.** orquestado con **Amazon EventBridge Scheduler** y **AWS Step Functions**:
 
 | Hora (COT) | Etapa del Pipeline | Acción Técnica sobre Clima y Satélite | Tabla / Destino Actualizado |
 |---|---|---|---|

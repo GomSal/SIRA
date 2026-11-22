@@ -1,7 +1,7 @@
 # README — Iteración B (`B_SIRA_ARCH`): Arquitectura Big Data Completa Alineada a `GomSal/SIRA@modelo-humedad`
 
 **Proyecto Integrador 1:** SIRA (Sistema Inteligente de Riego para Arroz en el Alto Magdalena) — Equipo 10 (Universidad EAFIT)  
-**Repositorio GitHub Local (Fuente Única):** [`la raíz del repositorio (`./`)`](../) (`https://github.com/GomSal/SIRA/tree/modelo-humedad`, **HEAD `8fde03d`**, 21-nov-2026)  
+**Repositorio GitHub Local (Fuente Única):** [`la raíz del repositorio (`./`)`](https://github.com/GomSal/SIRA/tree/modelo-humedad) (`https://github.com/GomSal/SIRA/tree/modelo-humedad`, **HEAD `8fde03d`**, 21-nov-2026)  
 **Cuenta AWS Activa:** `929570730700` (`admin-gomsal`) · **Región:** `us-east-2` (Ohio) · **CloudFormation:** `0 stacks`  
 **Lakehouse S3:** `s3://sira-b-lakehouse-929570730700/` · **Base de Datos Athena:** `sira_b_lakehouse_db` (**13 tablas**)
 
@@ -10,7 +10,7 @@
 ## 1. Reorganización del Proyecto y Evolución hasta HEAD `8fde03d`
 
 1. **Separación limpia del repositorio GitHub (`SIRA\github\`):**  
-   Todo el código, datos procesados, reportes y resultados del repositorio remoto (`GomSal/SIRA`, rama `modelo-humedad`) viven centralizados y versionados con Git en [`github/`](../). Los scripts de `B_SIRA_ARCH` leen directamente desde esa carpeta sin copias duplicadas.
+   Todo el código, datos procesados, reportes y resultados del repositorio remoto (`GomSal/SIRA`, rama `modelo-humedad`) viven centralizados y versionados con Git en [`github/`](https://github.com/GomSal/SIRA/tree/modelo-humedad). Los scripts de `B_SIRA_ARCH` leen directamente desde esa carpeta sin copias duplicadas.
 2. **Iteración A archivada (`A_SIRA_ARCH/`):**  
    Conserva intacta la arquitectura inicial (flujo diario único, regresión climática de bruma, PCA de Prithvi y Open-Meteo a 7 días) junto con sus recursos previos en AWS (`sira-lakehouse-clima-929570730700` y `sira_clima_db`).
 3. **Iteración B vigente (`B_SIRA_ARCH/`) — Acoplada a los 3 modelos cerrados en `modelo-humedad` (`708d4de` → `8fde03d`):**

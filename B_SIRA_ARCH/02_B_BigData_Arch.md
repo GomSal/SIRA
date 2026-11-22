@@ -1,7 +1,7 @@
 # 02_B — Arquitectura Técnica de Big Data (`B_SIRA_ARCH` · HEAD `8fde03d`)
 
 **Proyecto:** SIRA — Sistema Inteligente de Riego para Arroz en el Alto Magdalena (Equipo 10, EAFIT)  
-**Fuente ML y Operación:** [`SIRA\github`](../) (`https://github.com/GomSal/SIRA/tree/modelo-humedad`, commit `8fde03d`, 21-nov-2026)  
+**Fuente ML y Operación:** [`SIRA\github`](https://github.com/GomSal/SIRA/tree/modelo-humedad) (`https://github.com/GomSal/SIRA/tree/modelo-humedad`, commit `8fde03d`, 21-nov-2026)  
 **Bucket S3:** `s3://sira-b-lakehouse-929570730700/` · **Base de Datos Athena:** `sira_b_lakehouse_db` (**13 tablas**)
 
 ---

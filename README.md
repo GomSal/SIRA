@@ -1,69 +1,78 @@
-# SIRA
+# SIRA · Rama `Big-Data_Arch` (Arquitectura Lakehouse AWS)
 
-Repositorio principal para la extracción, procesamiento y análisis de datos de Landsat.
+Esta rama contiene **exclusivamente la arquitectura, pipelines, infraestructura AWS y documentación de Big Data** del proyecto **SIRA** (Equipo 10 · Universidad EAFIT · `SI7006`), completamente autocontenida y lista para que cualquier colaborador la ejecute o despliegue en AWS.
 
-## Diagrama de Flujo del Desarrollo del Proyecto
+> **Otras ramas del repositorio:**
+> * **Portada maestra y guía de replicación integral:** [`main`](https://github.com/GomSal/SIRA/tree/main)
+> * **Código y entrenamiento de Machine Learning:** [`modelo-humedad`](https://github.com/GomSal/SIRA/tree/modelo-humedad)
+> * **Carpetas base de documentación consolidada:** [`General-Documentation`](https://github.com/GomSal/SIRA/tree/General-Documentation)
 
-```mermaid
-graph TD
-    A[Inicio] --> B[Clonar Repositorio SIRA]
-    B --> C[Configurar Ambiente SIRA]
-    C --> D[Instalar Dependencias]
-    D --> E[Ejecutar src/main.py]
-    E --> F{Autenticación API Exitosa?}
-    F -->|Sí| G[Extracción de Datos Landsat]
-    F -->|No| H[Registrar Error / Solicitar Credenciales]
-    G --> I[Procesamiento / Limpieza de Datos]
-    I --> J[Guardar en data/processed]
-    J --> K[Fin]
-    H --> K
+---
+
+## Diagrama de Flujo Big Data (`B_SIRA_ARCH`)
+
+![Diagrama de Flujo General Big Data SIRA](Diagrama_flujo.jpeg)
+
+---
+
+## Estructura de esta Rama
+
+```text
+Big-Data_Arch/
+├── README.md                         # Esta guía rápida de la rama Big Data
+├── Diagrama_flujo.jpeg               # Diagrama general Lakehouse Medallion + Parallel B || C
+├── requirements_bigdata.txt          # Dependencias Python exactas del subsistema Big Data
+├── B_SIRA_ARCH/                      # ITERACIÓN B (VIGENTE — AWS us-east-2, 0 CloudFormation)
+│   ├── README_B_BigData.md           # Resumen ejecutivo y rúbrica SI7006
+│   ├── 02_B_BigData_Arch.md          # Arquitectura detallada, 20+7 agregados y criterio Spark
+│   ├── 03_B_Guia_Paso_a_Paso_AWS_Consola.md   # Cómo se creó paso a paso + evidencia 3/3 Step Functions & 42/42 Athena
+│   ├── 04_B_Manual_de_Uso_E2E.md     # Cómo leer cada carpeta/tabla/mapa + manual de uso
+│   └── bigdata_pipeline/             # Ingesta, 4 Glue PySpark Jobs, 3 Step Functions, 13 tablas Athena, API Dual y datos Parquet
+└── A_SIRA_ARCH/                      # ITERACIÓN A (Archivada para trazabilidad histórica)
+    ├── README_BigData.md · 02_... · 03_... · 04_... · Diagrama_flujo_A.jpeg
+    └── bigdata_pipeline/
 ```
 
-## Guía de Clonación e Instalación
+---
 
-> **¡Importante! Uso recomendado de Conda (conda-forge)**
-> 
-> Para este proyecto, **recomendamos encarecidamente utilizar Conda y el canal `conda-forge`** para la instalación de dependencias. Las bibliotecas científicas y geoespaciales dependen de librerías complejas en C/C++ (como BLAS/LAPACK). Instalar mediante un `pip` estándar a menudo falla porque tu máquina intentará compilar el código desde cero. Al usar `conda-forge`, descargas binarios que ya están precompilados y perfectamente enlazados, lo que te ahorrará dolores de cabeza y errores críticos de compatibilidad.
+## Recursos Desplegados y Verificados en AWS (`us-east-2` · `0 stacks` CloudFormation)
 
-El repositorio se clona en una carpeta llamada `SIRA` y el ambiente se llama `SIRA` en las 3 opciones soportadas.
+| Servicio | Recursos Activos (`sira-b-*`) | Estado Verificado |
+|---|---|---|
+| **Amazon S3** | `s3://sira-b-lakehouse-929570730700/` (`bronce/`, `plata/`, `oro/`, `oro/semaforo_c_mapas/`, `models/`, `scripts/`) | Deduplicado (`clear_s3_prefix`) |
+| **AWS Glue 4.0 (4 Jobs)** | `sira-b-01-lote-imagenes-pixel` · `sira-b-02-lote-clima-y-geos` · `sira-b-03-lote-inferencia-ab` · `sira-b-04-lote-semaforo-c` | `4/4 SUCCEEDED` |
+| **AWS Step Functions (3)** | `sira-b-flujo-recalibracion-mensual` (`135 s`) · `sira-b-flujo-diario-imagenes-inferencia` (`499 s`) · `sira-b-flujo-geos-5dias` (`256 s`, `Parallel[03 \|\| 04]`) | `3/3 SUCCEEDED` en vivo |
+| **EventBridge Scheduler (3)** | `sira-b-horario-diario-5am` · `sira-b-horario-geos-5dias` · `sira-b-horario-recalibracion-mensual` (`America/Bogota`) | `ENABLED` |
+| **Amazon Athena** | Base `sira_b_lakehouse_db` (`13` tablas Parquet externas + `6` consultas analíticas) | `42/42 SUCCEEDED` |
 
-### 1. Opción Conda (Recomendada para Data Science)
-Abre tu terminal de Anaconda/Miniconda y ejecuta:
+---
+
+## Ejecución Rápida para Colaboradores
+
 ```bash
-git clone https://github.com/GomSal/SIRA.git
-cd SIRA
-conda create --name SIRA python=3.10 -y
-conda activate SIRA
-conda install -c conda-forge --file requirements.txt -y
+git clone -b Big-Data_Arch https://github.com/GomSal/SIRA.git SIRA-BigData
+cd SIRA-BigData
+python -m venv .venv
+# Windows: .\.venv\Scripts\Activate.ps1   |   Linux/macOS: source .venv/bin/activate
+pip install -r requirements_bigdata.txt
+
+# 1. Corrida local autocontenida (construye las 13 tablas Plata y Oro en Parquet)
+python B_SIRA_ARCH/bigdata_pipeline/deploy_and_run_b_pipeline.py --local-only
+
+# 2. Probar API Dual (<50 ms: POST /regar_hoy + GET /semaforo_c)
+python B_SIRA_ARCH/bigdata_pipeline/api/app_b_inference_api.py
+
+# 3. Desplegar / sincronizar en AWS (usa `aws configure` o env var AWS_CREDENTIALS_CSV)
+python B_SIRA_ARCH/bigdata_pipeline/deploy_and_run_b_pipeline.py --aws-only
 ```
 
-### 2. Opción PowerShell (Usuarios Windows)
-Abre PowerShell como administrador y ejecuta:
-```powershell
-git clone https://github.com/GomSal/SIRA.git
-cd SIRA
-python -m venv SIRA
-.\SIRA\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-*(Nota: Si obtienes un error de políticas de ejecución, ejecuta `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` previamente).*
+*(Opcional — para re-ingestar archivos crudos desde un clon actualizado de la rama `modelo-humedad`, exporta `SIRA_REPO_PATH=/ruta/a/modelo-humedad` y ejecuta `python B_SIRA_ARCH/bigdata_pipeline/ingestion/fetch_b_bronze_data.py`).*
 
-### 3. Opción Pip / Terminal estándar (Linux/macOS)
-Abre tu terminal Bash/Zsh y ejecuta:
-```bash
-git clone https://github.com/GomSal/SIRA.git
-cd SIRA
-python3 -m venv SIRA
-source SIRA/bin/activate
-pip install -r requirements.txt
-```
+---
 
-## Modelo de humedad del arroz (Corrector + Pronosticador)
-
-El trabajo de verdad de campo, ubicación del lote, imágenes, clima y arquitectura de los modelos está documentado en:
-
-- [`docs/informe_preliminar.md`](docs/informe_preliminar.md): estado actual, arquitectura del **Corrector** y del **Pronosticador**, y diagramas de entrenamiento y operación.
-- [`docs/fase0_verdad_de_campo.md`](docs/fase0_verdad_de_campo.md): digitalización del artículo de Nataima y cómo reproducirla.
-- [`HANDOVER.md`](HANDOVER.md): decisiones tomadas y siguientes pasos.
-
-Código en `src/sira/` (digitalización y verdad de campo), `scripts/` (análisis y gráficas de control) y `cloud/` (corridas en AWS con salvaguardas).
+## Documentación de la Rama
+* [Resumen Ejecutivo y Rúbrica `SI7006`](B_SIRA_ARCH/README_B_BigData.md)
+* [Arquitectura Big Data Detallada](B_SIRA_ARCH/02_B_BigData_Arch.md)
+* [Guía Paso a Paso de Creación Local y AWS](B_SIRA_ARCH/03_B_Guia_Paso_a_Paso_AWS_Consola.md)
+* [Guía de Lectura Detallada y Manual de Uso E2E](B_SIRA_ARCH/04_B_Manual_de_Uso_E2E.md)
+* [Iteración A Archivada (`A_SIRA_ARCH`)](A_SIRA_ARCH/README_BigData.md)

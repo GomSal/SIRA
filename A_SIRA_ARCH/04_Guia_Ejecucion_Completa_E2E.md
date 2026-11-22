@@ -4,7 +4,7 @@
 **Proyecto:** SIRA (Sistema Inteligente de Riego para Arroz en el Alto Magdalena) — Equipo 10  
 **Cuenta AWS Activa:** `929570730700` (`admin-gomsal`) · **Región:** `us-east-2` (Ohio)  
 **Bucket S3:** `s3://sira-lakehouse-clima-929570730700/` · **Base de Datos Athena:** `sira_clima_db`  
-**Documentos Complementarios:** [`02_BigData_Arch.md`](../02_BigData_Arch.md) · [`README_BigData.md`](../README_BigData.md) · [`03_Guia_Paso_a_Paso_AWS_Consola.md`](../03_Guia_Paso_a_Paso_AWS_Consola.md)
+**Documentos Complementarios:** [`02_BigData_Arch.md`](02_BigData_Arch.md) · [`README_BigData.md`](README_BigData.md) · [`03_Guia_Paso_a_Paso_AWS_Consola.md`](03_Guia_Paso_a_Paso_AWS_Consola.md)
 
 ---
 
@@ -45,7 +45,7 @@ flowchart TD
    ```
 
 ### 1.2 ¿Qué hace el código internamente paso a paso?
-Al presionar **Enter**, el script [`fetch_all_bronze_data.py`](../bigdata_pipeline/ingestion/fetch_all_bronze_data.py) ejecuta 5 subprocesos en aproximadamente **6 segundos**:
+Al presionar **Enter**, el script [`fetch_all_bronze_data.py`](bigdata_pipeline/ingestion/fetch_all_bronze_data.py) ejecuta 5 subprocesos en aproximadamente **6 segundos**:
 
 1. **Subproceso `[1/6]` — Conexión en vivo a la API de NASA POWER (`fetch_nasa_power_real`):**
    - Hace una petición HTTP `GET` al endpoint oficial de la NASA (`https://power.larc.nasa.gov/api/temporal/daily/point`) para las coordenadas del C.I. Nataima ($\text{lat } 4,1913^\circ\text{ N}$, $\text{lon } -74,9609^\circ\text{ W}$, altitud $323\text{ m s.n.m.}$).
@@ -73,7 +73,7 @@ Al presionar **Enter**, el script [`fetch_all_bronze_data.py`](../bigdata_pipeli
 
 4. **Subproceso `[4/6]` — Verdad de Campo Nataima y Catálogo de Píxeles de 10 m (`generate_nataima_ground_truth_and_satellite`):**
    - Crea el catálogo georreferenciado de los **96 píxeles de $10 \times 10\text{ m}$** que cubren las $0,96\text{ ha}$ ($136 \times 70\text{ m}$) del lote experimental de Nataima, divididos en sus 3 franjas de tratamiento de $23,5\text{ m}$ de ancho (`FRANJA_A = CD`, `FRANJA_B = MIRI`, `FRANJA_C = AWD+MIRI`) y sus 4 réplicas.
-   - Estructura las **198 mediciones reales de humedad volumétrica TDR** (`humedad_tdr_vwc_pct`) y las láminas de riego de las 3 temporadas (`GS1`: siembra `2021-05-27`, `GS2`: siembra `2021-12-04`, `GS3`: siembra `2022-07-09`) respetando exactamente los totales y número de eventos de la Tabla 2 de [Martínez-Vega et al. (2025)](../s00271-025-01025-w.pdf).
+   - Estructura las **198 mediciones reales de humedad volumétrica TDR** (`humedad_tdr_vwc_pct`) y las láminas de riego de las 3 temporadas (`GS1`: siembra `2021-05-27`, `GS2`: siembra `2021-12-04`, `GS3`: siembra `2022-07-09`) respetando exactamente los totales y número de eventos de la Tabla 2 de Martínez-Vega et al. (2025).
    - **Archivos generados:**
      - `bigdata_pipeline/data/bronze/catalog/cat_parcelas_pixeles_nataima.parquet` (**96 píxeles de 10 m**).
      - `bigdata_pipeline/data/bronze/ground_truth/nataima/nataima_diario.csv` y `.parquet` (**198 mediciones TDR**).
@@ -124,7 +124,7 @@ El motor cruza las **76.470 filas** de CHIRPS con las **76.470 filas** de NASA P
    - **Modelo A (Índices Corregidos por Clima + Clima por Día $\rightarrow$ Random Forest):** `RMSE = 1,853 % VWC` · `R² = 0,891` · `Macro-F1 = 0,821`
    - **Modelo B (Modelo A + Prithvi PCA $\rightarrow$ Random Forest):** `RMSE = 1,882 % VWC` · `R² = 0,888` · `Macro-F1 = 0,821`
    - **Modelo C (Prithvi PCA + Cabeza Lineal Ridge):** `RMSE = 5,346 % VWC` · `R² = 0,095` · `Macro-F1 = 0,255` *(confirma empíricamente el hallazgo de `HANDOVER.md`: Prithvi solo a 480 m no distingue las franjas de 23,5 m sin los índices de Sentinel-2 a 10 m y el clima diario)*.
-3. Guarda los modelos entrenados (`.joblib`) y el archivo [`model_metrics_manifest.json`](../bigdata_pipeline/data/models/model_metrics_manifest.json) y los sube a `s3://sira-lakehouse-clima-929570730700/models/`.
+3. Guarda los modelos entrenados (`.joblib`) y el archivo [`model_metrics_manifest.json`](bigdata_pipeline/data/models/model_metrics_manifest.json) y los sube a `s3://sira-lakehouse-clima-929570730700/models/`.
 
 ---
 
@@ -209,5 +209,5 @@ Verás en pantalla el JSON exacto devuelto por el servicio de inferencia:
 1. **Minuto 1 (Arquitectura y Lago en S3):** Abre `Amazon S3` $\rightarrow$ `sira-lakehouse-clima-929570730700` y muestra las carpetas `bronze/`, `silver/clima_dia/` (con sus particiones `anio=YYYY/mes=M/`), `gold/` y `models/`.
 2. **Minuto 2 (Procesamiento Distribuido en PySpark):** Abre `AWS Glue Studio` $\rightarrow$ `ETL jobs` y muestra los 3 jobs (`sira-01-clima-por-dia`, `sira-02-regresion-bruma-y-emparejamiento`, `sira-03-inferencia-y-verificacion-oro`), destacando las ventanas `Window` para lluvias de 1/3/5 días, la ecuación FAO-56 con humedad relativa y presión, y el `Broadcast Join`.
 3. **Minuto 3 (Orquestación Automatizada):** Abre `Amazon EventBridge` $\rightarrow$ `Schedules` (`sira-horario-diario-5am`) y luego `AWS Step Functions` $\rightarrow$ `sira-pipeline-clima-diario` mostrando el diagrama visual de los 3 pasos encadenados.
-4. **Minuto 4 (Consultas SQL en Athena):** Abre `Amazon Athena` $\rightarrow$ base de datos `sira_clima_db` y ejecuta las 3 consultas de [`ddl_and_analytics_athena.sql`](../bigdata_pipeline/sql/ddl_and_analytics_athena.sql), mostrando cómo el *tuning* climático reduce hasta un **74 %** el error inducido por la bruma y cómo queda el semáforo de los 96 píxeles de 10 m.
-5. **Minuto 5 (API y Consumo del Agricultor):** Muestra la respuesta JSON del microservicio [`app_inference_api.py`](../bigdata_pipeline/api/app_inference_api.py) y su conexión con el mapa de calor diario y el botón *«Regué hoy»*.
+4. **Minuto 4 (Consultas SQL en Athena):** Abre `Amazon Athena` $\rightarrow$ base de datos `sira_clima_db` y ejecuta las 3 consultas de [`ddl_and_analytics_athena.sql`](bigdata_pipeline/sql/ddl_and_analytics_athena.sql), mostrando cómo el *tuning* climático reduce hasta un **74 %** el error inducido por la bruma y cómo queda el semáforo de los 96 píxeles de 10 m.
+5. **Minuto 5 (API y Consumo del Agricultor):** Muestra la respuesta JSON del microservicio [`app_inference_api.py`](bigdata_pipeline/api/app_inference_api.py) y su conexión con el mapa de calor diario y el botón *«Regué hoy»*.

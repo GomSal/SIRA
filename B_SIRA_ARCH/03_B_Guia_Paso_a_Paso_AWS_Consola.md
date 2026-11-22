@@ -2,7 +2,7 @@
 
 **Proyecto:** SIRA (Iteración B — `B_SIRA_ARCH`) — Equipo 10, Universidad EAFIT  
 **Repositorio Fuente (GitHub):** [`GomSal/SIRA@modelo-humedad`](https://github.com/GomSal/SIRA/tree/modelo-humedad) (commit **`8fde03db`**, 2026-11-21)  
-**Clon Local Exclusivo del Repo:** [`la raíz del repositorio (`./`)`](../)  
+**Clon Local Exclusivo del Repo:** [`la raíz del repositorio (`./`)`](https://github.com/GomSal/SIRA/tree/modelo-humedad)  
 **Cuenta AWS Activa:** `929570730700` (`admin-gomsal`) · **Región:** `us-east-2` (Ohio)  
 **Regla de Aprovisionamiento:** **0 stacks en AWS CloudFormation** (creación 100 % directa vía `boto3` desde [`deploy_and_run_b_pipeline.py`](bigdata_pipeline/deploy_and_run_b_pipeline.py))  
 **Convivencia:** Todos los recursos de esta iteración llevan el prefijo `sira-b-*` y la base `sira_b_lakehouse_db`, dejando intacta la Iteración A ([`A_SIRA_ARCH/`](../A_SIRA_ARCH/) y `sira-lakehouse-clima-929570730700`).
