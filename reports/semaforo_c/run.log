@@ -1,0 +1,7 @@
+[     6 s] zona 200×200 pixeles de 10 m (400 ha) · 1411 imágenes hasta 2026-11-15
+[     8 s] calibración y bruma listas · agrícolas 20286 de 40000
+[    13 s] siembras detectadas en 34780 de 40000 pixeles
+[    36 s] A pronosticó 20286 pixeles × 31 días (628,866 filas)
+[    37 s] GEOS-S2S inicio 2026-11-12 · 5 miembros · lluvia media 30 d 92 mm · ETo 113 mm · días con climatología 0 de 150
+[    37 s] B: tramo 1 desde 2026-06-19 con 3 calendarios CD · μ hoy mediana 32.5 % (P25–P75 31.9–32.8) · σ 3.12 % → margen 4.7 mm
+[    38 s] resumen: h0: suficiente 10.3 % · media 83.6 % · baja 6.1 % · marca 2.7 % | h7: suficiente 0.0 % · media 0.0 % · baja 100.0 % · marca 0.0 % | h15: suficiente 0.0 % · media 8.9 % · baja 91.1 % · marca 0.0 % | h30: suficiente 0.0 % · media 100.0 % · baja 0.0 % · marca 0.0 %

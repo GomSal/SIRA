@@ -1,24 +1,22 @@
-"""Modelo C: semáforo de humedad por pixel, de hoy a 30 días.  A (NDVI, NDMI) + GEOS-S2S (lluvia, ETo) → ecuación → mapa.
+"""Semáforo de humedad por pixel, de hoy a 30 días:  A + GEOS-S2S → ecuaciones S y Dr → B (ARIMAX) → mapa.
 
-C no se entrena: es la ecuación del balance de agua FAO-56 que ya usa B,
-    Dr(t) = Dr(t−1) − lluvia + Ks·Kc·ETo,      Kc = 1,0·NDVI + 0,45   (0,6–1,3)
-con TAW 6,7 mm, p 0,65 (RAW 4,35 mm), almacenamiento sobre capacidad de campo hasta 26,5 mm que drena a la mitad cada
-día (k = 0,5), igual que Dr_k0.5 de B (scripts/modelo_humedad_unificado.py).
-
-Entradas por pixel de 10 m (cubo Sentinel-2 + Landsat calibrado de A, misma QC de bruma y misma detección de siembra):
-  - NDVI pronosticado por A (Random Forest, models: data/interim/modelo_a/kaggle_final/resultados_a/modelos) → Kc diario.
-  - NDMI de hoy → punto de partida (día 0): se compara con la curva normal del NDMI del arroz por días desde siembra
-    (10 años, paso1_curva_por_dias_desde_siembra.csv). Banda normal, z ≥ −0,67 (del percentil 25 hacia arriba) →
-    suelo lleno (Dr = 0); z ≤ −1,28 (el 10 % más seco) → Dr = 4,34 mm (umbral de baja); entre los dos, lineal.
-  - Lluvia y ETo de GEOS-S2S (último inicio publicado antes de hoy, 5 miembros), corregidos con la tabla de A
-    (paso8_geos_correccion.csv); la ETo escala la ETo climatológica FAO-56 por la temperatura media pronosticada.
-
-Semáforo (umbrales de Martínez-Vega et al. 2025): suficiente Dr ≤ 0 (≥ 30 %); media 0 < Dr ≤ 4,34 mm (27,1–30 %);
-baja Dr > 4,34 mm (< 27,1 %). Se toma la mediana de Dr entre los miembros de GEOS-S2S. Escenario: sin riego desde hoy.
-
-Control del NDMI pronosticado por A (no entra en la ecuación): si el NDMI queda en el 10 % más seco de la curva normal
-aun sumándole el error de A a ese plazo, entonces media → baja, y suficiente → suficiente con la marca
-"posible enfermedad o deficiencia nutricional".
+Esquema (acordado 21/22-nov-2026; documento: docs/esquema_semaforo.md). Nada se entrena aquí:
+  A   Random Forest de NDVI y NDMI por pixel (data/interim/modelo_a/kaggle_final/resultados_a/modelos): detecta la
+      siembra con la curva del NDVI y pronostica NDVI/NDMI de hoy a +30 días.
+  Ecuaciones (scripts/operacion/b_entradas.py, las mismas con que se entrenó B):
+      S_τ(t) = e^(−1/τ)·S_τ(t−1) + lluvia + riego − Kc·ETo        τ = 20 y 5 días
+      Dr(t)  = Dr(t−1) − lluvia − riego + Ks·Kc·ETo                 FAO-56, k = 0,5
+      Kc = 1,0·NDVI + 0,45 (0,6–1,3)
+    Tramo 1, siembra → hoy: CHIRPS y NASA POWER observados, NDVI observado del pixel, riego supuesto AWD+MIRI
+      (los 3 calendarios medidos en Nataima; se corre con cada uno y se promedia μ).
+    Tramo 2, hoy → +30 días: lluvia y ETo de GEOS-S2S (último inicio ≤ hoy, 5 miembros, corregidos con
+      paso8_geos_correccion.csv), NDVI de A, sin riego desde hoy. Los estados siguen del tramo 1 sin cortar.
+  B   ARIMAX(1) de uso (models/semaforo_b/arimax.json), entrenado con el TDR de Nataima: con las 7 entradas de cada día
+      da μ = humedad volumétrica esperada (%) y σ = 3,12 % (su error típico sin TDR).
+  Color: déficit = 1,5·(30 − μ) mm; se pinta con déficit + margen (1,5·σ = 4,7 mm), intervalos de Martínez-Vega et al.
+      2025: suficiente ≤ 0 · media 0–4,34 mm · baja > 4,34 mm. La tarjeta muestra ese mismo déficit con margen.
+  Alarma tardía (no cambia el color): si el NDMI pronosticado por A queda en el 10 % más seco de la curva normal del
+      arroz aun sumándole el error de A, un pixel suficiente lleva la marca "posible enfermedad o deficiencia nutricional".
 
 Uso:  python scripts/operacion/semaforo_c.py [--hoy 2026-11-15] [--lado_km 2] [--lat 4.1895 --lon -74.9621]
       python scripts/operacion/semaforo_c.py --qa      (reproduce las predicciones de prueba de A con esta tubería)
@@ -26,6 +24,7 @@ Salida: reports/semaforo_c/ (mapas PNG por horizonte, resumen.json, pixeles.csv.
 """
 import argparse
 import json
+import sys
 import time
 import warnings
 from pathlib import Path
@@ -38,15 +37,14 @@ from pyproj import Transformer
 
 warnings.filterwarnings("ignore")
 RAIZ = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from b_entradas import DSAT, ENTRADAS, TAW, ArimaxB, propagar, propagar_dr  # noqa: E402
 CUBO = RAIZ / "data/interim/modelo_a/kaggle_nb1/datos_a"
 RES_A = RAIZ / "data/interim/modelo_a/kaggle_final/resultados_a"
 GEOS = RAIZ / "data/processed/modelo_a/geos"
 BASE = pd.Timestamp("2000-01-01")
 SELLO, ANIOS = pd.Timestamp("2025-11-18"), 10
-TAW, P_AG, ZR = 6.7, 0.65, 150.0
-RAW, DSAT, K_DREN, DR_ROJO = P_AG * TAW, ZR * (0.4765 - 0.30), 0.5, 4.34
-Z_SECO = -1.28  # 10 % más seco de la curva normal
-Z_NORMAL = -0.67  # percentil 25: desde aquí hacia arriba es la banda normal
+Z_SECO = -1.28  # 10 % más seco de la curva normal del NDMI (alarma tardía)
 HORIZONTE = 30
 SENS = {"S2": 0, "landsat-7": 1, "landsat-8": 2, "landsat-9": 2}
 CLASES = {0: "suficiente", 1: "media", 2: "baja"}
@@ -58,6 +56,7 @@ ap.add_argument("--lat", type=float, default=4.1895)
 ap.add_argument("--lon", type=float, default=-74.9621)
 ap.add_argument("--salida", default=str(RAIZ / "reports/semaforo_c"))
 ap.add_argument("--qa", action="store_true")
+ap.add_argument("--riego", default="CD", choices=["AWD+MIRI", "MIRI", "CD"], help="régimen supuesto hasta hoy")
 A = ap.parse_args()
 OUT = Path(A.salida)
 OUT.mkdir(parents=True, exist_ok=True)
@@ -290,38 +289,61 @@ for a_, mb in enumerate(MIEMBROS):
 log(f"GEOS-S2S inicio {INI.date()} · {len(MIEMBROS)} miembros · lluvia media 30 d {LL.sum(1).mean():.0f} mm · "
     f"ETo {ETO.sum(1).mean():.0f} mm · días con climatología {relleno} de {len(MIEMBROS) * HORIZONTE}")
 
-# ---------------------------------------------------------------- 5. ecuación C
+# ---------------------------------------------------------------- 5. Modelo B: tramo 1 (siembra → hoy) y tramo 2 (hoy → +30)
+MB = ArimaxB()
+CAL = pd.read_csv(RAIZ / "models/semaforo_b/calendarios_riego.csv", index_col="das")  # das 1… · "<tratamiento>|GS<t>"
+CAL = CAL[[c_ for c_ in CAL if c_.split("|")[0] == A.riego]]  # los 3 calendarios medidos del régimen supuesto
+NCAL, NP = CAL.shape[1], len(pix_ok)
+EN0 = np.isfinite(DAS[:, 0])  # en cultivo hoy
+SOW = np.where(EN0, DHOY - np.nan_to_num(DAS[:, 0]), DHOY + 1).astype(int)  # día de siembra (das = 0 en A, día 1 en B)
+DIAS1 = np.arange(int(SOW[EN0].min()) if EN0.any() else DHOY, DHOY + 1)
+f1_ = BASE + pd.to_timedelta(DIAS1, unit="D")
+L1 = cl.lluvia.reindex(f1_).fillna(0).to_numpy()  # CHIRPS observado
+E1 = cl.eto.reindex(f1_).ffill().bfill().to_numpy()  # ETo FAO-56 con NASA POWER observado
+NV1 = np.empty((len(DIAS1), NP))  # NDVI observado del pixel, llevado a diario (calibrado y sin bruma)
+for i, k in enumerate(pix_ok):
+    ok = np.isfinite(V[:, k])
+    NV1[:, i] = np.interp(DIAS1, DIA[ok], V[ok, k])
+NV1[-1] = NDVI[:, 0]  # hoy: el mismo NDVI del día 0 de A
+ACT1 = (DIAS1[:, None] >= SOW[None, :]) & EN0[None, :]
+DAS1 = DIAS1[:, None] - SOW[None, :] + 1  # días desde siembra como en el entrenamiento (siembra = día 1)
+R1 = np.zeros((len(DIAS1), NCAL, NP))
+for c_ in range(NCAL):
+    tabla_r = np.r_[CAL.iloc[:, c_].to_numpy(), 0.0]  # después del último día del calendario: sin riego
+    R1[:, c_] = np.where(ACT1, tabla_r[np.clip(DAS1, 1, len(CAL) + 1) - 1], 0.0)
+fo1 = (len(DIAS1), NCAL, NP)
+X1, EST = propagar(np.broadcast_to(L1[:, None, None], fo1), np.broadcast_to(E1[:, None, None], fo1), R1,
+                   np.broadcast_to(NV1[:, None, :], fo1), np.broadcast_to(ACT1[:, None, :], fo1))
+# B solo hasta hoy: μ de hoy = promedio de los 3 calendarios. El margen de B (1,5·σ) se aplica una vez, al arranque:
+#   Dr0 = 1,5·(30 − μ0) + 1,5·σ        (aval del 22-nov: "ARIMAX y su corrección de margen solo quedan hasta hoy")
+MU0 = MB.mu({c_: X1[c_][-1] for c_ in ENTRADAS}).mean(0)
+DR0_ESP = 1.5 * (30.0 - MU0)  # déficit esperado por B (sin margen), vista técnica
+DR0 = DR0_ESP + 1.5 * MB.sigma
+# tramo 2, de hoy a +30: déficit FAO-56 (Dr_modificada) desde Dr0, con GEOS-S2S y el NDVI de A, sin riego.
+# Se pinta con los límites del artículo tal cual, sin volver a sumar margen.
+fo2 = (HORIZONTE, len(MIEMBROS), NP)
+DR2 = propagar_dr(DR0[None, :], np.broadcast_to(LL.T[:, :, None], fo2), np.broadcast_to(ETO.T[:, :, None], fo2),
+                  np.broadcast_to(NDVI[:, 1:].T[:, None, :], fo2))
+DRP = np.c_[np.clip(DR0, -DSAT, TAW), DR2.mean(1).T]  # déficit que se pinta y se muestra (promedio de miembros GEOS)
+DRB = np.c_[DR0_ESP, np.full((NP, HORIZONTE), np.nan)]  # déficit esperado de B, solo hoy
+MU = 30.0 - DRP / 1.5  # humedad equivalente (%) del déficit que se pinta
+S20 = np.c_[X1["S_tau20"][-1].mean(0), np.full((NP, HORIZONTE), np.nan)]  # S de hoy (entrada de B)
+DR_EC = np.c_[X1["Dr_k0.5"][-1].mean(0), np.full((NP, HORIZONTE), np.nan)]  # Dr de la ecuación hoy (entrada de B)
+CLASE = np.select([DRP > 4.34, DRP > 0], [2, 1], 0)  # Martínez-Vega et al. 2025: 27,1 % y 30 %
+log(f"B: tramo 1 desde {(BASE + pd.Timedelta(days=int(DIAS1[0]))).date()} con {NCAL} calendarios {A.riego} · "
+    f"μ hoy mediana {np.nanmedian(MU0[EN0]):.1f} % (P25–P75 {np.nanpercentile(MU0[EN0], 25):.1f}–"
+    f"{np.nanpercentile(MU0[EN0], 75):.1f}) · σ {MB.sigma:.2f} % → margen {1.5 * MB.sigma:.1f} mm")
+
+# alarma tardía del NDMI pronosticado por A (no cambia el color): hoja más seca de lo normal con suelo suficiente
 cur = pd.read_csv(RES_A / "paso1_curva_por_dias_desde_siembra.csv")
 mu_c = lambda das: np.interp(das, cur.das_b + 5, cur.ndmi0_mean)  # noqa: E731  (centro del tramo de 10 días)
 sd_c = lambda das: np.interp(das, cur.das_b + 5, cur.ndmi0_std)  # noqa: E731
-z0 = (NDMI[:, 0] - mu_c(DAS[:, 0])) / sd_c(DAS[:, 0])
-# banda normal = del percentil 25 hacia arriba (z ≥ −0,67) → suelo lleno; 10 % más seco (z ≤ −1,28) → umbral de baja
-DR0 = np.clip((Z_NORMAL - z0) / (Z_NORMAL - Z_SECO), 0, 1) * DR_ROJO
-DR0 = np.where(np.isfinite(DR0), DR0, 0.0)
-KC = np.clip(1.0 * NDVI + 0.45, 0.6, 1.3)
-DR = np.zeros((len(MIEMBROS), len(pix_ok), HORIZONTE + 1))
-for a_ in range(len(MIEMBROS)):
-    dr = DR0.copy()
-    DR[a_, :, 0] = dr
-    for h in range(1, HORIZONTE + 1):
-        dr = dr - LL[a_, h - 1]
-        ks = np.where(dr <= RAW, 1.0, np.clip((TAW - dr) / ((1 - P_AG) * TAW), 0, None))
-        dr = dr + ks * KC[:, h] * ETO[a_, h - 1]
-        dr = np.where(dr < 0, dr * (1 - K_DREN), dr)
-        dr = np.clip(dr, -DSAT, TAW)
-        DR[a_, :, h] = dr
-DRM = np.median(DR, axis=0)
-P_BAJA = (DR > DR_ROJO).mean(0)
-CLASE = np.select([DRM > DR_ROJO, DRM > 0], [2, 1], 0)
-
-# control del NDMI pronosticado (error de A por plazo, prueba sellada)
 pa = pd.read_csv(RES_A / "paso8_prueba_clima_observado.csv")
 pa = pa[(pa.indice == "ndmi") & pa.grupo.str.match(r"h\d+$")]
 H_ERR = pa.grupo.str[1:].astype(int).to_numpy()
 RMSE_H = np.interp(DELTA, H_ERR, pa.rmse.to_numpy())
 RMSE_H = np.where(DELTA == 0, 0.0, RMSE_H)
 ANOM = ((NDMI + RMSE_H - mu_c(DAS)) / sd_c(DAS)) < Z_SECO
-CLASE = np.where((CLASE == 1) & ANOM, 2, CLASE)
 MARCA = (CLASE == 0) & ANOM
 CLASE = np.where(EN_CULTIVO, CLASE, -1)
 MARCA &= EN_CULTIVO
@@ -336,7 +358,10 @@ xb, ya = X0 + 10 * c1, Y0 - 10 * f0
 (lon_a, lat_b), (lon_b, lat_a) = ll_de.transform(xa, yb), ll_de.transform(xb, ya)
 pk = np.array(pix_ok)
 resumen = {"hoy": str(HOY.date()), "geos_inicio": str(INI.date()), "miembros_geos": len(MIEMBROS),
-           "zona_ha": NF * NC / 100, "limites_latlon": [[lat_b, lon_a], [lat_a, lon_b]], "horizontes": []}
+           "zona_ha": NF * NC / 100, "limites_latlon": [[lat_b, lon_a], [lat_a, lon_b]],
+           "modelo_b": {"sigma_pct": round(MB.sigma, 2), "margen_mm": round(1.5 * MB.sigma, 2),
+                        "riego_supuesto": f"{A.riego} de Nataima hasta hoy (promedio de GS1, GS2 y GS3); sin riego desde hoy"},
+           "horizontes": []}
 enc = CLASE[:, 0] >= 0
 db = DIAS_BAJA[enc]
 resumen["dias_hasta_baja_sin_riego_pct"] = {
@@ -356,7 +381,7 @@ for h in (0, 7, 15, 30):
             "eto_mm_hasta_h": float(ETO[:, :h].sum(1).mean()) if h else 0.0}
     for c_, nom in CLASES.items():
         sel = CLASE[:, h] == c_
-        dr_ = np.clip(DRM[sel, h], 0, None)
+        dr_ = np.clip(DRP[sel, h], 0, None)  # déficit con margen: el mismo número que decide el color
         fila[nom] = {"pct": round(100 * sel.sum() / max(n_c, 1), 1), "ha": sel.sum() / 100,
                      "deficit_L_m2_medio": round(float(dr_.mean()), 2) if sel.any() else 0.0,
                      "agua_m3_zona": round(float(dr_.sum() * 0.1), 0)}  # mm × 100 m² / 1000
@@ -365,11 +390,14 @@ for h in (0, 7, 15, 30):
     fila["posible_enfermedad_o_deficiencia_nutricional"] = {"pct": round(100 * MARCA[:, h].sum() / max(n_c, 1), 1)}
     resumen["horizontes"].append(fila)
 json.dump(resumen, open(OUT / "resumen.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)
-filas = pd.DataFrame({"pixel": IDX[pk], "dr0_mm": DR0, "dias_hasta_baja": DIAS_BAJA})
+filas = pd.DataFrame({"pixel": IDX[pk], "das_hoy": DAS[:, 0], "dias_hasta_baja": DIAS_BAJA})
 for h in (0, 7, 15, 30):
     filas[f"clase_h{h}"] = CLASE[:, h]
-    filas[f"dr_mm_h{h}"] = DRM[:, h].round(2)
-    filas[f"p_baja_h{h}"] = P_BAJA[:, h].round(2)
+    filas[f"humedad_pct_h{h}"] = MU[:, h].round(2)  # humedad equivalente del déficit pintado
+    filas[f"deficit_B_sin_margen_mm_h{h}"] = DRB[:, h].round(2)  # 1,5·(30 − μ0), solo hoy
+    filas[f"deficit_mm_h{h}"] = DRP[:, h].round(2)  # el que decide el color (hoy con margen; luego Dr FAO)
+    filas[f"S_tau20_h{h}"] = S20[:, h].round(2)
+    filas[f"dr_ecuacion_mm_h{h}"] = DR_EC[:, h].round(2)  # Dr de la ecuación (entrada del ARIMAX, vista técnica)
     filas[f"ndvi_h{h}"] = NDVI[:, h].round(3)
     filas[f"ndmi_h{h}"] = NDMI[:, h].round(3)
     filas[f"marca_h{h}"] = MARCA[:, h]
@@ -421,7 +449,7 @@ document.getElementById('tarjetas').insertAdjacentHTML('afterend', '');
 const extra = document.createElement('div'); extra.className = 'pie';
 extra.innerHTML = '<b>Si no se riega desde hoy, el cultivo llega a humedad baja:</b> ' + Object.entries(DB).map(([k, v]) => `${k}: ${f(v)} %`).join(' · ');
 document.querySelector('.wrap').insertBefore(extra, document.getElementById('pie'));
-document.getElementById('pie').textContent = `${f(R.zona_ha,0)} ha alrededor del lote de Nataima · hoy ${R.hoy} · clima GEOS-S2S (inicio ${R.geos_inicio}, ${R.miembros_geos} miembros) · escenario: sin riego desde hoy · umbrales 30 % y 27,1 % (Martínez-Vega et al. 2025)`;
+document.getElementById('pie').textContent = `${f(R.zona_ha,0)} ha alrededor del lote de Nataima · hoy ${R.hoy} · clima GEOS-S2S (inicio ${R.geos_inicio}, ${R.miembros_geos} miembros) · riego supuesto ${R.modelo_b.riego_supuesto} · hoy: humedad corregida a Nataima (ARIMAX) con margen de ${f(R.modelo_b.margen_mm)} L/m²; desde mañana: balance FAO-56 sin riego · umbrales 30 % y 27,1 % (Martínez-Vega et al. 2025)`;
 pintar(0);
 setTimeout(() => { map.invalidateSize(); map.fitBounds(R.limites_latlon); }, 50);
 </script></body></html>"""

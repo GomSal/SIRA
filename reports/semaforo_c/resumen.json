@@ -13,6 +13,11 @@
    -74.95314400739632
   ]
  ],
+ "modelo_b": {
+  "sigma_pct": 3.12,
+  "margen_mm": 4.68,
+  "riego_supuesto": "CD de Nataima hasta hoy (promedio de GS1, GS2 y GS3); sin riego desde hoy"
+ },
  "horizontes": [
   {
    "h": 0,
@@ -21,26 +26,26 @@
    "lluvia_mm_hasta_h": 0.0,
    "eto_mm_hasta_h": 0.0,
    "suficiente": {
-    "pct": 33.9,
-    "ha": 23.29,
+    "pct": 10.3,
+    "ha": 7.1,
     "deficit_L_m2_medio": 0.0,
     "agua_m3_zona": 0.0
    },
    "media": {
-    "pct": 30.4,
-    "ha": 20.85,
-    "deficit_L_m2_medio": 2.0,
-    "agua_m3_zona": 417.0,
-    "dias_hasta_baja_mediana": 4
+    "pct": 83.6,
+    "ha": 57.39,
+    "deficit_L_m2_medio": 1.3,
+    "agua_m3_zona": 746.0,
+    "dias_hasta_baja_mediana": 5
    },
    "baja": {
-    "pct": 35.7,
-    "ha": 24.54,
-    "deficit_L_m2_medio": 4.34,
-    "agua_m3_zona": 1065.0
+    "pct": 6.1,
+    "ha": 4.19,
+    "deficit_L_m2_medio": 5.56,
+    "agua_m3_zona": 233.0
    },
    "posible_enfermedad_o_deficiencia_nutricional": {
-    "pct": 0.0
+    "pct": 2.7
    }
   },
   {
@@ -65,8 +70,8 @@
    "baja": {
     "pct": 100.0,
     "ha": 67.61,
-    "deficit_L_m2_medio": 6.7,
-    "agua_m3_zona": 4530.0
+    "deficit_L_m2_medio": 6.64,
+    "agua_m3_zona": 4490.0
    },
    "posible_enfermedad_o_deficiencia_nutricional": {
     "pct": 0.0
@@ -85,17 +90,17 @@
     "agua_m3_zona": 0.0
    },
    "media": {
-    "pct": 3.1,
-    "ha": 2.07,
-    "deficit_L_m2_medio": 2.82,
-    "agua_m3_zona": 58.0,
+    "pct": 8.9,
+    "ha": 6.01,
+    "deficit_L_m2_medio": 2.94,
+    "agua_m3_zona": 177.0,
     "dias_hasta_baja_mediana": null
    },
    "baja": {
-    "pct": 96.9,
-    "ha": 65.31,
-    "deficit_L_m2_medio": 5.96,
-    "agua_m3_zona": 3890.0
+    "pct": 91.1,
+    "ha": 61.37,
+    "deficit_L_m2_medio": 5.73,
+    "agua_m3_zona": 3519.0
    },
    "posible_enfermedad_o_deficiencia_nutricional": {
     "pct": 0.0
@@ -114,17 +119,17 @@
     "agua_m3_zona": 0.0
    },
    "media": {
-    "pct": 1.2,
-    "ha": 0.81,
-    "deficit_L_m2_medio": 3.55,
-    "agua_m3_zona": 29.0,
+    "pct": 100.0,
+    "ha": 65.98,
+    "deficit_L_m2_medio": 1.32,
+    "agua_m3_zona": 870.0,
     "dias_hasta_baja_mediana": null
    },
    "baja": {
-    "pct": 98.8,
-    "ha": 65.17,
-    "deficit_L_m2_medio": 6.54,
-    "agua_m3_zona": 4264.0
+    "pct": 0.0,
+    "ha": 0.0,
+    "deficit_L_m2_medio": 0.0,
+    "agua_m3_zona": 0.0
    },
    "posible_enfermedad_o_deficiencia_nutricional": {
     "pct": 0.0
@@ -132,10 +137,10 @@
   }
  ],
  "dias_hasta_baja_sin_riego_pct": {
-  "ya hoy": 35.7,
-  "1-2 días": 7.5,
-  "3-5 días": 54.5,
-  "6-30 días": 0.7,
-  "no llega en 30 días": 1.6
+  "ya hoy": 6.1,
+  "1-2 días": 0.0,
+  "3-5 días": 89.9,
+  "6-30 días": 4.0,
+  "no llega en 30 días": 0.0
  }
 }
