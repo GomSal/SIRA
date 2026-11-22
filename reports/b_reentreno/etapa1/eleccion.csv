@@ -1,0 +1,6 @@
+particion,n_desarrollo,mejor_auc,auc_mejor,empatadas,elegida,auc_elegida
+1,151,S_tau60_a0.5,0.7937,3,S_tau60_a0.5,0.7937
+2,151,S_tau60_a0.5,0.7829,6,S_tau45_a0.5,0.7781
+3,146,S_tau60_a0.5,0.8194,8,S_tau45_a0.5,0.818
+4,146,S_tau60_a0.5,0.7657,7,S_tau45_a0.5,0.7646
+todos,198,S_tau60_a0.5,0.7979,7,S_tau45_a0.5,0.796

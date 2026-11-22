@@ -1,0 +1,31 @@
+modelo,hiperparametros,auc_macro_val,recall_rojo_val
+regresión logística,"{""C"": 0.03}",0.4645,0.0588
+regresión logística,"{""C"": 0.1}",0.4671,0.0588
+regresión logística,"{""C"": 0.3}",0.4707,0.0588
+regresión logística,"{""C"": 1.0}",0.4758,0.1765
+Random Forest,"{""max_depth"": 3, ""min_samples_leaf"": 3}",0.5363,0.0
+Random Forest,"{""max_depth"": 3, ""min_samples_leaf"": 8}",0.5315,0.0
+Random Forest,"{""max_depth"": 5, ""min_samples_leaf"": 3}",0.5455,0.0
+Random Forest,"{""max_depth"": 5, ""min_samples_leaf"": 8}",0.5307,0.0
+Random Forest,"{""max_depth"": null, ""min_samples_leaf"": 3}",0.5546,0.0
+Random Forest,"{""max_depth"": null, ""min_samples_leaf"": 8}",0.5301,0.0
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.03}",0.5496,0.0
+Gradient Boosting,"{""max_depth"": 1, ""learning_rate"": 0.1}",0.5499,0.0
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.03}",0.5825,0.0
+Gradient Boosting,"{""max_depth"": 2, ""learning_rate"": 0.1}",0.5814,0.0
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.03}",0.5969,0.0
+Gradient Boosting,"{""max_depth"": 3, ""learning_rate"": 0.1}",0.6102,0.0
+XGBoost,"{""max_depth"": 1, ""learning_rate"": 0.03, ""min_child_weight"": 3}",0.5381,0.0
+XGBoost,"{""max_depth"": 1, ""learning_rate"": 0.03, ""min_child_weight"": 8}",0.5306,0.0
+XGBoost,"{""max_depth"": 1, ""learning_rate"": 0.1, ""min_child_weight"": 3}",0.5465,0.0
+XGBoost,"{""max_depth"": 1, ""learning_rate"": 0.1, ""min_child_weight"": 8}",0.5248,0.0
+XGBoost,"{""max_depth"": 2, ""learning_rate"": 0.03, ""min_child_weight"": 3}",0.5697,0.0
+XGBoost,"{""max_depth"": 2, ""learning_rate"": 0.03, ""min_child_weight"": 8}",0.5483,0.0
+XGBoost,"{""max_depth"": 2, ""learning_rate"": 0.1, ""min_child_weight"": 3}",0.5797,0.0
+XGBoost,"{""max_depth"": 2, ""learning_rate"": 0.1, ""min_child_weight"": 8}",0.5476,0.0
+XGBoost,"{""max_depth"": 3, ""learning_rate"": 0.03, ""min_child_weight"": 3}",0.5831,0.0
+XGBoost,"{""max_depth"": 3, ""learning_rate"": 0.03, ""min_child_weight"": 8}",0.5541,0.0
+XGBoost,"{""max_depth"": 3, ""learning_rate"": 0.1, ""min_child_weight"": 3}",0.5911,0.0
+XGBoost,"{""max_depth"": 3, ""learning_rate"": 0.1, ""min_child_weight"": 8}",0.5486,0.0588
+ARIMAX,"{""p"": 1}",0.595,0.5882
+ARIMAX,"{""p"": 2}",0.6172,0.5882

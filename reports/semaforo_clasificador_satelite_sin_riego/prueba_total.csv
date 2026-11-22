@@ -1,0 +1,2 @@
+auc_macro,exactitud_balanceada,auc_verde,recall_verde,precision_verde,n_verde,auc_amarillo,recall_amarillo,precision_amarillo,n_amarillo,auc_rojo,recall_rojo,precision_rojo,n_rojo,auc_macro_IC95,exactitud_balanceada_IC95,auc_verde_IC95,recall_verde_IC95,precision_verde_IC95,auc_amarillo_IC95,recall_amarillo_IC95,precision_amarillo_IC95,auc_rojo_IC95,recall_rojo_IC95,precision_rojo_IC95
+0.4316,0.3172,0.4793,0.6547,0.7109,139,0.438,0.2381,0.2,42,0.3773,0.0588,0.05,17,0.36–0.50,0.26–0.37,0.37–0.59,0.53–0.77,0.64–0.78,0.34–0.52,0.09–0.43,0.11–0.27,0.25–0.51,0.00–0.23,0.00–0.14

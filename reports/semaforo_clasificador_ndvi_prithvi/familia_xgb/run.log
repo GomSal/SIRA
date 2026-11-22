@@ -1,0 +1,28 @@
+prueba 1: elegido XGBoost + Prithvi {"max_depth": 1, "learning_rate": 0.03, "min_child_weight": 8, "prithvi_pca": 3} | AUC val 0.73 | AUC prueba 0.88 | recall verde/amarillo/rojo 0.60/0.88/0.75
+prueba 2: elegido XGBoost + Prithvi {"max_depth": 2, "learning_rate": 0.03, "min_child_weight": 3, "prithvi_pca": 3} | AUC val 0.83 | AUC prueba 0.71 | recall verde/amarillo/rojo 0.82/0.33/0.25
+prueba 3: elegido XGBoost + Prithvi {"max_depth": 2, "learning_rate": 0.03, "min_child_weight": 3, "prithvi_pca": 3} | AUC val 0.79 | AUC prueba 0.64 | recall verde/amarillo/rojo 0.57/0.38/0.25
+prueba 4: elegido XGBoost {"max_depth": 3, "learning_rate": 0.03, "min_child_weight": 3} | AUC val 0.74 | AUC prueba 0.83 | recall verde/amarillo/rojo 0.89/0.25/0.20
+
+Mejor AUC macro de validación por familia (promedio de las 4 particiones):
+modelo
+XGBoost + Prithvi    0.771
+XGBoost              0.768
+
+PRUEBA (cada medición una vez):
+  auc_macro              0.73  [0.65–0.79]
+  auc_verde              0.74  [0.66–0.81]
+  auc_amarillo           0.73  [0.66–0.80]
+  auc_rojo               0.72  [0.56–0.84]
+  recall_verde           0.72  [0.63–0.82]
+  recall_amarillo        0.43  [0.23–0.62]
+  recall_rojo            0.35  [0.07–0.62]
+  precision_verde        0.77  [0.69–0.86]
+  precision_amarillo     0.33  [0.21–0.46]
+  precision_rojo         0.46  [0.09–0.80]
+  exactitud_balanceada   0.50  [0.39–0.62]
+               pred verde  pred amarillo  pred rojo
+real verde            100             34          5
+real amarillo          22             18          2
+real rojo               8              3          6
+
+Modelo de uso (selección con todos los datos): XGBoost + Prithvi {"max_depth": 2, "learning_rate": 0.1, "min_child_weight": 3, "prithvi_pca": 3} 0.764

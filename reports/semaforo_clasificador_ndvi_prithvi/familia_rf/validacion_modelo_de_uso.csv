@@ -1,0 +1,13 @@
+modelo,hiperparametros,auc_macro_val,recall_rojo_val
+Random Forest,"{""max_depth"": 3, ""min_samples_leaf"": 3}",0.7475,0.3529
+Random Forest,"{""max_depth"": 3, ""min_samples_leaf"": 8}",0.7323,0.3529
+Random Forest,"{""max_depth"": 5, ""min_samples_leaf"": 3}",0.7725,0.4118
+Random Forest,"{""max_depth"": 5, ""min_samples_leaf"": 8}",0.7524,0.3529
+Random Forest,"{""max_depth"": null, ""min_samples_leaf"": 3}",0.7721,0.4706
+Random Forest,"{""max_depth"": null, ""min_samples_leaf"": 8}",0.752,0.3529
+Random Forest + Prithvi,"{""max_depth"": 3, ""min_samples_leaf"": 3, ""prithvi_pca"": 3}",0.7442,0.2941
+Random Forest + Prithvi,"{""max_depth"": 3, ""min_samples_leaf"": 8, ""prithvi_pca"": 3}",0.729,0.3529
+Random Forest + Prithvi,"{""max_depth"": 5, ""min_samples_leaf"": 3, ""prithvi_pca"": 3}",0.7626,0.3529
+Random Forest + Prithvi,"{""max_depth"": 5, ""min_samples_leaf"": 8, ""prithvi_pca"": 3}",0.7412,0.4118
+Random Forest + Prithvi,"{""max_depth"": null, ""min_samples_leaf"": 3, ""prithvi_pca"": 3}",0.7628,0.3529
+Random Forest + Prithvi,"{""max_depth"": null, ""min_samples_leaf"": 8, ""prithvi_pca"": 3}",0.7404,0.4118

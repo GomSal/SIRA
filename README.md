@@ -57,3 +57,13 @@ python3 -m venv SIRA
 source SIRA/bin/activate
 pip install -r requirements.txt
 ```
+
+## Modelo de humedad del arroz (Corrector + Pronosticador)
+
+El trabajo de verdad de campo, ubicación del lote, imágenes, clima y arquitectura de los modelos está documentado en:
+
+- [`docs/informe_preliminar.md`](docs/informe_preliminar.md): estado actual, arquitectura del **Corrector** y del **Pronosticador**, y diagramas de entrenamiento y operación.
+- [`docs/fase0_verdad_de_campo.md`](docs/fase0_verdad_de_campo.md): digitalización del artículo de Nataima y cómo reproducirla.
+- [`HANDOVER.md`](HANDOVER.md): decisiones tomadas y siguientes pasos.
+
+Código en `src/sira/` (digitalización y verdad de campo), `scripts/` (análisis y gráficas de control) y `cloud/` (corridas en AWS con salvaguardas).

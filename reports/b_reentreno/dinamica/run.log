@@ -1,0 +1,10 @@
+modelo recall_verde recall_amarillo recall_rojo  exactitud_balanceada  spearman_mu_tdr  sigma_medio
+    B7       69/139           24/42        9/17                 0.532            0.530         3.07
+    BS       60/139           29/42       11/17                 0.590            0.591         3.19
+                  intervalos   n modelo  spearman_dmu_dtdr            ic95  d_tdr_medio  d_mu_medio
+sin riego en medio (secados)  85     B7              0.305  [0.137, 0.452]          0.1        0.18
+sin riego en medio (secados)  85     BS             -0.076 [-0.289, 0.104]          0.1       -0.27
+        todos los intervalos 189     B7              0.199   [0.013, 0.36]         -0.1        0.15
+        todos los intervalos 189     BS             -0.092 [-0.237, 0.061]         -0.1        0.06
+exactitud balanceada BS − B7, IC 95 %: [np.float64(-0.034), np.float64(0.156)]
+β de S en BS por partición: [2.286, 2.341, 2.633, 2.372]

@@ -1,0 +1,9 @@
+modelo,hiperparametros,auc_macro_val,recall_rojo_val
+regresión logística,"{""C"": 0.03}",0.6898,0.3529
+regresión logística,"{""C"": 0.1}",0.7057,0.3529
+regresión logística,"{""C"": 0.3}",0.7143,0.3529
+regresión logística,"{""C"": 1.0}",0.7171,0.3529
+regresión logística + Prithvi,"{""C"": 0.03, ""prithvi_pca"": 3}",0.687,0.2353
+regresión logística + Prithvi,"{""C"": 0.1, ""prithvi_pca"": 3}",0.6903,0.2353
+regresión logística + Prithvi,"{""C"": 0.3, ""prithvi_pca"": 3}",0.6883,0.2353
+regresión logística + Prithvi,"{""C"": 1.0, ""prithvi_pca"": 3}",0.6786,0.2941

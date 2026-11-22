@@ -1,0 +1,37 @@
+prueba 1: elegido ARIMAX + Prithvi {"p": 1, "prithvi_pca": 3} | AUC val 0.75 | AUC prueba 0.83 | recall verde/amarillo/rojo 0.69/0.25/1.00
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 2: elegido XGBoost + Prithvi {"max_depth": 2, "learning_rate": 0.03, "min_child_weight": 3, "prithvi_pca": 3} | AUC val 0.83 | AUC prueba 0.71 | recall verde/amarillo/rojo 0.82/0.33/0.25
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 3: elegido Gradient Boosting + Prithvi {"max_depth": 2, "learning_rate": 0.1, "prithvi_pca": 3} | AUC val 0.80 | AUC prueba 0.59 | recall verde/amarillo/rojo 0.57/0.23/0.00
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 4: elegido ARIMAX + Prithvi {"p": 1, "prithvi_pca": 3} | AUC val 0.75 | AUC prueba 0.84 | recall verde/amarillo/rojo 0.91/0.25/0.60
+
+Mejor AUC macro de validación por familia (promedio de las 4 particiones):
+modelo
+XGBoost + Prithvi                0.771
+Gradient Boosting + Prithvi      0.767
+ARIMAX + Prithvi                 0.759
+Random Forest + Prithvi          0.755
+regresión logística + Prithvi    0.710
+
+PRUEBA (cada medición una vez):
+  auc_macro              0.71  [0.63–0.78]
+  auc_verde              0.74  [0.67–0.80]
+  auc_amarillo           0.70  [0.63–0.78]
+  auc_rojo               0.69  [0.50–0.83]
+  recall_verde           0.75  [0.65–0.84]
+  recall_amarillo        0.26  [0.11–0.43]
+  recall_rojo            0.47  [0.13–0.73]
+  precision_verde        0.78  [0.71–0.87]
+  precision_amarillo     0.31  [0.17–0.44]
+  precision_rojo         0.28  [0.09–0.43]
+  exactitud_balanceada   0.49  [0.37–0.59]
+               pred verde  pred amarillo  pred rojo
+real verde            104             22         13
+real amarillo          23             11          8
+real rojo               6              3          8
+
+Modelo de uso (selección con todos los datos): Gradient Boosting + Prithvi {"max_depth": 3, "learning_rate": 0.1, "prithvi_pca": 3} 0.777

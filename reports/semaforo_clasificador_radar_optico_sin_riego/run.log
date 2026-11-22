@@ -1,0 +1,43 @@
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 1: elegido XGBoost {"max_depth": 1, "learning_rate": 0.1, "min_child_weight": 3} | AUC val 0.65 | AUC prueba 0.61 | recall verde/amarillo/rojo 0.60/0.50/0.00
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 2: elegido XGBoost {"max_depth": 3, "learning_rate": 0.1, "min_child_weight": 3} | AUC val 0.69 | AUC prueba 0.52 | recall verde/amarillo/rojo 0.71/0.33/0.00
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 3: elegido Gradient Boosting {"max_depth": 1, "learning_rate": 0.03} | AUC val 0.67 | AUC prueba 0.48 | recall verde/amarillo/rojo 0.74/0.23/0.00
+C:\Users\santi\SIRA\.venv\Lib\site-packages\statsmodels\tsa\statespace\mlemodel.py:737: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  mlefit = super().fit(
+prueba 4: elegido XGBoost {"max_depth": 3, "learning_rate": 0.03, "min_child_weight": 3} | AUC val 0.63 | AUC prueba 0.60 | recall verde/amarillo/rojo 0.91/0.17/0.00
+C:\Users\santi\SIRA\scripts\semaforo_clasificador.py:330: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  print(VAL.groupby(["particion_prueba", "modelo"]).auc_macro_val.max().unstack(0).mean(1).sort_values(ascending=False).round(3).to_string())
+
+Mejor AUC macro de validación por familia (promedio de las 4 particiones):
+modelo
+Gradient Boosting      0.655
+XGBoost                0.654
+Random Forest          0.601
+ARIMAX                 0.570
+regresión logística    0.543
+
+PRUEBA (cada medición una vez):
+  auc_macro              0.53  [0.47–0.60]
+  auc_verde              0.60  [0.50–0.71]
+  auc_amarillo           0.50  [0.42–0.57]
+  auc_rojo               0.50  [0.39–0.62]
+  recall_verde           0.74  [0.63–0.84]
+  recall_amarillo        0.29  [0.14–0.49]
+  recall_rojo            0.00  [0.00–0.00]
+  precision_verde        0.76  [0.69–0.84]
+  precision_amarillo     0.22  [0.13–0.31]
+  precision_rojo         0.00  [0.00–0.00]
+  exactitud_balanceada   0.34  [0.30–0.40]
+               pred verde  pred amarillo  pred rojo
+real verde            103             32          4
+real amarillo          26             12          4
+real rojo               7             10          0
+
+Modelo de uso (selección con todos los datos): ARIMAX {"p": 2} 0.617

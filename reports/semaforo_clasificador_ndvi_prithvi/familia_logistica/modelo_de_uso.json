@@ -1,0 +1,45 @@
+{
+ "elegido": "regresión logística",
+ "hiperparametros": {
+  "C": 1.0
+ },
+ "auc_macro_validacion": 0.7170773706130076,
+ "entradas": [
+  "riego",
+  "riego_3d",
+  "riego_5d",
+  "riego_10d",
+  "dias_desde_riego",
+  "lluvia",
+  "lluvia_3d",
+  "lluvia_5d",
+  "lluvia_10d",
+  "dias_desde_lluvia",
+  "eto",
+  "eto_3d",
+  "eto_5d",
+  "eto_10d",
+  "T2M_MAX",
+  "RH2M",
+  "ALLSKY_SFC_SW_DWN",
+  "ndvi",
+  "kc",
+  "S_tau2",
+  "S_tau5",
+  "S_tau10",
+  "S_tau20",
+  "Dr_k0.2",
+  "Dr_k0.5",
+  "Dr_k0.8",
+  "das",
+  "etapa_vegetativa",
+  "etapa_reproductiva",
+  "etapa_maduracion"
+ ],
+ "clases": {
+  "verde": "≥ 30 %",
+  "amarillo": "27,1–30 %",
+  "rojo": "< 27,1 %"
+ },
+ "error_esperado": "el de la prueba sellada (prueba_total.csv)"
+}

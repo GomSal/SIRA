@@ -1,0 +1,51 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Semáforo de humedad SIRA</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bg:#1b2a47;--card:#16233d;--ink:#f3f5f9;--muted:#a9b4c8;--baja:#e04b4b;--media:#f2c230;--suf:#2e9e5b;--marca:#8e44ad}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,sans-serif}
+.wrap{max-width:1100px;margin:auto;padding:16px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px}
+#mapa{height:520px;border-radius:12px}
+.card{background:var(--card);border-radius:12px;padding:12px 16px;margin-bottom:12px;border-left:4px solid var(--c)}
+.card h3{margin:0 0 4px;font-size:18px}.card p{margin:2px 0}.card small{color:var(--muted)}
+.pie{grid-column:1/-1;color:var(--muted);font-size:13px}
+.slider{grid-column:1/-1}.slider input{width:100%}.marcas{display:flex;justify-content:space-between;color:var(--muted)}
+@media(max-width:760px){.wrap{grid-template-columns:1fr}#mapa{height:380px}}
+</style></head><body><div class="wrap">
+<div class="slider"><div>Horizonte de predicción: <b id="hlabel"></b></div>
+<input id="h" type="range" min="0" max="3" step="1" value="0"><div class="marcas"><span>hoy</span><span>7 d</span><span>15 d</span><span>30 d</span></div></div>
+<div id="mapa"></div><div id="tarjetas"></div>
+<div class="pie" id="pie"></div></div>
+<script>
+const R = {"hoy": "2026-11-15", "geos_inicio": "2026-11-12", "miembros_geos": 5, "zona_ha": 400.0, "limites_latlon": [[4.180507764718583, -74.97116620355825], [4.198600545044166, -74.95314400739632]], "modelo_b": {"sigma_pct": 3.12, "margen_mm": 4.68, "riego_supuesto": "CD de Nataima hasta hoy (promedio de GS1, GS2 y GS3); sin riego desde hoy"}, "horizontes": [{"h": 0, "fecha": "2026-11-15", "ha_en_cultivo": 68.68, "lluvia_mm_hasta_h": 0.0, "eto_mm_hasta_h": 0.0, "suficiente": {"pct": 10.3, "ha": 7.1, "deficit_L_m2_medio": 0.0, "agua_m3_zona": 0.0}, "media": {"pct": 83.6, "ha": 57.39, "deficit_L_m2_medio": 1.3, "agua_m3_zona": 746.0, "dias_hasta_baja_mediana": 5}, "baja": {"pct": 6.1, "ha": 4.19, "deficit_L_m2_medio": 5.56, "agua_m3_zona": 233.0}, "posible_enfermedad_o_deficiencia_nutricional": {"pct": 2.7}}, {"h": 7, "fecha": "2026-11-22", "ha_en_cultivo": 67.61, "lluvia_mm_hasta_h": 17.975266986738706, "eto_mm_hasta_h": 25.564442375714385, "suficiente": {"pct": 0.0, "ha": 0.0, "deficit_L_m2_medio": 0.0, "agua_m3_zona": 0.0}, "media": {"pct": 0.0, "ha": 0.0, "deficit_L_m2_medio": 0.0, "agua_m3_zona": 0.0, "dias_hasta_baja_mediana": null}, "baja": {"pct": 100.0, "ha": 67.61, "deficit_L_m2_medio": 6.64, "agua_m3_zona": 4490.0}, "posible_enfermedad_o_deficiencia_nutricional": {"pct": 0.0}}, {"h": 15, "fecha": "2026-11-30", "ha_en_cultivo": 67.38, "lluvia_mm_hasta_h": 34.58766239725409, "eto_mm_hasta_h": 54.300544994032556, "suficiente": {"pct": 0.0, "ha": 0.0, "deficit_L_m2_medio": 0.0, "agua_m3_zona": 0.0}, "media": {"pct": 8.9, "ha": 6.01, "deficit_L_m2_medio": 2.94, "agua_m3_zona": 177.0, "dias_hasta_baja_mediana": null}, "baja": {"pct": 91.1, "ha": 61.37, "deficit_L_m2_medio": 5.73, "agua_m3_zona": 3519.0}, "posible_enfermedad_o_deficiencia_nutricional": {"pct": 0.0}}, {"h": 30, "fecha": "2026-12-15", "ha_en_cultivo": 65.98, "lluvia_mm_hasta_h": 92.30156731935753, "eto_mm_hasta_h": 112.53806993857775, "suficiente": {"pct": 0.0, "ha": 0.0, "deficit_L_m2_medio": 0.0, "agua_m3_zona": 0.0}, "media": {"pct": 100.0, "ha": 65.98, "deficit_L_m2_medio": 1.32, "agua_m3_zona": 870.0, "dias_hasta_baja_mediana": null}, "baja": {"pct": 0.0, "ha": 0.0, "deficit_L_m2_medio": 0.0, "agua_m3_zona": 0.0}, "posible_enfermedad_o_deficiencia_nutricional": {"pct": 0.0}}], "dias_hasta_baja_sin_riego_pct": {"ya hoy": 6.1, "1-2 días": 0.0, "3-5 días": 89.9, "6-30 días": 4.0, "no llega en 30 días": 0.0}};
+const map = L.map('mapa', {zoomControl:true, scrollWheelZoom:false}).fitBounds(R.limites_latlon);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Imágenes &copy; Esri'}).addTo(map);
+let capa = null;
+const f = (x, d=1) => Number(x).toLocaleString('es-CO', {maximumFractionDigits:d});
+function pintar(i){
+  const H = R.horizontes[i];
+  document.getElementById('hlabel').textContent = H.h === 0 ? `hoy (${H.fecha})` : `${H.h} días (${H.fecha})`;
+  if (capa) map.removeLayer(capa);
+  capa = L.imageOverlay(`semaforo_h${String(H.h).padStart(2,'0')}.png`, R.limites_latlon, {opacity:0.85}).addTo(map);
+  const b = H.baja, m = H.media, s = H.suficiente, e = H.posible_enfermedad_o_deficiencia_nutricional;
+  document.getElementById('tarjetas').innerHTML = `
+  <div class="card" style="--c:var(--baja)"><h3>Humedad baja · ${f(b.pct)} %</h3>
+   <p>Déficit ≈ ${f(b.deficit_L_m2_medio)} L/m² (${f(b.deficit_L_m2_medio*10000,0)} L/ha): regar ya</p><small>≈ ${f(b.agua_m3_zona,0)} m³ de agua en esta zona</small></div>
+  <div class="card" style="--c:var(--media)"><h3>Humedad media · ${f(m.pct)} %</h3>
+   <p>Faltan ≈ ${f(m.deficit_L_m2_medio)} L/m²${m.dias_hasta_baja_mediana!=null ? `; pasa a baja en ≈ ${m.dias_hasta_baja_mediana} días sin riego` : ''}</p><small>≈ ${f(m.agua_m3_zona,0)} m³ de agua en esta zona</small></div>
+  <div class="card" style="--c:var(--suf)"><h3>Humedad suficiente · ${f(s.pct)} %</h3>
+   <p>${H.h === 0 ? 'Hoy el suelo tiene agua suficiente: no requiere riego' : 'No requiere riego: alcanza con la lluvia pronosticada'}</p><small>Lluvia pronosticada hasta este día: ${f(H.lluvia_mm_hasta_h,0)} mm · ETo ${f(H.eto_mm_hasta_h,0)} mm</small></div>
+  ${e.pct > 0 ? `<div class="card" style="--c:var(--marca)"><h3>Posible enfermedad o deficiencia nutricional · ${f(e.pct)} %</h3>
+   <p>La hoja se ve más seca de lo normal aunque el suelo tenga agua</p><small>Revisar en campo</small></div>` : ''}`;
+}
+document.getElementById('h').addEventListener('input', e => pintar(+e.target.value));
+const DB = R.dias_hasta_baja_sin_riego_pct;
+document.getElementById('tarjetas').insertAdjacentHTML('afterend', '');
+const extra = document.createElement('div'); extra.className = 'pie';
+extra.innerHTML = '<b>Si no se riega desde hoy, el cultivo llega a humedad baja:</b> ' + Object.entries(DB).map(([k, v]) => `${k}: ${f(v)} %`).join(' · ');
+document.querySelector('.wrap').insertBefore(extra, document.getElementById('pie'));
+document.getElementById('pie').textContent = `${f(R.zona_ha,0)} ha alrededor del lote de Nataima · hoy ${R.hoy} · clima GEOS-S2S (inicio ${R.geos_inicio}, ${R.miembros_geos} miembros) · riego supuesto ${R.modelo_b.riego_supuesto} · hoy: humedad corregida a Nataima (ARIMAX) con margen de ${f(R.modelo_b.margen_mm)} L/m²; desde mañana: balance FAO-56 sin riego · umbrales 30 % y 27,1 % (Martínez-Vega et al. 2025)`;
+pintar(0);
+setTimeout(() => { map.invalidateSize(); map.fitBounds(R.limites_latlon); }, 50);
+</script></body></html>

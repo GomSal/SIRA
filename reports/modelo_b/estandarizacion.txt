@@ -1,0 +1,1 @@
+StandardScaler y PCA de Prithvi (k ∈ {3, 5, 10, 20}, recortado a fechas HLS distintas − 1) van dentro de un Pipeline de scikit-learn (ColumnTransformer → modelo). Se ajustan en cada partición solo con el entrenamiento; el PCA se ajusta sobre los vectores distintos (una fecha = un vector).

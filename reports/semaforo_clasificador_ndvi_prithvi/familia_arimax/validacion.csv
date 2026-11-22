@@ -1,0 +1,17 @@
+modelo,hiperparametros,auc_macro_val,recall_rojo_val,particion_prueba
+ARIMAX,"{""p"": 1}",0.7615,0.7692,1
+ARIMAX,"{""p"": 2}",0.7621,0.7692,1
+ARIMAX + Prithvi,"{""p"": 1, ""prithvi_pca"": 3}",0.7484,0.6923,1
+ARIMAX + Prithvi,"{""p"": 2, ""prithvi_pca"": 3}",0.7462,0.6923,1
+ARIMAX,"{""p"": 1}",0.7649,0.6154,2
+ARIMAX,"{""p"": 2}",0.7642,0.6154,2
+ARIMAX + Prithvi,"{""p"": 1, ""prithvi_pca"": 3}",0.7546,0.6154,2
+ARIMAX + Prithvi,"{""p"": 2, ""prithvi_pca"": 3}",0.7545,0.6154,2
+ARIMAX,"{""p"": 1}",0.8081,0.7692,3
+ARIMAX,"{""p"": 2}",0.8045,0.7692,3
+ARIMAX + Prithvi,"{""p"": 1, ""prithvi_pca"": 3}",0.785,0.5385,3
+ARIMAX + Prithvi,"{""p"": 2, ""prithvi_pca"": 3}",0.7851,0.5385,3
+ARIMAX,"{""p"": 1}",0.754,0.75,4
+ARIMAX,"{""p"": 2}",0.7489,0.6667,4
+ARIMAX + Prithvi,"{""p"": 1, ""prithvi_pca"": 3}",0.7469,0.5,4
+ARIMAX + Prithvi,"{""p"": 2, ""prithvi_pca"": 3}",0.7402,0.5,4
