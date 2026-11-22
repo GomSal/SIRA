@@ -42,7 +42,7 @@ Detalle: `reports/validacion_digitalizacion.md`.
 
 **Curvas continuas.** Las 198 mediciones se interpolan con **PCHIP**: la curva pasa por cada medición sin inventar picos (a diferencia de la curva suavizada de Excel del artículo). Cada valor queda marcado como *medido* o *interpolado*, junto con la distancia a la medición más cercana (`data/processed/humedad_continua.csv`).
 
-![Curvas continuas de humedad](../reports/control/humedad_continua.png)
+![Curvas continuas de humedad](https://raw.githubusercontent.com/GomSal/SIRA/modelo-humedad/reports/control/humedad_continua.png)
 
 **Índices del dron (Fig. 7).** El artículo también publica índices de dron: DJI Matrice 300 con Micasense Altum a 60 m, con vuelos a los 30 días y luego cada 20. Vienen como medias por temporada × etapa × tratamiento para NDVI, NDRE y OSAVI. Se digitalizaron las 81 barras (`data/processed/dron_indices.csv`); contra las medias por etapa de la Tabla 4, el error medio es de 0,006–0,011. **Son la referencia del Corrector (§6).**
 
@@ -59,11 +59,11 @@ Los polígonos de las 3 franjas (MIRI, AWD+MIRI, CD) se obtuvieron del plano geo
 
 **Verificación sobre Sentinel-2 real.** Justo antes de la siembra de GS2 (día −4) y de GS3 (día −1), el área de los polígonos aparece con suelo desnudo (NDVI bajo), con la misma forma y orientación del lote, mientras alrededor hay vegetación. Desplazar el polígono 10 m no mejora el ajuste: la ubicación es correcta a ±10 m.
 
-![NDVI del lote en siembras y mitad de temporada](../reports/control/ndvi_lote_mosaico.png)
+![NDVI del lote en siembras y mitad de temporada](https://raw.githubusercontent.com/GomSal/SIRA/modelo-humedad/reports/control/ndvi_lote_mosaico.png)
 
 **Fechas de siembra.** El artículo solo da meses. Se estimaron alineando su lluvia con CHIRPS, NASA POWER y ERA5: **GS1 ≈ 27-may-2021, GS2 ≈ 4-dic-2021, GS3 ≈ 9-jul-2022**. La serie de NDVI del lote sube y baja al ritmo de esas tres siembras, y se diferencia de los alrededores, lo que confirma las fechas.
 
-![Ciclo de NDVI del lote frente a las siembras](../reports/control/ndvi_lote_serie.png)
+![Ciclo de NDVI del lote frente a las siembras](https://raw.githubusercontent.com/GomSal/SIRA/modelo-humedad/reports/control/ndvi_lote_serie.png)
 
 **Escala (píxeles por franja):**
 

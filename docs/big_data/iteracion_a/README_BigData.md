@@ -6,13 +6,13 @@
 - **SI7006** — Almacenamiento y Procesamiento de Grandes Datos (*Foco principal de este documento*)  
 - **SI7009** — Aprendizaje Automático  
 - **SI7007** — Visualización de Datos  
-**Documentos Relacionados:** [`02_BigData_Arch.md`](../02_BigData_Arch.md) · [`sira_flujo_entrenamiento.html`](../sira_flujo_entrenamiento.html) · [`HANDOVER.md`](../HANDOVER.md) · [`s00271-025-01025-w.pdf`](../s00271-025-01025-w.pdf) · [`CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx`](../General/CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx)
+**Documentos Relacionados:** [`02_BigData_Arch.md`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/A_SIRA_ARCH/02_BigData_Arch.md) · `sira_flujo_entrenamiento.html` · [`HANDOVER.md`](https://github.com/GomSal/SIRA/blob/main/HANDOVER.md) · `s00271-025-01025-w.pdf` · `CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx`
 
 ---
 
 ## 1. Propósito y Alcance del Módulo de Big Data en SIRA
 
-**SIRA** tiene como objetivo predecir la **humedad volumétrica del suelo ($\text{VWC}$) por píxel de 10 m** y generar recomendaciones oportunas de riego (🔴 **Déficit** $< 27,1\%$, 🟡 **Óptimo** $27,1\text{–}30,0\%$, 🟢 **Exceso** $> 30,0\%$) para prevenir el estrés hídrico y optimizar el uso del agua en los cultivos de arroz del Alto Magdalena, partiendo de la verdad de campo experimental del **C.I. Nataima de Agrosavia** (El Espinal, Tolima; [Martínez-Vega et al., 2025](../s00271-025-01025-w.pdf)).
+**SIRA** tiene como objetivo predecir la **humedad volumétrica del suelo ($\text{VWC}$) por píxel de 10 m** y generar recomendaciones oportunas de riego (🔴 **Déficit** $< 27,1\%$, 🟡 **Óptimo** $27,1\text{–}30,0\%$, 🟢 **Exceso** $> 30,0\%$) para prevenir el estrés hídrico y optimizar el uso del agua en los cultivos de arroz del Alto Magdalena, partiendo de la verdad de campo experimental del **C.I. Nataima de Agrosavia** (El Espinal, Tolima; Martínez-Vega et al. (2025)).
 
 ### ¿Qué problema real resuelve Big Data dentro del proyecto?
 
@@ -21,7 +21,7 @@ En SIRA existe una asimetría fundamental entre los datos de tierra y los datos 
 2. **Necesidad de operar con imágenes satelitales actuales y corregir bruma/baja resolución:** Para que el modelo de aprendizaje automático funcione hoy en día (2026+) sobre las parcelas arroceras, debe superar dos obstáculos:
    - La **bruma atmosférica** (cirros delgados, neblina y aerosoles frecuentes en el valle del Magdalena) que altera la reflectancia óptica sin activar siempre las máscaras binarias de nubes.
    - La **baja resolución espacial** de las fuentes de contexto ($30\text{ m}$ en HLS / bloques de $480\text{ m}$ en **Prithvi-EO-2.0** y $20\text{ m}$ en la banda $\text{SWIR}$ de Sentinel-2 frente a franjas de cultivo de $23,5\text{ m}$ de ancho).
-3. **El puente desde Big Data:** A diferencia de las mediciones en tierra, **los datos climáticos (CHIRPS, NASA POWER e IDEAM) son diarios, masivos y abarcan décadas completas sin vacíos temporales**. El subsistema de Big Data ingesta, limpia, cruza y almacena estas series históricas masivas junto con el archivo multianual de imágenes satelitales para entrenar una **regresión hidroclimática-espectral** (nodo `Clima por día` en [`sira_flujo_entrenamiento.html`](../sira_flujo_entrenamiento.html)). Esta regresión permite hacer el *tuning* del modelo de Machine Learning, corrigiendo desviaciones por bruma o resolución y proyectando el balance hídrico diario sobre la parcela real.
+3. **El puente desde Big Data:** A diferencia de las mediciones en tierra, **los datos climáticos (CHIRPS, NASA POWER e IDEAM) son diarios, masivos y abarcan décadas completas sin vacíos temporales**. El subsistema de Big Data ingesta, limpia, cruza y almacena estas series históricas masivas junto con el archivo multianual de imágenes satelitales para entrenar una **regresión hidroclimática-espectral** (nodo `Clima por día` en `sira_flujo_entrenamiento.html`). Esta regresión permite hacer el *tuning* del modelo de Machine Learning, corrigiendo desviaciones por bruma o resolución y proyectando el balance hídrico diario sobre la parcela real.
 
 ---
 
@@ -52,13 +52,13 @@ En SIRA existe una asimetría fundamental entre los datos de tierra y los datos 
 
 ## 3. Cumplimiento Detallado de la Rúbrica de Calificación (`SI7006`)
 
-A continuación se detalla cómo el diseño y la implementación de SIRA responden a cada uno de los **7 criterios oficiales** de la materia **SI7006 — Almacenamiento y Procesamiento de Grandes Datos** según el documento [`CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx`](../General/CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx), apuntando al nivel **Excelente (4.5 – 5.0)**.
+A continuación se detalla cómo el diseño y la implementación de SIRA responden a cada uno de los **7 criterios oficiales** de la materia **SI7006 — Almacenamiento y Procesamiento de Grandes Datos** según el documento `CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx`, apuntando al nivel **Excelente (4.5 – 5.0)**.
 
 ### Resumen Ejecutivo de Pesos y Estrategia de Cumplimiento (`SI7006`)
 
 | # | Criterio de Evaluación (`SI7006`) | Peso | Exigencia Nivel Excelente (4.5 – 5.0) | Implementación Concreta en SIRA |
 |---|---|---|---|---|
-| **1** | **Arquitectura de referencia y flujo de datos** | **15 %** | Arquitectura explícita (Lakehouse por zonas), justificada por volumen, velocidad y latencia; diagrama E2E coherente. | Arquitectura **Lakehouse Medallion (Bronce–Plata–Oro)** en AWS S3 + Iceberg. Proceso *batch* diario (5:00 a.m.) justificado porque la humedad del suelo y las fuentes climáticas son diarias (no requieren streaming). Diagramas E2E en [`02_BigData_Arch.md`](../02_BigData_Arch.md) y [`sira_flujo_entrenamiento.html`](../sira_flujo_entrenamiento.html). |
+| **1** | **Arquitectura de referencia y flujo de datos** | **15 %** | Arquitectura explícita (Lakehouse por zonas), justificada por volumen, velocidad y latencia; diagrama E2E coherente. | Arquitectura **Lakehouse Medallion (Bronce–Plata–Oro)** en AWS S3 + Iceberg. Proceso *batch* diario (5:00 a.m.) justificado porque la humedad del suelo y las fuentes climáticas son diarias (no requieren streaming). Diagramas E2E en [`02_BigData_Arch.md`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/A_SIRA_ARCH/02_BigData_Arch.md) y `sira_flujo_entrenamiento.html`. |
 | **2** | **Ambiente tecnológico** | **10 %** | Desplegado en nube/clúster (AWS S3, Glue, Athena) elegido por requerimientos y costo; reproducible y con IAM seguro. | Ecosistema **100 % Serverless en AWS** (`S3` + `Glue PySpark` + `Glue Data Catalog` + `Athena` + `Step Functions` + `EventBridge`) + `Colab GPU` (inferencia Prithvi) + `Supabase`. Costo mínimo por pago por uso y guías reproducibles paso a paso. |
 | **3** | **Origen e ingesta de datos** | **15 %** | Fuentes caracterizadas (tipo, formato, volumen, frecuencia); modo de ingesta justificado, automatizado, con calidad y manejo de errores. | 6 fuentes reales caracterizadas (`CHIRPS`, `NASA POWER`, `IDEAM`, `Sentinel-2`, `HLS`, `Campo Nataima`). Ingesta *batch* automatizada con validación de rangos físicos, detección de huecos en IDEAM y reintentos con *exponential backoff*. |
 | **4** | **Almacenamiento** | **15 %** | Almacenamiento distribuido (S3) por zonas, formato columnar (Parquet/Iceberg), particionamiento acorde a consultas y catálogo SQL/NoSQL justificado. | **S3** dividido en `bronze/`, `silver/`, `gold/`. Tablas **Apache Iceberg / Parquet (Snappy)** particionadas por `(anio, mes)`. Catálogo en **AWS Glue Data Catalog** (consultas analíticas en **Athena**) y **PostgreSQL en Supabase** (lectura OLTP $< 50\text{ ms}$ desde la app). |
@@ -66,7 +66,7 @@ A continuación se detalla cómo el diseño y la implementación de SIRA respond
 | **6** | **Despliegue de modelos y consumo** | **20 %** | Modelo persistido y versionado (S3/MLflow), publicado vía API funcional; resultados en motor SQL/NoSQL y consumidos desde dashboard o consultas. | Modelos **A, B y C** + PCA y regresor climático persistidos y versionados en `s3://.../models/`. Inferencia expuesta por **API REST (FastAPI / AWS Lambda)**, resultados escritos en `gold.prediccion_pixel_dia` (Athena) y sincronizados en **Supabase** para el dashboard **Lovable**. |
 | **7** | **Sustentación** | **30 %*** | Cada integrante explica y defiende las decisiones de arquitectura e implementación y demuestra el pipeline funcionando. | Defensa estructurada con evidencia empírica: por qué se descartó IDEAM ($-36\%$ a $-63\%$ de sesgo y sin `GS2`) y ERA5 ($+142\%$), cómo la regresión climática corrige la bruma y demostración en vivo del pipeline y la app. |
 
-*\*Nota: Se conservan los pesos textuales del documento preliminar [`CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx`](../General/CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx).*
+*\*Nota: Se conservan los pesos textuales del documento preliminar `CRITERIOS_EVAL_PROYECTO_INTEGRADOR_1_unificado.docx`.*
 
 ---
 
@@ -94,7 +94,7 @@ A continuación se detalla cómo el diseño y la implementación de SIRA respond
   3. **IDEAM (`datos.gov.co` `s54a-sgyg`):** Externa (API SODA) · JSON/CSV · Estaciones puntuales en Tolima · Usada para auditoría de calidad y contraste regional.
   4. **Sentinel-2 L2A (ESA Copernicus / GEE):** Externa · Ráster GeoTIFF COG (`B3, B4, B8` a $10\text{ m}$; `B8A, B11, SCL, AOT` a $20\text{ m}$) · Frecuencia cada 5 días.
   5. **HLS v2.0 (`HLSL30` / `HLSS30` NASA):** Externa · Ráster GeoTIFF COG ($30\text{ m}$, 6 bandas armonizadas + `Fmask`) · Frecuencia cada 2–4 días combinados.
-  6. **Verdad de Campo C.I. Nataima:** Científica ([Martínez-Vega et al., 2025](../s00271-025-01025-w.pdf)) · CSV (`nataima_diario.csv`) · 198 mediciones TDR validadas con 11 pruebas automatizadas en `pytest`.
+  6. **Verdad de Campo C.I. Nataima:** Científica (Martínez-Vega et al. (2025)) · CSV (`nataima_diario.csv`) · 198 mediciones TDR validadas con 11 pruebas automatizadas en `pytest`.
 - **Validaciones en Ingesta:** Verificación de esquemas (*Schema-on-Read*), validación de rangos biofísicos (reflectancias $\in [0, 1]$, humedad relativa $\in [0, 100]\%$, radiación solar $R_s \ge 0$, precipitación $\ge 0\text{ mm}$), control de duplicados por `(grid_id, fecha)` y manejo de errores HTTP en llamadas a las APIs de NASA POWER y ClimateSERV.
 
 #### Criterio 4: Almacenamiento (15 %)

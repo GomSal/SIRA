@@ -1,7 +1,7 @@
 # 04_B — Manual de Uso y Guía de Lectura Detallada (`B_SIRA_ARCH` · HEAD `8fde03d`)
 
 **Proyecto:** SIRA — Sistema Inteligente de Riego para Arroz en el Alto Magdalena (Equipo 10, EAFIT)  
-**Repositorio GitHub Local:** [`la raíz del repositorio (`./`)`](../) (`GomSal/SIRA`, rama `modelo-humedad`, commit `8fde03d`)  
+**Repositorio GitHub Local:** [`la raíz del repositorio (`./`)`](https://github.com/GomSal/SIRA/tree/modelo-humedad) (`GomSal/SIRA`, rama `modelo-humedad`, commit `8fde03d`)  
 **Lakehouse AWS:** `s3://sira-b-lakehouse-929570730700/` · **Base de Datos Athena:** `sira_b_lakehouse_db` (**13 tablas**)
 
 > **Propósito de este documento:** Explicar en lenguaje claro **cómo saber leer cada pieza del sistema** (qué dice cada carpeta en S3, qué significa cada tabla y cada columna en Athena, cómo leer los mapas y colores del Semáforo C, cómo interpretar las respuestas JSON de la API) y entregar el **manual de uso completo** para actualizar, ejecutar y demostrar la plataforma.
@@ -114,7 +114,7 @@ git -C github pull origin modelo-humedad
 
 ### 2.5 Abrir el Visor Interactivo de Mapas (Modelo C) en el Navegador
 Puedes abrir directamente la copia local del visor interactivo generado desde el repositorio:
-- [`B_SIRA_ARCH/bigdata_pipeline/data/oro/semaforo_c_mapas/mapa.html`](bigdata_pipeline/data/oro/semaforo_c_mapas/mapa.html)  
+- [`B_SIRA_ARCH/bigdata_pipeline/data/oro/semaforo_c_mapas/mapa.html`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/data/oro/semaforo_c_mapas/mapa.html)  
 Mueve el deslizador superior entre **`hoy`**, **`7 d`**, **`15 d`** y **`30 d`** para ver cómo evolucionan sobre la imagen satelital de Nataima las 400 ha y las tarjetas de déficit en $\text{L/m}^2$ y $\text{m}^3$.
 
 ---
@@ -124,5 +124,5 @@ Mueve el deslizador superior entre **`hoy`**, **`7 d`**, **`15 d`** y **`30 d`**
 1. **Minuto 1 — Orden del Repositorio y Evolución (`SIRA\github` → `A_SIRA_ARCH` → `B_SIRA_ARCH`):** Explica la separación del repo GitHub en `github/` y por qué pasamos de 1 modelo a **3 modelos desacoplados**: A (NDVI/NDMI 1–30 d sin clima/Prithvi), B (`ARIMAX(1)` oficial con riego + `S_tau45_a05` del reentreno) y C (ecuación física FAO-56 para operar sin riego registrado sobre 400 ha).
 2. **Minuto 2 — Lakehouse Medallion en S3 (`sira-b-lakehouse-929570730700`):** Muestra `bronce/`, `plata/indices_pixel/predio_id=NATAIMA_01/fecha=...`, `plata/estado_hidrico_pixel/`, `oro/semaforo/`, `oro/semaforo_c_pixeles/` y `oro/semaforo_c_mapas/mapa.html`.
 3. **Minuto 3 — 4 Glue Jobs + 3 Step Functions (`Parallel`) + 3 EventBridge Schedules:** Abre `sira-b-flujo-geos-5dias` en Step Functions para mostrar el bloque **`Parallel`** actualizando en simultáneo Semáforo B (`sira-b-03`) y Semáforo C (`sira-b-04`), justificando con `SPARK_ECUACION.md` cuándo entra Spark (`1 vs. 100 predios`). Confirma `0 stacks` en CloudFormation.
-4. **Minuto 4 — Amazon Athena (`sira_b_lakehouse_db`):** Corre las Consultas 4, 5 y 6 de [`ddl_and_analytics_b_athena.sql`](bigdata_pipeline/sql/ddl_and_analytics_b_athena.sql) mostrando en vivo las 400 ha de Modelo C (20.286 píxeles) y el tablero de los 5 bloques de verificación.
+4. **Minuto 4 — Amazon Athena (`sira_b_lakehouse_db`):** Corre las Consultas 4, 5 y 6 de [`ddl_and_analytics_b_athena.sql`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/sql/ddl_and_analytics_b_athena.sql) mostrando en vivo las 400 ha de Modelo C (20.286 píxeles) y el tablero de los 5 bloques de verificación.
 5. **Minuto 5 — API Dual + Mapa Interactivo:** Ejecuta `app_b_inference_api.py` (Modo B `/regar_hoy` + Modo C `/semaforo_c`) y abre `mapa.html` deslizando de hoy a 30 días.

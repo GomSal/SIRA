@@ -2,10 +2,10 @@
 
 **Proyecto:** SIRA (Iteración B — `B_SIRA_ARCH`) — Equipo 10, Universidad EAFIT  
 **Repositorio Fuente (GitHub):** [`GomSal/SIRA@modelo-humedad`](https://github.com/GomSal/SIRA/tree/modelo-humedad) (commit **`8fde03db`**, 2026-11-21)  
-**Clon Local Exclusivo del Repo:** [`la raíz del repositorio (`./`)`](../)  
+**Clon Local Exclusivo del Repo:** [`la raíz del repositorio (`./`)`](https://github.com/GomSal/SIRA/tree/modelo-humedad)  
 **Cuenta AWS Activa:** `929570730700` (`admin-gomsal`) · **Región:** `us-east-2` (Ohio)  
-**Regla de Aprovisionamiento:** **0 stacks en AWS CloudFormation** (creación 100 % directa vía `boto3` desde [`deploy_and_run_b_pipeline.py`](bigdata_pipeline/deploy_and_run_b_pipeline.py))  
-**Convivencia:** Todos los recursos de esta iteración llevan el prefijo `sira-b-*` y la base `sira_b_lakehouse_db`, dejando intacta la Iteración A ([`A_SIRA_ARCH/`](../A_SIRA_ARCH/) y `sira-lakehouse-clima-929570730700`).
+**Regla de Aprovisionamiento:** **0 stacks en AWS CloudFormation** (creación 100 % directa vía `boto3` desde [`deploy_and_run_b_pipeline.py`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/deploy_and_run_b_pipeline.py))  
+**Convivencia:** Todos los recursos de esta iteración llevan el prefijo `sira-b-*` y la base `sira_b_lakehouse_db`, dejando intacta la Iteración A ([`A_SIRA_ARCH/`](https://github.com/GomSal/SIRA/tree/Big-Data_Arch/A_SIRA_ARCH) y `sira-lakehouse-clima-929570730700`).
 
 > **Propósito de este documento:** Documentar paso a paso **exactamente cómo se organizó la carpeta local y cómo se creó cada recurso en AWS** con base en las últimas actualizaciones del repositorio (`708d4de` → `8fde03d`), junto con el paso a paso para auditarlo en la Consola de AWS y la evidencia en vivo (`42/42` sentencias `SUCCEEDED` en Athena).  
 > Para aprender a **leer e interpretar cada carpeta, tabla, columna, color de mapa y JSON de la API**, consulta [`04_B_Manual_de_Uso_E2E.md`](04_B_Manual_de_Uso_E2E.md).
@@ -40,7 +40,7 @@ Para evitar copias duplicadas del repositorio dentro del pipeline Big Data:
 2. **Eliminación de copias antiguas duplicadas:**
    - Se eliminó la semilla temporal anterior (`B_SIRA_ARCH\bigdata_pipeline\data\bronce\repo_modelo_humedad\`) y cualquier copia scratch.
    - Se verificó que `A_SIRA_ARCH\` permanezca intacta como respaldo histórico de la Iteración A.
-3. **Fuente única de verdad:** tanto [`fetch_b_bronze_data.py`](bigdata_pipeline/ingestion/fetch_b_bronze_data.py) como [`deploy_and_run_b_pipeline.py`](bigdata_pipeline/deploy_and_run_b_pipeline.py) leen directamente desde `la raíz del repositorio (`./`)`.
+3. **Fuente única de verdad:** tanto [`fetch_b_bronze_data.py`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/ingestion/fetch_b_bronze_data.py) como [`deploy_and_run_b_pipeline.py`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/deploy_and_run_b_pipeline.py) leen directamente desde `la raíz del repositorio (`./`)`.
 
 ---
 
@@ -124,19 +124,19 @@ Todo el despliegue se ejecutó con un único comando directo contra la API de AW
    - Reutilizó sin duplicar permisos los roles existentes `sira-glue-service-role`, `sira-stepfunctions-role` y `sira-scheduler-role`.
 4. **Paso 3.3 — Registro de los 4 Jobs PySpark en AWS Glue 4.0:**
    - Cada job fue creado/actualizado con `GlueVersion="4.0"`, `PythonVersion="3"`, `WorkerType="G.1X"`, `NumberOfWorkers=2`, `Timeout=20`, logs continuos de CloudWatch y métricas activas, apuntando a sus rutas S3 exactas en `DefaultArguments`:
-     - [`job_b01_lote_imagenes_pixel.py`](bigdata_pipeline/spark_jobs/job_b01_lote_imagenes_pixel.py) $\rightarrow$ `sira-b-01-lote-imagenes-pixel`
-     - [`job_b02_lote_clima_y_geos.py`](bigdata_pipeline/spark_jobs/job_b02_lote_clima_y_geos.py) $\rightarrow$ `sira-b-02-lote-clima-y-geos`
-     - [`job_b03_lote_inferencia_ab.py`](bigdata_pipeline/spark_jobs/job_b03_lote_inferencia_ab.py) $\rightarrow$ `sira-b-03-lote-inferencia-ab`
-     - [`job_b04_lote_semaforo_c.py`](bigdata_pipeline/spark_jobs/job_b04_lote_semaforo_c.py) $\rightarrow$ `sira-b-04-lote-semaforo-c`
+     - [`job_b01_lote_imagenes_pixel.py`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/spark_jobs/job_b01_lote_imagenes_pixel.py) $\rightarrow$ `sira-b-01-lote-imagenes-pixel`
+     - [`job_b02_lote_clima_y_geos.py`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/spark_jobs/job_b02_lote_clima_y_geos.py) $\rightarrow$ `sira-b-02-lote-clima-y-geos`
+     - [`job_b03_lote_inferencia_ab.py`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/spark_jobs/job_b03_lote_inferencia_ab.py) $\rightarrow$ `sira-b-03-lote-inferencia-ab`
+     - [`job_b04_lote_semaforo_c.py`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/spark_jobs/job_b04_lote_semaforo_c.py) $\rightarrow$ `sira-b-04-lote-semaforo-c`
 5. **Paso 3.4 — Definición ASL de las 3 Máquinas en AWS Step Functions:**
    - Cargó las definiciones JSON desde `B_SIRA_ARCH/bigdata_pipeline/orchestration/`:
-     - [`stepfunctions_b_diario_imagenes_ab.asl.json`](bigdata_pipeline/orchestration/stepfunctions_b_diario_imagenes_ab.asl.json) (`sira-b-01` $\rightarrow$ `sira-b-03` $\rightarrow$ `sira-b-04`).
-     - [`stepfunctions_b_geos_5dias.asl.json`](bigdata_pipeline/orchestration/stepfunctions_b_geos_5dias.asl.json) (`sira-b-02` $\rightarrow$ **`Parallel`**[`sira-b-03` || `sira-b-04`]).
-     - [`stepfunctions_b_recalibracion_mensual.asl.json`](bigdata_pipeline/orchestration/stepfunctions_b_recalibracion_mensual.asl.json) (`sira-b-02`).
+     - [`stepfunctions_b_diario_imagenes_ab.asl.json`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/orchestration/stepfunctions_b_diario_imagenes_ab.asl.json) (`sira-b-01` $\rightarrow$ `sira-b-03` $\rightarrow$ `sira-b-04`).
+     - [`stepfunctions_b_geos_5dias.asl.json`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/orchestration/stepfunctions_b_geos_5dias.asl.json) (`sira-b-02` $\rightarrow$ **`Parallel`**[`sira-b-03` || `sira-b-04`]).
+     - [`stepfunctions_b_recalibracion_mensual.asl.json`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/orchestration/stepfunctions_b_recalibracion_mensual.asl.json) (`sira-b-02`).
 6. **Paso 3.5 — Programación en Amazon EventBridge Scheduler:**
    - Actualizó las 3 reglas en zona horaria `America/Bogota` con `State="ENABLED"` y `FlexibleTimeWindow={"Mode": "OFF"}`.
 7. **Paso 3.6 — Reconstrucción del Catálogo SQL (`13 tablas`) en Amazon Athena:**
-   - Ejecutó de principio a fin [`ddl_and_analytics_b_athena.sql`](bigdata_pipeline/sql/ddl_and_analytics_b_athena.sql): `1 CREATE DATABASE`, `13 DROP TABLE IF EXISTS`, `13 CREATE EXTERNAL TABLE` (con los esquemas actualizados incluyendo `s_tau45_a05`, `s_tau60_a05` y las 3 tablas nuevas del Modelo C), `9 MSCK REPAIR TABLE` para descubrir particiones S3 y **`6 SELECT`** de auditoría.
+   - Ejecutó de principio a fin [`ddl_and_analytics_b_athena.sql`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/sql/ddl_and_analytics_b_athena.sql): `1 CREATE DATABASE`, `13 DROP TABLE IF EXISTS`, `13 CREATE EXTERNAL TABLE` (con los esquemas actualizados incluyendo `s_tau45_a05`, `s_tau60_a05` y las 3 tablas nuevas del Modelo C), `9 MSCK REPAIR TABLE` para descubrir particiones S3 y **`6 SELECT`** de auditoría.
 
 ---
 
