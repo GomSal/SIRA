@@ -62,7 +62,34 @@ Usar el `.venv` del proyecto: tiene pyproj.
 - `pixeles.csv.gz`, con humedad, déficit pintado, déficit de B sin margen, S₂₀, Dr de la ecuación y color por pixel en hoy, +7, +15 y +30;
 - `diario.npz`, con color, déficit pintado y marca del NDMI de los 31 días.
 
-Los datos que se usan son los que ya existían: el cubo de A, `clima.csv` y GEOS-S2S. No cambió el almacenamiento.
+Los datos que se usan son los que ya existían: el cubo de A, `clima.csv` y GEOS-S2S.
+
+## Actualización con datos nuevos y app
+
+```
+python scripts/modelo_a/bajar_geos.py                 # GEOS-S2S: solo los inicios nuevos (retoma desde geos_nrt_parcial.csv)
+python scripts/operacion/actualizar_datos.py          # clima (POWER + CHIRPS) y escenas Sentinel-2/Landsat nuevas al cubo
+python scripts/operacion/semaforo_c.py --hoy <último día con lluvia POWER>
+python scripts/operacion/exportar_app.py              # app/datos/semaforo.json (31 días) y zonas.json
+python scripts/operacion/subir_aws.py                 # s3://sira-b-lakehouse-929570730700 (prefijos propios) y latest.json
+```
+
+Controles de la actualización:
+- **Clima:** en los días que ya estaban, POWER y CHIRPS nuevos son idénticos a los guardados, y la ETo recalculada es la del notebook 1.
+- **Imágenes:** se reprocesan escenas que ya estaban en el cubo y deben salir idénticas (el 22-nov: 15 y 18-nov, idénticas).
+- **GEOS:** las filas anteriores no cambian.
+
+La app (Lovable) lee `oro/semaforo_app/latest.json` del bucket por `/api/semaforo`, con credenciales temporales de solo lectura de esa carpeta. Toma cada subida nueva sin reiniciar.
+
+**Corrida del 22-nov.** Hoy = 19-nov, último día con lluvia POWER. La ETo de POWER llega al 16-nov y se arrastra hasta el 19-nov. CHIRPS llega al 30-sep. La última escena del cubo es del 18-nov. GEOS-S2S: inicio del 12-nov, el último que había publicado.
+
+| Día | Verde | Amarillo | Rojo |
+|---|---|---|---|
+| 19-nov (hoy) | 100 % | 0 % | 0 % |
+| 21-nov | 0 % | 98 % | 2 % |
+| 22-nov | 0 % | 7 % | 93 % |
+| 3-dic | 100 % | 0 % | 0 % |
+| 19-dic | 0 % | 0 % | 100 % |
 
 ## Resultado del 15-nov-2026 (zona de 400 ha alrededor de Nataima, 69 ha en cultivo)
 
