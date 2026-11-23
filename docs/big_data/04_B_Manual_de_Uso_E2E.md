@@ -1,128 +1,101 @@
-# 04_B — Manual de Uso y Guía de Lectura Detallada (`B_SIRA_ARCH` · HEAD `8fde03d`)
+# 04_B — Manual de Uso y Guía de Lectura Detallada (`B_SIRA_ARCH` Limpio · HEAD `876be25`)
 
 **Proyecto:** SIRA — Sistema Inteligente de Riego para Arroz en el Alto Magdalena (Equipo 10, EAFIT)  
-**Repositorio GitHub Local:** [`la raíz del repositorio (`./`)`](https://github.com/GomSal/SIRA/tree/modelo-humedad) (`GomSal/SIRA`, rama `modelo-humedad`, commit `8fde03d`)  
-**Lakehouse AWS:** `s3://sira-b-lakehouse-929570730700/` · **Base de Datos Athena:** `sira_b_lakehouse_db` (**13 tablas**)
-
-> **Propósito de este documento:** Explicar en lenguaje claro **cómo saber leer cada pieza del sistema** (qué dice cada carpeta en S3, qué significa cada tabla y cada columna en Athena, cómo leer los mapas y colores del Semáforo C, cómo interpretar las respuestas JSON de la API) y entregar el **manual de uso completo** para actualizar, ejecutar y demostrar la plataforma.
+**Repositorio ML:** [`GomSal/SIRA@modelo-humedad`](https://github.com/GomSal/SIRA/tree/modelo-humedad) (commit **`876be25`**, emisión **`2026-11-19`**)  
+**Lakehouse AWS:** `s3://sira-b-lakehouse-929570730700/` · **Base de Datos Athena:** `sira_b_lakehouse_db` (**13 tablas**)  
+**API Live en Producción (Lovable):** `https://s435rizz22wj6qd3mv37doq76m0widfd.lambda-url.us-east-2.on.aws/`
 
 ---
 
-## PARTE 1 · Cómo Saber Leer la Estructura (Qué Dice Cada Parte)
+## PARTE 1 · Cómo Leer la Estructura Conectada (ML ↔ Big Data ↔ App)
 
-### 1.1 Mapa de Carpetas Locales: ¿Dónde está cada cosa?
-```text
-<ruta-local-SIRA>\
-├── github\           ← TODO lo del repositorio GitHub (clon oficial rama modelo-humedad).
-│                        No edites datos a mano aquí; se actualiza solo con `git pull`.
-├── A_SIRA_ARCH\      ← Iteración A archivada (arquitectura inicial, solo histórico).
-└── B_SIRA_ARCH\      ← Iteración B vigente (código Big Data, scripts AWS, API y manuales).
+### 1.1 Prefijos Oficiales en Amazon S3 (`s3://sira-b-lakehouse-929570730700/`)
+
+1. **`models/` — Modelos reales versionados:**
+   - `models/pronosticador_a/rf/`: **`predictor_ndvi.joblib`** (92,2 MB) y **`predictor_ndmi.joblib`** (95,3 MB) reales (`sklearn 1.6.1`), más calibración Landsat→S2, curva normal 10 años y factores GEOS-S2S.
+   - `models/semaforo_b/operacion/`: **`arimax.json`** ($\sigma = 3{,}12\,\%$, margen $4{,}68\text{ mm}$) y **`calendarios_riego.csv`** (CD, MIRI, AWD+MIRI de Nataima).
+2. **`bronce/` y `plata/` — Datos crudos y limpios:**
+   - `plata/cubo_a/`: cubo satelital real de 400 ha (`cubo.npz` 297,6 MB, `cubo_fechas.csv` hasta `2026-11-18`) y serie climática diaria `clima.csv` (`2001–2026`, lluvia POWER hasta `2026-11-19`).
+   - `plata/clima_observado/` (`anio=2001..2026`): tabla Parquet generada por `sira-b-02` con lluvia CHIRPS + relleno NASA POWER (`PRECTOTCORR`) y ETo FAO-56.
+   - `plata/indices_pixel/` y `plata/geos_s2s_crudo/`: series limpias particionadas para Athena.
+3. **`oro/` — Salidas de negocio y consumo:**
+   - `oro/geos_s2s_corregido/` (`emision=`): 5 miembros GEOS-S2S corregidos por `sira-b-02` con climatología sellada de 10 años (`2015-11-18..2025-11-17`), consumidos directamente por `sira-b-05`.
+   - `oro/semaforo_c_pixeles/` (`emision=2026-11-19`, histórico `2026-11-15`): **20.286 píxeles agrícolas** en **40 columnas** (`predio_id`, `pixel`, `das_hoy`, `dias_hasta_baja`, y para `h = 0, 7, 15, 30`: `clase_h*`, `humedad_pct_h*`, `deficit_B_sin_margen_mm_h*`, `deficit_mm_h*`, `S_tau20_h*`, `dr_ecuacion_mm_h*`, `ndvi_h*`, `ndmi_h*`, `marca_h*`).
+   - `oro/semaforo_c_resumen/` (`emision=2026-11-19`, histórico `2026-11-15`): **4 horizontes (`0, 7, 15, 30`)** en **25 columnas** incluyendo `modelo_b_sigma_pct` (`3,12`), `modelo_b_margen_mm` (`4,68`), `riego_supuesto`, `lluvia_hueco_dias_sin_chirps` (`50`) y `lluvia_hueco_relleno` (`power`).
+   - `oro/semaforo_app/`: **fuente directa de la App Lovable**, actualizada automáticamente por `sira-b-05` con guardia monotónica:
+     - `latest.json`: puntero atómico a la última emisión (`emision=2026-11-19`, `generado_por: "aws-glue:sira-b-05-inferencia-unificada-ml"`).
+     - `zonas.json`: contorno del Tolima + 47 municipios + polígono de la zona piloto Nataima.
+     - `emision=2026-11-19/semaforo.json`: **`formato: 2`**, **6.761 píxeles en cultivo** con `lat`/`lon` WGS84 y los **31 días completos (`h = 0..30`)**.
+     - `emision=2026-11-19/simulador_riego.json`: payload compacto que permite a la Lambda `POST /regar_hoy` simular riegos con física exacta FAO-56 en `< 5 ms`.
+     - `emision=2026-11-19/mapa.html` y `semaforo_h{00,07,15,30}.png`: visor interactivo Leaflet y mapas RGBA (también espejados en `oro/semaforo_c_mapas/`).
+   - `oro/verificacion_clima_cultivo/`: **37 filas en 6 bloques** (incluyendo el Bloque 6 `6_PRUEBA_DINAMICA_B_VS_FAO56`).
+
+### 1.2 Cómo Leer los Resultados Oficiales Vigentes (`2026-11-19` · Paridad 1:1 ML = Athena = Lambda)
+
+| Horizonte | Fecha | Área en cultivo | 🟢 Suficiente | 🟡 Media | 🔴 Baja | 🟣 Alarma NDMI | Déficit / Volumen |
+|---|---|---|---|---|---|---|---|
+| **Hoy (`h=0`)** | 2026-11-19 | `67,61 ha` (`6.761 px`) | **`99,6 %`** | `0,4 %` | **`0,0 %`** | `11,4 %` | `0 L/m²` (`0 m³` en baja) |
+| **`+7 d`** | 2026-11-26 | `67,38 ha` | `0,0 %` | `0,0 %` | **`100,0 %`** | `0,0 %` | `6,61 L/m²` (`4.457 m³` en baja) |
+| **`+15 d`** | 2026-12-04 | `66,37 ha` | `0,0 %` | **`100,0 %`** | `0,0 %` | `0,0 %` | `1,92 L/m²` (`1.276 m³` en media) |
+| **`+30 d`** | 2026-12-19 | `65,98 ha` | `0,0 %` | `0,0 %` | **`100,0 %`** | `0,0 %` | `6,63 L/m²` (`4.377 m³` en baja) |
+
+- **Urgencia sin riego desde hoy (`2026-11-19`):** `0,0 %` ya hoy · **`1,6 %` en 1–2 días** (`111 px`, `1,11 ha`) · **`98,4 %` en 3–5 días** (`6.650 px`, `66,50 ha`) · `0,0 %` en 6–30 d / no llega.
+- **Lluvia/ETo GEOS-S2S acumuladas:** `+7 d`: `3,9 / 25,3 mm` · `+15 d`: `39,9 / 55,2 mm` · `+30 d`: `79,0 / 113,3 mm`.
+- **Histórico preservado en Athena:** la emisión previa `2026-11-15` (`68,68 ha`, `98,6 %` suf hoy, `87,8 %` en 3–5 d) permanece particionada en `oro_semaforo_c_resumen` y `oro_semaforo_c_pixeles`.
+
+---
+
+## PARTE 2 · Manual de Uso Operativo y Conexión con Lovable
+
+### 2.1 Endpoints HTTPS Activos en Producción (CORS nativo único)
+
+Base URL: **`https://s435rizz22wj6qd3mv37doq76m0widfd.lambda-url.us-east-2.on.aws`**
+
+| Método y Ruta | Uso en la App Lovable | Respuesta / Latencia típica |
+|---|---|---|
+| `GET /health` | Monitoreo y verificación de despliegue | `200 OK` · estado + última emisión + lista de rutas |
+| `GET /latest` | Detectar si hay una nueva emisión del pipeline AWS | `200 OK` · `317 B` · `emision`, `generado_por`, `subido_utc` |
+| `GET /zonas` | Cargar polígono del Tolima, 47 municipios y zona piloto | `200 OK` · `28 KB` |
+| `GET /resumen` | Tarjetas ejecutivas de 400 ha (`h=0, 7, 15, 30` + 31 días) | `200 OK` · `6,1 KB` |
+| `GET /semaforo` | Pintar los **6.761 píxeles** del mapa en los **31 días** (`formato: 2`) | `200 OK` · **`232 KB` (gzip)** |
+| `GET /semaforo_c?lat=4.1895&lon=-74.9621` | Inspeccionar un píxel puntual al hacer clic en el mapa | `200 OK` · `3,1 KB` |
+| `POST /regar_hoy` | Simulador interactivo *«¿Qué pasa si riego X mm el día D?»* | `200 OK` · **`< 5 ms`** en caliente (`re_ejecuto_modelo_a: false`) |
+
+Ejemplo `fetch()` desde Lovable para el botón **"Simular riego"**:
+```javascript
+const API = "https://s435rizz22wj6qd3mv37doq76m0widfd.lambda-url.us-east-2.on.aws";
+const resp = await fetch(`${API}/regar_hoy`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ lat: 4.1895, lon: -74.9621, lamina_riego_mm: 30, dia_aplicacion: 2 }),
+});
+const sim = await resp.json();
+// Emisión 2026-11-19: sim.escenario_sin_riego.dias_hasta_rojo === 3 -> sim.escenario_con_riego.dias_hasta_rojo === 6 (+3 días)
 ```
 
-### 1.2 Cómo Leer las 3 Capas en Amazon S3 (`s3://sira-b-lakehouse-929570730700/`)
-Piensa en S3 como una **línea de preparación en 3 pisos** (Arquitectura Lakehouse Medallion):
+### 2.2 Operación Diaria del Pipeline Local y en AWS
 
-1. **`bronce/` — Ingredientes crudos (tal como llegaron del repositorio y satélites):**
-   - `sentinel2/` y `landsat/`: reflectancias e índices crudos por píxel (10 m y 30 m) antes de limpiar bruma ni calibrar sensores.
-   - `hls/`: manifiesto de escenas HLS2 ($224\times 224$ px, 30 m) reservadas **solo** para que `Prithvi-EO-2.0` rellene nubes si hoy está nublado.
-   - `chirps/` y `power/`: lluvia y meteorología diaria histórica observada.
-   - `geos_s2s/`: pronóstico climático de la NASA (`geos_s2s_nrt.parquet`, 41.805 filas) y su climatología histórica de sesgo (`geos_s2s_drift.parquet`, 8.008 filas).
-   - `campo_nataima/` e `ideam_auditoria/`: las 198 mediciones reales TDR del artículo de Martínez-Vega et al. (2025) y la auditoría que documenta por qué se descartó IDEAM.
-   - `semaforo_c_repo/`: espejo crudo de los 20.286 píxeles producidos por `github/scripts/operacion/semaforo_c.py`.
-
-2. **`plata/` — Datos limpios, calibrados y listos para modelar (4 tablas en Athena):**
-   - **`plata_indices_pixel`** (`predio_id=.../fecha=...`): es el insumo exacto del **Modelo A**.
-     - `ndvi0`, `ndmi0`: vegetación y humedad foliar actuales del píxel en escala Sentinel-2 (Landsat ya fue calibrado con $S2 = a + b\cdot L$).
-     - `sensor0`: `0` = Sentinel-2, `1` = Landsat 7, `2` = Landsat 8/9.
-     - `flag_bruma` y `origen_valor`: `False` / `observado` indica que pasó el filtro de bruma (sin caídas abruptas $>0{,}10$ ni banda azul `azul_b02 ≥ 0,075` sobre vegetación).
-     - `ndvi_l1`, `edad_l1`, `ndmi_l1`, `ndvi_l2`, `edad_l2`: los 2 últimos valores despejados del mismo píxel y cuántos días atrás ocurrieron (topes 60 d y 90 d).
-     - `pend_ndvi`, `pend_ndmi`: velocidad de cambio diario del cultivo ($\Delta\text{índice}/\Delta\text{días}$); positiva = cultivo creciendo, negativa = senescencia o secado.
-     - `fecha_siembra_est`, `das0`, `etapa0`: fecha de siembra detectada automáticamente por la curva de NDVI, días desde siembra y etapa (`0` fuera de ciclo, `1` vegetativa $\le 45\text{ d}$, `2` reproductiva $\le 82\text{ d}$, `3` maduración $\le 130\text{ d}$).
-     - `doy_sin`, `doy_cos`: posición cíclica del día en el año (captura estacionalidad bimodal del Tolima).
-   - **`plata_clima_observado`** (`anio=...`): lluvia diaria `lluvia_mm` (CHIRPS con respaldo POWER) y demanda evaporativa `eto_mm` (FAO-56 Penman-Monteith), más acumulados `5d` y `10d`.
-   - **`plata_geos_s2s_crudo`** (`emision=...`): pronóstico crudo de los 5 miembros de GEOS-S2S-3 antes de corregir sesgo (`pr_raw_mm`, `tx_raw_c`, `tn_raw_c`) por `plazo` (días desde la emisión).
-   - **`plata_estado_hidrico_pixel`**: **la memoria diaria del suelo** al corte de hoy. Guarda los valores arrastrados de cada píxel para no recomputar toda la campaña desde el día 0 cada mañana:
-     - `s_tau20_init`, `s_tau5_init`, `dr_k05_init`: memoria para el **Modelo B oficial (`ARIMAX(1)`)**.
-     - `s_tau45_a05_init`, `s_tau60_a05_init`: memoria de largo plazo ($\alpha = 0{,}5$, $\tau = 45$ y $60\text{ d}$) ganadoras del **Reentreno B Etapa 1 (commit `8fde03d`)**.
-     - `dias_desde_riego_init`, `riego_4d_prev_sum`, `eto_4d_prev_sum`: contadores y buffers de los 4 días previos.
-
-3. **`oro/` — Productos finales de negocio, semáforos, mapas y auditoría (9 tablas + mapas):**
-   - **`oro_correccion_coeficientes`** (`version=v2026_11`): factores multiplicativos (`variable='pr'`) y aditivos en °C (`variable='t'`) por mes (`1..12`) y bloque de plazo (`0`: 0–10 d, `1`: 11–20 d, `2`: 21–60 d). Si un factor de `pr` es `0,62`, significa que GEOS-S2S sobreestima la lluvia en ese mes y se multiplica por `0,62` para llevarlo a la escala de CHIRPS.
-   - **`oro_geos_s2s_corregido`** (`emision=...`): lluvia (`lluvia_corr_mm`) y ETo (`eto_corr_mm`, escalada por temperatura media sobre la climatología FAO-56) ya corregidas para los 5 miembros de GEOS-S2S.
-   - **`oro_curva_normal_10anios`**: la «curva sana de referencia» del arroz en el Alto Magdalena construida con 10 años de imágenes (16 tramos cada 10 días desde la siembra: `das_b = 0..150`). `ndmi0_mean` y `ndmi0_std` dicen cuál es el NDMI normal del cultivo a esa edad.
-   - **`oro_pronostico_predictor`** (`emision=...`): salida del **Modelo A (`Random Forest`)**. Para cada `pixel_id` y `horizonte` (`1..30` días), entrega `ndvi_pred` y `ndmi_pred` en escala Sentinel-2 (sin depender del clima).
-   - **`oro_semaforo`** (`emision=...`): salida del **Modelo B oficial (`ARIMAX(1)` para fincas CON riego registrado)**.
-     - Cada fila es un `pixel_id × miembro (1..5) × escenario_riego ('sin_riego' o 'riego_30mm_hoy') × horizonte (1..30)`.
-     - Cómo leer las métricas: `vwc_esperada_pct` es la humedad volumétrica esperada del suelo (%); `p_verde`, `p_amarillo`, `p_rojo` suman `1,0` y representan la probabilidad de cada clase (`VERDE` $\ge 30\%$, `AMARILLO` $27{,}1\text{–}30\%$, `ROJO` $< 27{,}1\%$); `s_tau45_a05` y `s_tau60_a05` muestran la reserva hídrica de memoria larga (mayor valor = más agua almacenada).
-   - **`oro_semaforo_c_pixeles`** (`emision=2026-11-12`): salida del **Modelo C operativo (para operación SIN riego registrado — 20.286 píxeles, 400 ha)**.
-     - `dr0_mm`: déficit inicial hoy (mm) estimado comparando el NDMI de hoy contra `oro_curva_normal_10anios`. `0,0 mm` = suelo lleno; `4,34 mm` = ya está en umbral crítico de déficit.
-     - `dias_hasta_baja`: **cuántos días faltan para que el píxel entre en humedad baja (rojo) si no se riega**. `0` = regar ya hoy; `4` = entra a rojo en 4 días; `-1` = no llega a rojo en los próximos 30 días.
-     - `clase_h0`, `clase_h7`, `clase_h15`, `clase_h30`: clase del semáforo hoy, a 7, 15 y 30 días:
-       - `0` = 🟢 **Suficiente** ($Dr \le 0\text{ mm}$, humedad $\ge 30\%$)
-       - `1` = 🟡 **Media** ($0 < Dr \le 4{,}34\text{ mm}$, humedad $27{,}1\text{–}30\%$)
-       - `2` = 🔴 **Baja** ($Dr > 4{,}34\text{ mm}$, humedad $< 27{,}1\%$ — **regar ya**)
-       - `-1` = Fuera de cultivo (barbecho o cosechado).
-     - `dr_mm_h*`: mediana del déficit radicular (mm) entre los 5 miembros de GEOS-S2S. Equivale directamente a **litros por metro cuadrado ($\text{L/m}^2$)** faltantes para volver a capacidad de campo.
-     - `p_baja_h*`: fracción de los 5 miembros de GEOS-S2S que predicen humedad baja (`0,0` = 0/5 miembros; `0,6` = 3/5; `1,0` = los 5 miembros coinciden en déficit). Mide la **certeza climática de la alerta**.
-     - `marca_h*` (`true`/`false`): **alerta morada fitosanitaria**. Cuando es `true`, el suelo tiene agua suficiente (`clase = 0`), pero el NDMI de la hoja está en el 10 % más seco incluso descontando el error del Modelo A $\Rightarrow$ **revisar en campo por posible enfermedad o deficiencia nutricional**.
-   - **`oro_semaforo_c_resumen`** (`emision=2026-11-12`): tabla ejecutiva de 4 filas (`horizonte = 0, 7, 15, 30`) que resume las 400 ha: `ha_en_cultivo` (68,68 ha hoy), `%` y `ha` en cada clase, `deficit_baja_L_m2`, volumen total de agua requerido en la zona (`agua_baja_m3_zona` en $\text{m}^3$), `dias_hasta_baja_mediana` y `pct_marca_fitosanitaria`.
-   - **`oro_semaforo_c_mapas/` (en S3):** contiene los 4 mapas RGBA (`semaforo_h00.png`, `h07`, `h15`, `h30`), `resumen.json` y **`mapa.html`**, un visor web interactivo (Leaflet sobre imagen satelital Esri) con deslizador de horizonte (`hoy`, `7 d`, `15 d`, `30 d`).
-     - **Cómo leer los colores en `mapa.html`:** 🟢 Verde = humedad suficiente (no regar) · 🟡 Amarillo = humedad media (programar riego en los días indicados) · 🔴 Rojo = humedad baja (regar ya, muestra $\text{L/m}^2$ y $\text{m}^3$) · 🟣 Morado = hoja seca con suelo húmedo (revisar enfermedad/nutrientes).
-   - **`oro_verificacion_clima_cultivo`**: tablero de 33 filas con los **5 bloques oficiales de validación del proyecto** (`1_CLIMA_GEOS_S2S`, `2_MODELO_A_NDVI/NDMI_ABSOLUTO`, `3_SEMAFORO_B_ADELANTE`, `4_MODELO_B_FAMILIAS_ROC` y `5_REENTRENO_B_ETAPA1`). Compara siempre `valor_crudo_o_base` contra `valor_corregido_o_modelo`.
-   - **`oro_predios`**: ficha maestra de cada finca (coordenadas, área, celda GEOS-S2S asignada y parámetros hidráulicos del suelo `FC`, `PWP`, `TAW`, `RAW`, `DR_ROJO`, `DSAT`, `k_drenaje`). Al escalar de 1 a 100 predios solo se agregan filas aquí.
-
----
-
-## PARTE 2 · Manual de Uso Operativo (Paso a Paso)
-
-### 2.1 Sincronizar las últimas actualizaciones desde GitHub (`SIRA\github`)
-Cada vez que el equipo de ML suba nuevos commits a la rama `modelo-humedad`:
 ```powershell
-cd <ruta-local-SIRA>
+# 1. Traer últimos cambios de ML (solo lectura de modelo-humedad si trabajas con clon separado)
 git -C github pull origin modelo-humedad
-```
 
-### 2.2 Ejecutar el Pipeline Completo Local (Sin tocar AWS)
-```powershell
-# Paso 1: Ingestar datos reales desde SIRA\github hacia Bronce (Parquet)
+# 2. Ingesta local + corrida local de validación (13 tablas Parquet)
 .\.venv\Scripts\python.exe B_SIRA_ARCH\bigdata_pipeline\ingestion\fetch_b_bronze_data.py
-
-# Paso 2: Procesar localmente los 4 Lotes (construye las 13 tablas Plata y Oro + parámetros ARIMAX(1))
 .\.venv\Scripts\python.exe B_SIRA_ARCH\bigdata_pipeline\deploy_and_run_b_pipeline.py --local-only
-```
 
-### 2.3 Reorganizar / Desplegar en AWS (`us-east-2`) y Validar en Athena
-```powershell
-# Sube Bronce, Plata, Oro, Modelos, 4 Scripts PySpark y Mapas PNG/HTML a S3,
-# actualiza 4 Glue Jobs, 3 Step Functions, 3 EventBridge Schedules y valida las 13 tablas + 6 queries en Athena:
+# 3. Sincronizar scripts, 2 Glue Jobs, 3 Step Functions, 3 Schedules, Athena y Lambda API en AWS (0 CloudFormation)
 .\.venv\Scripts\python.exe B_SIRA_ARCH\bigdata_pipeline\deploy_and_run_b_pipeline.py --aws-only
-```
-*(También puedes correr local + AWS en un solo comando omitiendo las banderas).*
 
-### 2.4 Probar el Microservicio API Dual (`Modelo B /regar_hoy` + `Modelo C /semaforo_c`)
-```powershell
+# 4. Probar localmente el cliente contra la Capa Oro real en S3
 .\.venv\Scripts\python.exe B_SIRA_ARCH\bigdata_pipeline\api\app_b_inference_api.py
 ```
 
-**Cómo leer las 2 respuestas JSON de la API:**
-1. **`PRUEBA 1: MODELO B (POST /regar_hoy)`** *(finca con riego registrado)*:
-   - Confirma `"re_ejecuto_modelo_a": false` (demuestra que cambiar el riego recalcula en $<50\text{ ms}$ sin re-ejecutar el satélite ni el Random Forest A).
-   - Compara `escenario_sin_riego` vs. `escenario_con_riego` (`lamina_riego_mm = 30.0`): observa cómo sube `vwc_esperada_pct`, baja `p_rojo` (con banda `p_rojo_rango_5m` de los 5 miembros GEOS-S2S) y aumenta la reserva `s_tau45_a05_medio` (de `~20,6` a `~50,6 mm`).
-2. **`PRUEBA 2: MODELO C (GET /semaforo_c)`** *(operación sin riego registrado)*:
-   - Muestra el estado real de un píxel entre los **20.286 píxeles** de las 400 ha (`pixel = 75149`: hoy `h0` está `suficiente` con `dr0_mm = 0,0`, entra en `baja` en **`4 días` sin riego**, y a `h7` llega a `dr_mm = 6,7` con `p_baja = 1,0` en 5/5 miembros).
-   - Incluye el resumen zonal `dias_hasta_baja_sin_riego_pct_zona`: `35,7 %` ya hoy, `7,5 %` en 1–2 d, `54,5 %` en 3–5 d, `0,7 %` en 6–30 d, `1,6 %` no llega en 30 d, más la ruta S3 del visor `mapa.html`.
-
-### 2.5 Abrir el Visor Interactivo de Mapas (Modelo C) en el Navegador
-Puedes abrir directamente la copia local del visor interactivo generado desde el repositorio:
-- [`B_SIRA_ARCH/bigdata_pipeline/data/oro/semaforo_c_mapas/mapa.html`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/data/oro/semaforo_c_mapas/mapa.html)  
-Mueve el deslizador superior entre **`hoy`**, **`7 d`**, **`15 d`** y **`30 d`** para ver cómo evolucionan sobre la imagen satelital de Nataima las 400 ha y las tarjetas de déficit en $\text{L/m}^2$ y $\text{m}^3$.
-
 ---
 
-## PARTE 3 · Guion de Demostración en 5 Minutos (Sustentación `SI7006`)
+## PARTE 3 · Guion de Demostración en 5 Minutos (Sustentación Integrada ML + Big Data + App)
 
-1. **Minuto 1 — Orden del Repositorio y Evolución (`SIRA\github` → `A_SIRA_ARCH` → `B_SIRA_ARCH`):** Explica la separación del repo GitHub en `github/` y por qué pasamos de 1 modelo a **3 modelos desacoplados**: A (NDVI/NDMI 1–30 d sin clima/Prithvi), B (`ARIMAX(1)` oficial con riego + `S_tau45_a05` del reentreno) y C (ecuación física FAO-56 para operar sin riego registrado sobre 400 ha).
-2. **Minuto 2 — Lakehouse Medallion en S3 (`sira-b-lakehouse-929570730700`):** Muestra `bronce/`, `plata/indices_pixel/predio_id=NATAIMA_01/fecha=...`, `plata/estado_hidrico_pixel/`, `oro/semaforo/`, `oro/semaforo_c_pixeles/` y `oro/semaforo_c_mapas/mapa.html`.
-3. **Minuto 3 — 4 Glue Jobs + 3 Step Functions (`Parallel`) + 3 EventBridge Schedules:** Abre `sira-b-flujo-geos-5dias` en Step Functions para mostrar el bloque **`Parallel`** actualizando en simultáneo Semáforo B (`sira-b-03`) y Semáforo C (`sira-b-04`), justificando con `SPARK_ECUACION.md` cuándo entra Spark (`1 vs. 100 predios`). Confirma `0 stacks` en CloudFormation.
-4. **Minuto 4 — Amazon Athena (`sira_b_lakehouse_db`):** Corre las Consultas 4, 5 y 6 de [`ddl_and_analytics_b_athena.sql`](https://github.com/GomSal/SIRA/blob/Big-Data_Arch/B_SIRA_ARCH/bigdata_pipeline/sql/ddl_and_analytics_b_athena.sql) mostrando en vivo las 400 ha de Modelo C (20.286 píxeles) y el tablero de los 5 bloques de verificación.
-5. **Minuto 5 — API Dual + Mapa Interactivo:** Ejecuta `app_b_inference_api.py` (Modo B `/regar_hoy` + Modo C `/semaforo_c`) y abre `mapa.html` deslizando de hoy a 30 días.
+1. **Minuto 1 — Conexión Real ML → S3 (`sira-b-lakehouse-929570730700`):** Muestra `models/pronosticador_a/rf/*.joblib`, `models/semaforo_b/operacion/arimax.json`, `plata/cubo_a/cubo.npz` y `oro/semaforo_app/latest.json` apuntando a **`2026-11-19`** (generado automáticamente por `aws-glue:sira-b-05-inferencia-unificada-ml`).
+2. **Minuto 2 — Arquitectura Depurada (2 Glue Jobs + Step Functions):** Abre AWS Glue Studio (solo 2 jobs limpios: `sira-b-02` y `sira-b-05` con `--fecha_hoy=auto`) y Step Functions `sira-b-flujo-geos-5dias` (`sira-b-02 → sira-b-05`). Confirma **`0 stacks`** en CloudFormation.
+3. **Minuto 3 — Amazon Athena (`sira_b_lakehouse_db`, 13 tablas):** Corre `Q4` y `Q5` demostrando paridad 1:1 exacta con el equipo de ML y la App (`2026-11-19`: `99,6 %` verde hoy, `98,4 %` rojo en 3–5 d, `1,6 %` en 1–2 d, `20.286` píxeles totales, `6.761` en cultivo).
+4. **Minuto 4 — API Serverless AWS Lambda (`sira-b-api-serving`):** Abre `/health`, `/latest`, `/zonas` y prueba `POST /regar_hoy` (`dia_aplicacion=2`, `30 mm`) mostrando la respuesta instantánea ganando `+3 días` antes de rojo sin re-ejecutar el Random Forest.
+5. **Minuto 5 — App Lovable en Vivo:** Muestra la aplicación en producción consumiendo la Function URL con los 47 municipios del Tolima, el piloto de 400 ha en Nataima a 10 m y el deslizador de 31 días.
