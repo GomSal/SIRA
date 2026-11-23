@@ -5,12 +5,14 @@ Prefijos (el resto del bucket es de la iteración B de Big Data y no se toca; el
   models/semaforo_b/operacion/      modelo B de uso: arimax.json y calendarios_riego.csv
   plata/cubo_a/                     cubo de A (cubo.npz, cubo_fechas.csv) y clima observado (clima.csv)
   bronce/geos_s2s_a/                GEOS-S2S NRT en la celda de Nataima (geos_nrt.csv)
-  oro/semaforo_app/                 lo que lee la app: emision=<hoy>/ (semaforo.json, resumen.json, pixeles.csv.gz, PNG,
-                                    mapa.html), zonas.json y latest.json (apunta a la última emisión)
-Cada objeto lleva su SHA-256 en los metadatos; si ya está igual en S3, no se vuelve a subir. Al final deja
-oro/semaforo_app/manifiestos/subida_<fecha>.json con clave, tamaño y SHA-256 de todo lo subido.
+  oro/semaforo_app/                 lo que lee la app. Desde el 22-nov lo PRODUCE el job de Glue
+                                    sira-b-05-inferencia-unificada-ml de la iteración B (lee los prefijos de arriba y
+                                    escribe emision=<hoy>/ y latest.json). Este script ya no lo escribe, salvo con
+                                    --con-oro o --solo-oro (respaldo manual): dos escritores del mismo latest.json se pisan.
+Cada objeto lleva su SHA-256 en los metadatos; si ya está igual en S3, no se vuelve a subir. Al final deja un
+manifiesto (clave, tamaño y SHA-256): plata/cubo_a/manifiestos/ (entradas) u oro/semaforo_app/manifiestos/ (con oro).
 
-    python scripts/operacion/subir_aws.py [--solo-oro] [--perfil sira-b] [--seco]
+    python scripts/operacion/subir_aws.py [--con-oro | --solo-oro] [--perfil sira-b] [--seco]
 """
 import argparse
 import hashlib
@@ -28,13 +30,15 @@ SEM = RAIZ / "reports/semaforo_c"
 APP = RAIZ / "app/datos"
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--solo-oro", action="store_true", help="solo la salida del semáforo (actualización diaria)")
+ap.add_argument("--con-oro", action="store_true", help="también la salida del semáforo y latest.json (respaldo manual)")
+ap.add_argument("--solo-oro", action="store_true", help="solo la salida del semáforo y latest.json (respaldo manual)")
 ap.add_argument("--perfil", default="sira-b")
 ap.add_argument("--seco", action="store_true", help="muestra qué subiría, sin subir")
 A = ap.parse_args()
 
+CON_ORO = A.con_oro or A.solo_oro
 emision = json.loads((SEM / "resumen.json").read_text(encoding="utf-8"))["hoy"]
-assert json.loads((APP / "semaforo.json").read_text(encoding="utf-8"))["hoy"] == emision, \
+assert not CON_ORO or json.loads((APP / "semaforo.json").read_text(encoding="utf-8"))["hoy"] == emision, \
     "app/datos/semaforo.json no es de la misma corrida: correr exportar_app.py"
 
 fijos = {
@@ -53,7 +57,7 @@ oro = {
        for p in sorted(SEM.glob("*")) if p.suffix in (".json", ".gz", ".png", ".html", ".npz")},
     "oro/semaforo_app/zonas.json": APP / "zonas.json",
 }
-objetos = oro if A.solo_oro else {**fijos, **oro}
+objetos = oro if A.solo_oro else ({**fijos, **oro} if A.con_oro else fijos)
 faltan = [str(p) for p in objetos.values() if not p.exists()]
 assert not faltan, f"faltan archivos: {faltan}"
 
@@ -85,16 +89,22 @@ for clave, p in objetos.items():
     print(f"{n / 1e6:9.2f} MB  {clave}  [{estado}]", flush=True)
 
 if not A.seco:
-    puntero = {"emision": emision, "semaforo": f"emision={emision}/semaforo.json", "zonas": "zonas.json",
-               "subido_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    s3.put_object(Bucket=BUCKET, Key="oro/semaforo_app/latest.json", Body=json.dumps(puntero, ensure_ascii=False),
-                  ContentType="application/json")
-    clave_m = f"oro/semaforo_app/manifiestos/subida_{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}.json"
+    ts = f"{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
+    if CON_ORO:
+        puntero = {"emision": emision, "semaforo": f"emision={emision}/semaforo.json", "zonas": "zonas.json",
+                   "subido_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                   "generado_por": "pc:subir_aws.py"}
+        s3.put_object(Bucket=BUCKET, Key="oro/semaforo_app/latest.json", Body=json.dumps(puntero, ensure_ascii=False),
+                      ContentType="application/json")
+        clave_m = f"oro/semaforo_app/manifiestos/subida_{ts}.json"
+    else:
+        clave_m = f"plata/cubo_a/manifiestos/subida_entradas_{ts}.json"
     s3.put_object(Bucket=BUCKET, Key=clave_m, ContentType="application/json",
-                  Body=json.dumps({"bucket": BUCKET, "emision": emision, "objetos": manifiesto}, ensure_ascii=False, indent=1))
+                  Body=json.dumps({"bucket": BUCKET, "emision": emision if CON_ORO else None, "objetos": manifiesto},
+                                  ensure_ascii=False, indent=1))
     # control: lo que quedó en S3 tiene el tamaño y la huella de lo local
     for m in manifiesto:
         o = s3.head_object(Bucket=BUCKET, Key=m["clave"])
         assert o["ContentLength"] == m["bytes"] and o["Metadata"].get("sha256") == m["sha256"], m["clave"]
     print(f"listo: {len(manifiesto)} objetos verificados ({sum(m['bytes'] for m in manifiesto) / 1e6:.1f} MB) · "
-          f"latest.json → emision={emision} · {clave_m}")
+          f"{'latest.json → emision=' + emision if CON_ORO else 'sin tocar oro/semaforo_app'} · {clave_m}")
