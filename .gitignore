@@ -9,7 +9,7 @@ __pycache__/
 __pycache__/
 *.pyc
 .pytest_cache/
-# copia del artículo con marca de agua de la editorial: no se redistribuye
+# el artículo de Nataima es CC BY 4.0: su copia versionada está en docs/fuentes/ (esta queda como insumo local)
 data/raw/martinez_vega_2025.pdf
 # temporales
 data/interim/_*.csv
