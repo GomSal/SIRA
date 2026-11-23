@@ -1,5 +1,5 @@
 {
-  "Comment": "SIRA B_SIRA_ARCH (Flujo Mensual Dia 1): Lote 3 Recalibracion de sesgo de GEOS-S2S-3 frente a CHIRPS + NASA POWER observados y generacion de nueva version de oro/correccion_coeficientes.",
+  "Comment": "SIRA B_SIRA_ARCH Unificado (Flujo Mensual Dia 1): Lote 3 Recalibracion de sesgo GEOS-S2S-3 frente a CHIRPS + NASA POWER (26 anos de plata/cubo_a/clima.csv) y actualizacion de oro/geos_s2s_corregido.",
   "StartAt": "Lote_3_Recalibracion_Mensual_Clima",
   "States": {
     "Lote_3_Recalibracion_Mensual_Clima": {
@@ -11,6 +11,8 @@
           "--input_bronce_chirps": "s3://sira-b-lakehouse-929570730700/bronce/chirps/",
           "--input_bronce_power": "s3://sira-b-lakehouse-929570730700/bronce/power/",
           "--input_bronce_geos_nrt": "s3://sira-b-lakehouse-929570730700/bronce/geos_s2s/geos_s2s_nrt.parquet",
+          "--input_plata_cubo_clima": "s3://sira-b-lakehouse-929570730700/plata/cubo_a/clima.csv",
+          "--input_bronce_geos_csv": "s3://sira-b-lakehouse-929570730700/bronce/geos_s2s_a/geos_nrt.csv",
           "--input_oro_coeficientes": "s3://sira-b-lakehouse-929570730700/oro/correccion_coeficientes/",
           "--output_plata_clima_observado": "s3://sira-b-lakehouse-929570730700/plata/clima_observado/",
           "--output_plata_geos_crudo": "s3://sira-b-lakehouse-929570730700/plata/geos_s2s_crudo/",

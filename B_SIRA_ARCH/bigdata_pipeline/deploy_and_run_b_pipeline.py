@@ -3,7 +3,7 @@ r"""
 SIRA (Iteración B — B_SIRA_ARCH) · Ejecución Local E2E + Reorganización y Despliegue AWS (us-east-2)
 ====================================================================================================
 Alineado a extremo detalle a `https://github.com/GomSal/SIRA/tree/modelo-humedad` (HEAD 8fde03d):
-- Fuente única del repositorio: raíz del clon GitHub (Big-Data_Arch / modelo-humedad)
+- Fuente única del repositorio: C:\Users\Sismo\Documents\EDUCATION\EAFIT\10th_semester\SIRA\github
 - Incluye los 3 modelos oficiales del repositorio:
     * Modelo A: Random Forest NDVI/NDMI (20 features, sin clima ni Prithvi, 1..30d; métricas absolutas 8ed983d)
     * Modelo B: ARIMAX(1) sin Prithvi (oficial ec84551, AUC 0.75, 12/17 rojos) + reservorios ganadores
@@ -21,10 +21,12 @@ Uso:
 
 import argparse
 import csv
+import io
 import json
 import math
 import os
 import time
+import zipfile
 from datetime import datetime, timezone
 
 import boto3
@@ -36,12 +38,7 @@ from scipy.stats import norm
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SIRA_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
-if os.path.isdir(os.path.join(SIRA_ROOT, "data")) and os.path.isdir(os.path.join(SIRA_ROOT, "reports")):
-    GITHUB_REPO = SIRA_ROOT
-elif os.path.isdir(os.path.join(SIRA_ROOT, "github")):
-    GITHUB_REPO = os.path.join(SIRA_ROOT, "github")
-else:
-    GITHUB_REPO = os.environ.get("SIRA_REPO_PATH", SIRA_ROOT)
+GITHUB_REPO = os.path.join(SIRA_ROOT, "github")
 
 DATA_DIR = os.path.join(BASE_DIR, "data")
 BRONZE_DIR = os.path.join(DATA_DIR, "bronce")
@@ -49,16 +46,18 @@ SILVER_DIR = os.path.join(DATA_DIR, "plata")
 GOLD_DIR = os.path.join(DATA_DIR, "oro")
 MODELS_DIR = os.path.join(DATA_DIR, "models")
 
-AWS_REGION = os.environ.get("SIRA_AWS_REGION", "us-east-2")
-ACCOUNT_ID = os.environ.get("SIRA_AWS_ACCOUNT_ID", "929570730700")
-BUCKET_NAME = os.environ.get("SIRA_B_BUCKET", f"sira-b-lakehouse-{ACCOUNT_ID}")
-ATHENA_DB = os.environ.get("SIRA_B_ATHENA_DB", "sira_b_lakehouse_db")
-CREDS_CSV = os.environ.get("AWS_CREDENTIALS_CSV", "")
+AWS_REGION = "us-east-2"
+ACCOUNT_ID = "929570730700"
+BUCKET_NAME = f"sira-b-lakehouse-{ACCOUNT_ID}"
+ATHENA_DB = "sira_b_lakehouse_db"
+CREDS_CSV = os.environ.get(
+    "AWS_CREDENTIALS_CSV",
+    r"C:\Users\Sismo\Documents\EDUCATION\EAFIT\10th_semester\Big_Data\01-Session\admin-gomsal_accessKeys.csv",
+)
 
 
 def get_boto3_session():
-    """Usa AWS_CREDENTIALS_CSV si se define; de lo contrario usa la cadena estándar de AWS CLI / variables de entorno."""
-    if CREDS_CSV and os.path.exists(CREDS_CSV):
+    if os.path.exists(CREDS_CSV):
         with open(CREDS_CSV, mode="r", encoding="utf-8-sig") as f:
             row = next(csv.DictReader(f))
         ak = [v for k, v in row.items() if "Id" in k or "ID" in k][0].strip()
@@ -68,22 +67,7 @@ def get_boto3_session():
 
 
 def repo_file(rel: str) -> str:
-    """Busca primero en SIRA_REPO_PATH / clon de modelo-humedad y cae a copias locales en data/models/."""
-    rel_norm = rel.replace("\\", "/")
-    cand = os.path.join(GITHUB_REPO, *rel_norm.split("/"))
-    if os.path.exists(cand):
-        return cand
-    fallback_map = {
-        "reports/modelo_a/entrenamiento_final/paso8_geos_correccion.csv": os.path.join(MODELS_DIR, "pronosticador_a", "paso8_geos_correccion.csv"),
-        "reports/modelo_a/entrenamiento_final/paso8_geos_error_clima.csv": os.path.join(MODELS_DIR, "pronosticador_a", "paso8_geos_error_clima.csv"),
-        "reports/modelo_a/entrenamiento_final/paso8_metricas_absolutas.csv": os.path.join(MODELS_DIR, "pronosticador_a", "paso8_metricas_absolutas.csv"),
-        "reports/modelo_a/entrenamiento_final/paso8_semaforo_b_hacia_adelante.csv": os.path.join(MODELS_DIR, "pronosticador_a", "paso8_semaforo_b_hacia_adelante.csv"),
-        "reports/semaforo_clasificador_ndvi_prithvi/roc_auc.csv": os.path.join(MODELS_DIR, "semaforo_b", "roc_auc_familias.csv"),
-        "reports/b_reentreno/etapa1/resumen_por_variante.csv": os.path.join(MODELS_DIR, "semaforo_b", "reentreno_etapa1_resumen.csv"),
-    }
-    if rel_norm in fallback_map and os.path.exists(fallback_map[rel_norm]):
-        return fallback_map[rel_norm]
-    return cand
+    return os.path.join(GITHUB_REPO, *rel.replace("\\", "/").split("/"))
 
 
 def fit_arimax1_params_from_real_data() -> dict:
@@ -488,23 +472,28 @@ def build_b_silver_and_gold_local():
     df_sem.to_parquet(os.path.join(GOLD_DIR, "semaforo", "semaforo_latest.parquet"), index=False)
 
     # ------------------------------------------------------------------
-    # LOTE 4C: Modelo C Operativo sin Riego (20.286 píxeles reales + resumen zonal)
+    # LOTE 4C: Semáforo Unificado Producto (d77ae9c -> 86aa09b · 20.286 píxeles, 39 cols + predio_id)
     # ------------------------------------------------------------------
-    print("  [Lote 4C] Materializando salidas reales de Modelo C (20.286 píxeles, 400 ha, resumen zonal)...")
+    print("  [Lote 4C] Materializando salidas reales del Semáforo Unificado (20.286 píxeles, 400 ha, 39 cols)...")
     with open(os.path.join(GOLD_DIR, "semaforo_c_mapas", "resumen.json"), "r", encoding="utf-8") as f:
         res_c = json.load(f)
-    emision_c = str(res_c["geos_inicio"])
+    emision_c = str(res_c["hoy"])
+    mod_b = res_c.get("modelo_b", {"sigma_pct": 3.12, "margen_mm": 4.68, "riego_supuesto": "CD de Nataima hasta hoy; sin riego desde hoy"})
+    hueco = res_c.get("lluvia_hueco", {"dias_sin_chirps": 0, "relleno": "ninguno"})
 
     df_c_pix = pd.read_parquet(os.path.join(BRONZE_DIR, "semaforo_c_repo", "pixeles_c_20286.parquet"))
+    if "predio_id" not in df_c_pix.columns:
+        df_c_pix.insert(0, "predio_id", "NATAIMA_01")
     df_c_pix["emision"] = emision_c
-    cols_c_pix = [
-        "predio_id", "pixel", "dr0_mm", "dias_hasta_baja",
-        "clase_h0", "dr_mm_h0", "p_baja_h0", "ndvi_h0", "ndmi_h0", "marca_h0",
-        "clase_h7", "dr_mm_h7", "p_baja_h7", "ndvi_h7", "ndmi_h7", "marca_h7",
-        "clase_h15", "dr_mm_h15", "p_baja_h15", "ndvi_h15", "ndmi_h15", "marca_h15",
-        "clase_h30", "dr_mm_h30", "p_baja_h30", "ndvi_h30", "ndmi_h30", "marca_h30",
-        "emision",
-    ]
+    cols_c_pix = ["predio_id", "pixel", "das_hoy", "dias_hasta_baja"]
+    for h_ in (0, 7, 15, 30):
+        cols_c_pix.extend(
+            [
+                f"clase_h{h_}", f"humedad_pct_h{h_}", f"deficit_B_sin_margen_mm_h{h_}", f"deficit_mm_h{h_}",
+                f"S_tau20_h{h_}", f"dr_ecuacion_mm_h{h_}", f"ndvi_h{h_}", f"ndmi_h{h_}", f"marca_h{h_}",
+            ]
+        )
+    cols_c_pix.append("emision")
     df_c_pix = df_c_pix[cols_c_pix].copy()
     df_c_pix.to_parquet(os.path.join(GOLD_DIR, "semaforo_c_pixeles", "semaforo_c_pixeles_latest.parquet"), index=False)
 
@@ -532,6 +521,11 @@ def build_b_silver_and_gold_local():
                 "deficit_baja_L_m2": float(hz["baja"]["deficit_L_m2_medio"]),
                 "agua_baja_m3_zona": float(hz["baja"]["agua_m3_zona"]),
                 "pct_marca_fitosanitaria": float(hz["posible_enfermedad_o_deficiencia_nutricional"]["pct"]),
+                "modelo_b_sigma_pct": float(mod_b.get("sigma_pct", 3.12)),
+                "modelo_b_margen_mm": float(mod_b.get("margen_mm", 4.68)),
+                "riego_supuesto": str(mod_b.get("riego_supuesto", "")),
+                "lluvia_hueco_dias_sin_chirps": int(hueco.get("dias_sin_chirps", 0)),
+                "lluvia_hueco_relleno": str(hueco.get("relleno", "ninguno")),
                 "emision": emision_c,
             }
         )
@@ -617,6 +611,38 @@ def build_b_silver_and_gold_local():
                 "observacion": f"Empates={int(r.veces_empata)}/4 | Elegida={int(r.veces_elegida)}/4 | Spearman TDR={r.spearman_con_TDR_descriptivo:.3f}",
             }
         )
+    # Bloque 6: Prueba Dinámica B7 vs BS (commit d77ae9c -> justifica B día 0 + FAO-56 30 d)
+    din_path = repo_file("reports/b_reentreno/dinamica/resultado.json")
+    if os.path.exists(din_path):
+        with open(din_path, "r", encoding="utf-8") as f:
+            din = json.load(f)
+        for c_item in din.get("clasificacion", []):
+            ver_rows.append(
+                {
+                    "ciclo": "6_PRUEBA_DINAMICA_B_VS_FAO56",
+                    "periodo": "prueba_sellada_198_TDR_regla_margen_22nov",
+                    "horizonte_grupo": f"clasif_{c_item['modelo']}",
+                    "n_observaciones": 198,
+                    "metrica_principal": "exactitud_balanceada_con_margen",
+                    "valor_crudo_o_base": 0.390,
+                    "valor_corregido_o_modelo": round(float(c_item["exactitud_balanceada"]), 3),
+                    "observacion": f"rojos={c_item['recall_rojo']} amarillos={c_item['recall_amarillo']} verdes={c_item['recall_verde']} spearman={c_item['spearman_mu_tdr']} sigma={c_item['sigma_medio']}%",
+                }
+            )
+        for d_item in din.get("dinamica", []):
+            if "secados" in d_item.get("intervalos", ""):
+                ver_rows.append(
+                    {
+                        "ciclo": "6_PRUEBA_DINAMICA_B_VS_FAO56",
+                        "periodo": "intervalos_secado_sin_riego_en_medio",
+                        "horizonte_grupo": f"secado_{d_item['modelo']}",
+                        "n_observaciones": int(d_item["n"]),
+                        "metrica_principal": "spearman_dmu_dtdr",
+                        "valor_crudo_o_base": 0.0,
+                        "valor_corregido_o_modelo": round(float(d_item["spearman_dmu_dtdr"]), 3),
+                        "observacion": f"IC95={d_item['ic95']} dTDR={d_item['d_tdr_medio']} dMu={d_item['d_mu_medio']} -> dinamica 30d delegada a FAO-56",
+                    }
+                )
     df_verif = pd.DataFrame(ver_rows)
     df_verif.to_parquet(os.path.join(GOLD_DIR, "verificacion_clima_cultivo", "verificacion_clima_cultivo.parquet"), index=False)
 
@@ -625,7 +651,7 @@ def build_b_silver_and_gold_local():
     print(f"    -> oro/semaforo (Modelo B)    : {len(df_sem):,} filas")
     print(f"    -> oro/semaforo_c_pixeles     : {len(df_c_pix):,} píxeles reales (400 ha, emisión={emision_c})")
     print(f"    -> oro/semaforo_c_resumen     : {len(df_c_res):,} horizontes (0, 7, 15, 30 d)")
-    print(f"    -> oro/verificacion_clima_cul.: {len(df_verif):,} métricas reales de los 5 bloques del repo")
+    print(f"    -> oro/verificacion_clima_cul.: {len(df_verif):,} métricas reales de los 6 bloques del repo")
 
 
 def clear_s3_prefix(s3, s3_prefix: str):
@@ -724,14 +750,24 @@ def deploy_b_to_aws():
         (os.path.join(MODELS_DIR, "semaforo_b", "arimax1_params.json"), "models/semaforo_b/arimax1_params.json"),
         (os.path.join(MODELS_DIR, "semaforo_c", "modelo_c_spec.json"), "models/semaforo_c/modelo_c_spec.json"),
         (os.path.join(MODELS_DIR, "prithvi_gapfill", "prithvi_manifest.json"), "models/prithvi_gapfill/prithvi_manifest.json"),
-        # Scripts PySpark (4 Glue Jobs) y SQL
-        (os.path.join(BASE_DIR, "spark_jobs", "job_b01_lote_imagenes_pixel.py"), "scripts/job_b01_lote_imagenes_pixel.py"),
+        # Scripts activos (2 Glue Jobs vigentes: sira-b-02 y sira-b-05) y SQL
         (os.path.join(BASE_DIR, "spark_jobs", "job_b02_lote_clima_y_geos.py"), "scripts/job_b02_lote_clima_y_geos.py"),
-        (os.path.join(BASE_DIR, "spark_jobs", "job_b03_lote_inferencia_ab.py"), "scripts/job_b03_lote_inferencia_ab.py"),
-        (os.path.join(BASE_DIR, "spark_jobs", "job_b04_lote_semaforo_c.py"), "scripts/job_b04_lote_semaforo_c.py"),
+        (os.path.join(BASE_DIR, "spark_jobs", "job_b05_inferencia_unificada_ml.py"), "scripts/job_b05_inferencia_unificada_ml.py"),
         (os.path.join(BASE_DIR, "sql", "ddl_and_analytics_b_athena.sql"), "scripts/ddl_and_analytics_b_athena.sql"),
     ]
+    # Proteccion: si ya existe oro/semaforo_app/latest.json (generado por sira-b-05 o subir_aws.py),
+    # no sobrescribir mapas ni particiones Oro de ML con archivos locales antiguos.
+    has_live_ml_oro = False
+    try:
+        s3.head_object(Bucket=BUCKET_NAME, Key="oro/semaforo_app/latest.json")
+        has_live_ml_oro = True
+        print("        -> Detectado oro/semaforo_app/latest.json en S3: preservando salidas en vivo de ML/Glue 5.0.")
+    except ClientError:
+        pass
+
     for lp, key in static_uploads:
+        if has_live_ml_oro and key.startswith("oro/semaforo_c_mapas/"):
+            continue
         if os.path.exists(lp):
             extra = {}
             if key.endswith(".html"):
@@ -744,14 +780,17 @@ def deploy_b_to_aws():
 
     tmp_up = os.path.join(DATA_DIR, "_tmp_s3")
     n1 = upload_partitioned(s3, pd.read_parquet(os.path.join(SILVER_DIR, "indices_pixel", "indices_pixel_full.parquet")), ["predio_id", "fecha"], "plata/indices_pixel", tmp_up)
-    n2 = upload_partitioned(s3, pd.read_parquet(os.path.join(SILVER_DIR, "clima_observado", "clima_observado_full.parquet")), ["anio"], "plata/clima_observado", tmp_up)
-    n3 = upload_partitioned(s3, pd.read_parquet(os.path.join(SILVER_DIR, "geos_s2s_crudo", "geos_s2s_crudo_full.parquet")), ["emision"], "plata/geos_s2s_crudo", tmp_up, max_partitions=12)
     n4 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "correccion_coeficientes", "coeficientes_v2026_11.parquet")), ["version"], "oro/correccion_coeficientes", tmp_up)
-    n5 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "geos_s2s_corregido", "geos_s2s_corregido_full.parquet")), ["emision"], "oro/geos_s2s_corregido", tmp_up, max_partitions=12)
     n6 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "pronostico_predictor", "pronostico_predictor_latest.parquet")), ["emision"], "oro/pronostico_predictor", tmp_up)
     n7 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "semaforo", "semaforo_latest.parquet")), ["emision"], "oro/semaforo", tmp_up)
-    n8 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "semaforo_c_pixeles", "semaforo_c_pixeles_latest.parquet")), ["emision"], "oro/semaforo_c_pixeles", tmp_up)
-    n9 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "semaforo_c_resumen", "semaforo_c_resumen_latest.parquet")), ["emision"], "oro/semaforo_c_resumen", tmp_up)
+    if not has_live_ml_oro:
+        n2 = upload_partitioned(s3, pd.read_parquet(os.path.join(SILVER_DIR, "clima_observado", "clima_observado_full.parquet")), ["anio"], "plata/clima_observado", tmp_up)
+        n3 = upload_partitioned(s3, pd.read_parquet(os.path.join(SILVER_DIR, "geos_s2s_crudo", "geos_s2s_crudo_full.parquet")), ["emision"], "plata/geos_s2s_crudo", tmp_up, max_partitions=12)
+        n5 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "geos_s2s_corregido", "geos_s2s_corregido_full.parquet")), ["emision"], "oro/geos_s2s_corregido", tmp_up, max_partitions=12)
+        n8 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "semaforo_c_pixeles", "semaforo_c_pixeles_latest.parquet")), ["emision"], "oro/semaforo_c_pixeles", tmp_up)
+        n9 = upload_partitioned(s3, pd.read_parquet(os.path.join(GOLD_DIR, "semaforo_c_resumen", "semaforo_c_resumen_latest.parquet")), ["emision"], "oro/semaforo_c_resumen", tmp_up)
+    else:
+        n2 = n3 = n5 = n8 = n9 = "PRESERVED_LIVE_AWS"
     print(f"        -> Particiones S3 cargadas: idx={n1}, cli={n2}, geos_crudo={n3}, coef={n4}, geos_corr={n5}, pred_a={n6}, sem_b={n7}, sem_c_px={n8}, sem_c_res={n9}")
 
     print("  [2/6] Verificando Roles IAM (reutilizando roles SIRA existentes)...")
@@ -760,26 +799,13 @@ def deploy_b_to_aws():
     sched_role_arn = iam.get_role(RoleName="sira-scheduler-role")["Role"]["Arn"]
     print("        -> Roles verificados: sira-glue-service-role, sira-stepfunctions-role, sira-scheduler-role")
 
-    print("  [3/6] Configurando 4 Jobs PySpark en AWS Glue Studio (sira-b-01..04)...")
+    print("  [3/6] Configurando los 2 Jobs activos en AWS Glue Studio (sira-b-02 y sira-b-05)...")
     glue_specs = [
-        {
-            "Name": "sira-b-01-lote-imagenes-pixel",
-            "Script": f"s3://{BUCKET_NAME}/scripts/job_b01_lote_imagenes_pixel.py",
-            "Description": "SIRA B Lote 1 Diario: Calibracion Landsat->S2, filtro bruma deterministico y 20 agregados Modelo A",
-            "DefaultArgs": {
-                "--job-language": "python",
-                "--enable-continuous-cloudwatch-log": "true",
-                "--enable-metrics": "true",
-                "--input_bronce_s2": f"s3://{BUCKET_NAME}/bronce/sentinel2/",
-                "--input_bronce_landsat": f"s3://{BUCKET_NAME}/bronce/landsat/",
-                "--input_calibracion": f"s3://{BUCKET_NAME}/models/calibracion_landsat_s2/calibracion_landsat_s2.parquet",
-                "--output_plata_indices_pixel": f"s3://{BUCKET_NAME}/plata/indices_pixel/",
-            },
-        },
         {
             "Name": "sira-b-02-lote-clima-y-geos",
             "Script": f"s3://{BUCKET_NAME}/scripts/job_b02_lote_clima_y_geos.py",
-            "Description": "SIRA B Lotes 2 y 3: Clima observado CHIRPS+POWER y correccion sesgo GEOS-S2S-3 (5 miembros) + ETo escalada",
+            "Description": "SIRA B Lotes 2 y 3 Unificado: Clima 2001-2026 (plata/cubo_a/clima.csv) + GEOS-S2S-3 (5m) con climatologia sellada 10 anos",
+            "GlueVersion": "4.0",
             "DefaultArgs": {
                 "--job-language": "python",
                 "--enable-continuous-cloudwatch-log": "true",
@@ -787,6 +813,8 @@ def deploy_b_to_aws():
                 "--input_bronce_chirps": f"s3://{BUCKET_NAME}/bronce/chirps/",
                 "--input_bronce_power": f"s3://{BUCKET_NAME}/bronce/power/",
                 "--input_bronce_geos_nrt": f"s3://{BUCKET_NAME}/bronce/geos_s2s/geos_s2s_nrt.parquet",
+                "--input_plata_cubo_clima": f"s3://{BUCKET_NAME}/plata/cubo_a/clima.csv",
+                "--input_bronce_geos_csv": f"s3://{BUCKET_NAME}/bronce/geos_s2s_a/geos_nrt.csv",
                 "--input_oro_coeficientes": f"s3://{BUCKET_NAME}/oro/correccion_coeficientes/",
                 "--output_plata_clima_observado": f"s3://{BUCKET_NAME}/plata/clima_observado/",
                 "--output_plata_geos_crudo": f"s3://{BUCKET_NAME}/plata/geos_s2s_crudo/",
@@ -794,38 +822,22 @@ def deploy_b_to_aws():
             },
         },
         {
-            "Name": "sira-b-03-lote-inferencia-ab",
-            "Script": f"s3://{BUCKET_NAME}/scripts/job_b03_lote_inferencia_ab.py",
-            "Description": "SIRA B Lote 4AB: Predictor A (1-30d) + Semaforo B oficial ARIMAX(1) sin Prithvi + reservorios S_tau45/60_a05",
+            "Name": "sira-b-05-inferencia-unificada-ml",
+            "Script": f"s3://{BUCKET_NAME}/scripts/job_b05_inferencia_unificada_ml.py",
+            "Description": "SIRA B Unificado (Glue 5.0): Modelo A (RF real .joblib) + Tramo 1 CD + Modelo B ARIMAX(1) dia 0 + Dr FAO-56 5m GEOS-S2S + Parquet Athena + App Lovable formato 2",
+            "GlueVersion": "5.0",
             "DefaultArgs": {
                 "--job-language": "python",
                 "--enable-continuous-cloudwatch-log": "true",
                 "--enable-metrics": "true",
-                "--input_plata_indices": f"s3://{BUCKET_NAME}/plata/indices_pixel/",
-                "--input_plata_estado": f"s3://{BUCKET_NAME}/plata/estado_hidrico_pixel/",
-                "--input_oro_geos_corregido": f"s3://{BUCKET_NAME}/oro/geos_s2s_corregido/",
-                "--input_oro_predios": f"s3://{BUCKET_NAME}/oro/predios/",
-                "--input_arimax_params_json": f"s3://{BUCKET_NAME}/models/semaforo_b/arimax1_params.json",
-                "--output_oro_pronostico_a": f"s3://{BUCKET_NAME}/oro/pronostico_predictor/",
-                "--output_oro_semaforo": f"s3://{BUCKET_NAME}/oro/semaforo/",
-                "--skip_modelo_a": "false",
-            },
-        },
-        {
-            "Name": "sira-b-04-lote-semaforo-c",
-            "Script": f"s3://{BUCKET_NAME}/scripts/job_b04_lote_semaforo_c.py",
-            "Description": "SIRA B Lote 4C: Semaforo fisico Modelo C sin riego (NDMI vs curva 10a -> FAO-56 Dr x 5m + control fitosanitario)",
-            "DefaultArgs": {
-                "--job-language": "python",
-                "--enable-continuous-cloudwatch-log": "true",
-                "--enable-metrics": "true",
-                "--input_oro_pronostico_a": f"s3://{BUCKET_NAME}/oro/pronostico_predictor/",
-                "--input_oro_geos_corregido": f"s3://{BUCKET_NAME}/oro/geos_s2s_corregido/",
-                "--input_oro_curva_10anios": f"s3://{BUCKET_NAME}/oro/curva_normal_10anios/",
-                "--input_oro_predios": f"s3://{BUCKET_NAME}/oro/predios/",
-                "--input_bronce_semaforo_c_grid": f"s3://{BUCKET_NAME}/bronce/semaforo_c_repo/pixeles_c_20286.parquet",
-                "--output_oro_semaforo_c_pixeles": f"s3://{BUCKET_NAME}/oro/semaforo_c_pixeles/",
-                "--output_oro_semaforo_c_resumen": f"s3://{BUCKET_NAME}/oro/semaforo_c_resumen/",
+                "--additional-python-modules": "scikit-learn==1.6.1,joblib,pyproj,Pillow",
+                "--s3_bucket": BUCKET_NAME,
+                "--aws_region": AWS_REGION,
+                "--athena_db": ATHENA_DB,
+                "--predio_id": "NATAIMA_01",
+                "--fecha_hoy": "auto",
+                "--riego_supuesto": "CD",
+                "--prefer_oro_geos": "true",
             },
         },
     ]
@@ -838,7 +850,7 @@ def deploy_b_to_aws():
             "DefaultArguments": spec["DefaultArgs"],
             "MaxRetries": 0,
             "Timeout": 20,
-            "GlueVersion": "4.0",
+            "GlueVersion": spec.get("GlueVersion", "4.0"),
             "NumberOfWorkers": 2,
             "WorkerType": "G.1X",
         }
@@ -872,9 +884,9 @@ def deploy_b_to_aws():
 
     print("  [5/6] Verificando 3 Schedules en Amazon EventBridge Scheduler...")
     sched_specs = [
-        ("sira-b-horario-diario-5am", "cron(0 5 * * ? *)", "America/Bogota", sm_arns["sira-b-flujo-diario-imagenes-inferencia"], "SIRA B Diario 5AM: Lote 1 -> A+B -> Modelo C"),
-        ("sira-b-horario-geos-5dias", "rate(5 days)", "America/Bogota", sm_arns["sira-b-flujo-geos-5dias"], "SIRA B Cada 5d: GEOS-S2S -> Parallel(B || C)"),
-        ("sira-b-horario-recalibracion-mensual", "cron(0 6 1 * ? *)", "America/Bogota", sm_arns["sira-b-flujo-recalibracion-mensual"], "SIRA B Mensual Dia 1: Recalibracion sesgo GEOS-S2S"),
+        ("sira-b-horario-diario-5am", "cron(0 5 * * ? *)", "America/Bogota", sm_arns["sira-b-flujo-diario-imagenes-inferencia"], "SIRA B Diario 5AM: Inferencia Unificada ML Real + App Lovable (sira-b-05, --fecha_hoy=auto)"),
+        ("sira-b-horario-geos-5dias", "rate(5 days)", "America/Bogota", sm_arns["sira-b-flujo-geos-5dias"], "SIRA B Cada 5d: Clima 26a + GEOS (sira-b-02) -> Inferencia ML Real + App Lovable (sira-b-05)"),
+        ("sira-b-horario-recalibracion-mensual", "cron(0 6 1 * ? *)", "America/Bogota", sm_arns["sira-b-flujo-recalibracion-mensual"], "SIRA B Mensual Dia 1: Recalibracion sesgo GEOS-S2S sobre 26 anos (sira-b-02)"),
     ]
     for sc_name, expr, tz, target_arn, desc in sched_specs:
         kw = {
@@ -937,9 +949,145 @@ def deploy_b_to_aws():
                 print(f"           Fila: {[c.get('VarCharValue', '') for c in row_d['Data']]}")
     print(f"  -> Resumen Athena: {ok_cnt}/{len(stmts)} sentencias SUCCEEDED.")
 
+    deploy_lambda_api_serving(session)
+
+
+def deploy_lambda_api_serving(session) -> str:
+    """Despliega/actualiza AWS Lambda `sira-b-api-serving` + Function URL con CORS (0 stacks CloudFormation)."""
+    print("  [7/7] Desplegando AWS Lambda `sira-b-api-serving` + Function URL (CORS para App Lovable)...")
+    iam = session.client("iam")
+    lam = session.client("lambda")
+
+    role_name = "sira-b-lambda-api-role"
+    trust_doc = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {"Service": "lambda.amazonaws.com"},
+                "Action": "sts:AssumeRole",
+            }
+        ],
+    }
+    try:
+        role_arn = iam.get_role(RoleName=role_name)["Role"]["Arn"]
+    except ClientError:
+        role_arn = iam.create_role(
+            RoleName=role_name,
+            AssumeRolePolicyDocument=json.dumps(trust_doc),
+            Description="Rol minimo de lectura S3 Oro (semaforo_app) para AWS Lambda sira-b-api-serving",
+        )["Role"]["Arn"]
+        iam.attach_role_policy(
+            RoleName=role_name,
+            PolicyArn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+        )
+        time.sleep(10)
+
+    s3_read_policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "ReadOnlySiraAppGold",
+                "Effect": "Allow",
+                "Action": ["s3:GetObject"],
+                "Resource": [
+                    f"arn:aws:s3:::{BUCKET_NAME}/oro/semaforo_app/*",
+                    f"arn:aws:s3:::{BUCKET_NAME}/models/semaforo_b/operacion/*",
+                ],
+            },
+            {
+                "Sid": "ListSiraAppGold",
+                "Effect": "Allow",
+                "Action": ["s3:ListBucket"],
+                "Resource": [f"arn:aws:s3:::{BUCKET_NAME}"],
+                "Condition": {"StringLike": {"s3:prefix": ["oro/semaforo_app/*"]}},
+            },
+        ],
+    }
+    iam.put_role_policy(
+        RoleName=role_name,
+        PolicyName="sira-b-lambda-s3-read-oro-app",
+        PolicyDocument=json.dumps(s3_read_policy),
+    )
+
+    # Empaquetar app_b_inference_api.py en ZIP en memoria (0 capas externas, solo stdlib + boto3)
+    api_path = os.path.join(BASE_DIR, "api", "app_b_inference_api.py")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.write(api_path, arcname="app_b_inference_api.py")
+    zip_bytes = buf.getvalue()
+
+    fn_name = "sira-b-api-serving"
+    env_vars = {
+        "SIRA_S3_BUCKET": BUCKET_NAME,
+        "SIRA_APP_PREFIX": "oro/semaforo_app",
+        "SIRA_CACHE_TTL_SEC": "60",
+    }
+    try:
+        lam.get_function(FunctionName=fn_name)
+        lam.update_function_code(FunctionName=fn_name, ZipFile=zip_bytes)
+        waiter = lam.get_waiter("function_updated_v2")
+        waiter.wait(FunctionName=fn_name)
+        lam.update_function_configuration(
+            FunctionName=fn_name,
+            Runtime="python3.11",
+            Handler="app_b_inference_api.lambda_handler",
+            Timeout=15,
+            MemorySize=512,
+            Environment={"Variables": env_vars},
+        )
+        waiter.wait(FunctionName=fn_name)
+        print(f"        -> Lambda actualizada: {fn_name} ({len(zip_bytes):,} B)")
+    except ClientError:
+        for attempt in range(5):
+            try:
+                lam.create_function(
+                    FunctionName=fn_name,
+                    Runtime="python3.11",
+                    Role=role_arn,
+                    Handler="app_b_inference_api.lambda_handler",
+                    Code={"ZipFile": zip_bytes},
+                    Description="SIRA API Serving Unificada (S3 Oro semaforo_app + simulador POST /regar_hoy FAO-56 <50ms)",
+                    Timeout=15,
+                    MemorySize=512,
+                    Environment={"Variables": env_vars},
+                )
+                break
+            except ClientError as exc:
+                if "cannot be assumed" in str(exc) and attempt < 4:
+                    time.sleep(5)
+                    continue
+                raise
+        lam.get_waiter("function_active_v2").wait(FunctionName=fn_name)
+        print(f"        -> Lambda creada: {fn_name} ({len(zip_bytes):,} B)")
+
+    cors_cfg = {
+        "AllowOrigins": ["*"],
+        "AllowMethods": ["GET", "POST"],
+        "AllowHeaders": ["content-type", "authorization", "x-api-key"],
+        "MaxAge": 300,
+    }
+    try:
+        furl = lam.get_function_url_config(FunctionName=fn_name)["FunctionUrl"]
+        lam.update_function_url_config(FunctionName=fn_name, AuthType="NONE", Cors=cors_cfg)
+    except ClientError:
+        furl = lam.create_function_url_config(FunctionName=fn_name, AuthType="NONE", Cors=cors_cfg)["FunctionUrl"]
+
+    for sid, act, extra in [
+        ("PublicFunctionUrlInvoke", "lambda:InvokeFunctionUrl", {"FunctionUrlAuthType": "NONE"}),
+        ("PublicInvokeFunctionViaUrl", "lambda:InvokeFunction", {"InvokedViaFunctionUrl": True}),
+    ]:
+        try:
+            lam.add_permission(FunctionName=fn_name, StatementId=sid, Action=act, Principal="*", **extra)
+        except Exception:
+            pass
+
+    print(f"        -> Function URL activa (CORS=*): {furl}")
+    return furl
+
 
 def main():
-    parser = argparse.ArgumentParser(description="SIRA B_SIRA_ARCH Pipeline E2E (HEAD 8fde03d)")
+    parser = argparse.ArgumentParser(description="SIRA B_SIRA_ARCH Pipeline E2E Unificado (HEAD 86aa09b)")
     parser.add_argument("--local-only", action="store_true", help="Ejecuta solo procesamiento local en Parquet")
     parser.add_argument("--aws-only", action="store_true", help="Ejecuta solo despliegue en AWS")
     args = parser.parse_args()
@@ -948,7 +1096,7 @@ def main():
         build_b_silver_and_gold_local()
     if not args.local_only:
         deploy_b_to_aws()
-    print("\n=== PROCESO B_SIRA_ARCH (HEAD 8fde03d) COMPLETADO ===")
+    print("\n=== PROCESO B_SIRA_ARCH UNIFICADO (HEAD 86aa09b) COMPLETADO ===")
 
 
 if __name__ == "__main__":

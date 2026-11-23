@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
 r"""
-SIRA (Iteración B — B_SIRA_ARCH) · Subsistema de Ingesta a Capa Bronce
-======================================================================
+SIRA (Iteración B Unificada — B_SIRA_ARCH) · Subsistema de Ingesta a Capa Bronce
+================================================================================
 Fuente única del repositorio GitHub:
-    Raíz del repositorio clonado (o subcarpeta ./github si se ejecuta desde carpeta padre)
-    (https://github.com/GomSal/SIRA/tree/modelo-humedad · HEAD 8fde03d, 21-nov-2026)
+    C:\Users\Sismo\Documents\EDUCATION\EAFIT\10th_semester\SIRA\github
+    (https://github.com/GomSal/SIRA/tree/modelo-humedad · commits d77ae9c -> 86aa09b)
 
 Ingesta y estructura en formato columnar Parquet todos los insumos reales del repo:
 1. Imágenes Satelitales (Planetary Computer STAC): Sentinel-2 L2A (10-20m),
    Landsat 7/8/9 C2 L2 (30m) y manifiesto HLS2 (224x224, 30m) reservado
    exclusivamente para gap-fill operativo en días nublados con Prithvi-EO-2.0.
-2. Clima Observado Diario: CHIRPS (lluvia) + NASA POWER (ETo FAO-56).
+2. Clima Observado Diario: CHIRPS (lluvia con relleno POWER PRECTOTCORR) + NASA POWER (ETo FAO-56).
 3. Clima Pronosticado Subestacional: NASA GMAO GEOS-S2S-3 (5 miembros, 30-81d)
    NRT (`geos_nrt.csv`) + climatología de hindcasts (`geos_drift.csv`).
 4. Verdad de Campo Nataima (198 mediciones TDR) + tabla unificada + auditoría IDEAM.
-5. Insumos de Modelo C operativo (commit 1a592aa):
+5. Insumos del Semáforo Unificado (`d77ae9c` -> `86aa09b`):
+   - Modelo B oficial (`models/semaforo_b/arimax.json`, `calendarios_riego.csv`) y prueba dinámica
+     (`reports/b_reentreno/dinamica/resultado.json`).
    - Curva normal de 10 años por DAS (`paso1_curva_por_dias_desde_siembra.csv`).
-   - Salida real de 20.286 píxeles agrícolas (400 ha, 2x2 km) de `reports/semaforo_c/`
-     + mapas PNG (`semaforo_h00/07/15/30.png`), `resumen.json` y visor Leaflet `mapa.html`.
-6. Metadatos oficiales de Modelos A, B (ARIMAX(1) + reentreno Etapa 1 `8fde03d`) y C.
+   - Salida real de 20.286 píxeles agrícolas (39 cols) de `reports/semaforo_c/` + mapas PNG,
+     `resumen.json`, visor Leaflet `mapa.html` y exportación App Lovable (`app/datos/`).
 """
 
 import json
@@ -30,13 +31,7 @@ import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIRA_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
-# Soporta ejecución directa dentro del clon del repo (Big-Data_Arch) o desde carpeta padre con subcarpeta ./github
-if os.path.isdir(os.path.join(SIRA_ROOT, "data")) and os.path.isdir(os.path.join(SIRA_ROOT, "reports")):
-    GITHUB_REPO = SIRA_ROOT
-elif os.path.isdir(os.path.join(SIRA_ROOT, "github")):
-    GITHUB_REPO = os.path.join(SIRA_ROOT, "github")
-else:
-    GITHUB_REPO = os.environ.get("SIRA_REPO_PATH", SIRA_ROOT)
+GITHUB_REPO = os.environ.get("SIRA_REPO_PATH") or os.path.join(SIRA_ROOT, "github")
 
 DATA_DIR = os.path.join(BASE_DIR, "data")
 BRONZE_DIR = os.path.join(DATA_DIR, "bronce")
@@ -62,6 +57,7 @@ def ensure_dirs():
         "oro/predios",
         "oro/curva_normal_10anios",
         "oro/semaforo_c_mapas",
+        "oro/semaforo_app",
         "models/pronosticador_a",
         "models/calibracion_landsat_s2",
         "models/semaforo_b",
@@ -88,7 +84,6 @@ def ingest_satellite_bronze():
     pix["predio_id"] = PREDIO_MVP
     pix["fecha"] = pd.to_datetime(pix["fecha"]).dt.strftime("%Y-%m-%d")
 
-    # Control de bruma documentado en scripts/modelo_humedad_unificado.py (4 fechas brumosas)
     malas_s2 = {"2021-07-07", "2021-08-11", "2021-09-15", "2022-01-03"}
     rng = np.random.default_rng(20261121)
     pix["azul_b02"] = np.where(
@@ -113,10 +108,8 @@ def ingest_satellite_bronze():
     df_ls["plataforma"] = df_ls["satelite"].str.lower()
     df_ls["qa_ok"] = True
 
-    s2_out = os.path.join(BRONZE_DIR, "sentinel2", "sentinel2_l2a_nataima.parquet")
-    ls_out = os.path.join(BRONZE_DIR, "landsat", "landsat_c2l2_nataima.parquet")
-    df_s2.to_parquet(s2_out, index=False)
-    df_ls.to_parquet(ls_out, index=False)
+    df_s2.to_parquet(os.path.join(BRONZE_DIR, "sentinel2", "sentinel2_l2a_nataima.parquet"), index=False)
+    df_ls.to_parquet(os.path.join(BRONZE_DIR, "landsat", "landsat_c2l2_nataima.parquet"), index=False)
 
     fechas_hls = sorted(df_s2["fecha"].unique())
     df_hls = pd.DataFrame(
@@ -131,9 +124,7 @@ def ingest_satellite_bronze():
             "frac_despejado": np.where(pd.Series(fechas_hls).isin(malas_s2), 0.35, 0.92),
         }
     )
-    hls_out = os.path.join(BRONZE_DIR, "hls", "hls_prithvi_manifest.parquet")
-    df_hls.to_parquet(hls_out, index=False)
-
+    df_hls.to_parquet(os.path.join(BRONZE_DIR, "hls", "hls_prithvi_manifest.parquet"), index=False)
     print(f"  -> Sentinel-2 L2A: {len(df_s2):,} filas | Landsat C2 L2: {len(df_ls):,} filas | HLS2: {len(df_hls)} escenas")
 
 
@@ -153,17 +144,9 @@ def ingest_climate_and_geos_bronze():
 
     df_power = cl[
         [
-            "celda_clima_id",
-            "lat_celda",
-            "lon_celda",
-            "fecha",
-            "T2M_MAX",
-            "T2M_MIN",
-            "RH2M",
-            "WS2M",
-            "ALLSKY_SFC_SW_DWN",
-            "PRECTOTCORR",
-            "eto",
+            "celda_clima_id", "lat_celda", "lon_celda", "fecha",
+            "T2M_MAX", "T2M_MIN", "RH2M", "WS2M",
+            "ALLSKY_SFC_SW_DWN", "PRECTOTCORR", "eto",
         ]
     ].rename(columns={"eto": "eto_fao56_power_mm"})
     df_power["fuente"] = "NASA_POWER_AG"
@@ -183,7 +166,6 @@ def ingest_climate_and_geos_bronze():
 
     df_geos_nrt.to_parquet(os.path.join(BRONZE_DIR, "geos_s2s", "geos_s2s_nrt.parquet"), index=False)
     df_geos_drift.to_parquet(os.path.join(BRONZE_DIR, "geos_s2s", "geos_s2s_drift.parquet"), index=False)
-
     print(f"  -> CHIRPS/POWER: {len(df_chirps):,} días | GEOS-S2S NRT: {len(df_geos_nrt):,} | Drift: {len(df_geos_drift):,}")
 
 
@@ -211,30 +193,34 @@ def ingest_ground_truth_and_audit():
     print(f"  -> Nataima diario: {len(df_nat):,} filas | Mediciones reales TDR: {len(df_unif):,}")
 
 
-def ingest_modelo_c_and_curva_normal():
-    """Ingesta insumos operativos reales del Modelo C (commit 1a592aa) y curva normal 10 años."""
-    print("[4/6] Estructurando curva normal 10 años y salidas reales del Modelo C (20.286 píxeles, 400 ha)...")
-    # 1. Curva normal de 10 años por días desde siembra (para día 0 y control anomalía NDMI de C)
+def ingest_modelo_unificado_and_curva_normal():
+    """Ingesta insumos del Semáforo Unificado (d77ae9c -> 86aa09b, 39 columnas) y datos App Lovable."""
+    print("[4/6] Estructurando curva normal 10 años, salidas del Semáforo Unificado (39 cols) y App Lovable...")
     df_curva = pd.read_csv(repo_path("reports/modelo_a/entrenamiento_final/paso1_curva_por_dias_desde_siembra.csv"))
     df_curva["das_centro"] = df_curva["das_b"] + 5.0
     df_curva.to_parquet(os.path.join(GOLD_DIR, "curva_normal_10anios", "curva_normal_10anios.parquet"), index=False)
 
-    # 2. Píxeles reales de Modelo C (reports/semaforo_c/pixeles.csv.gz -> 20.286 píxeles agrícolas)
     df_px_c = pd.read_csv(repo_path("reports/semaforo_c/pixeles.csv.gz"))
-    df_px_c["predio_id"] = PREDIO_MVP
+    df_px_c.insert(0, "predio_id", PREDIO_MVP)
     df_px_c.to_parquet(os.path.join(BRONZE_DIR, "semaforo_c_repo", "pixeles_c_20286.parquet"), index=False)
 
-    # 3. Mapas PNG, resumen JSON y visor Leaflet HTML del Modelo C para publicación en S3 Oro
     mapas_dir = os.path.join(GOLD_DIR, "semaforo_c_mapas")
     for fname in ["semaforo_h00.png", "semaforo_h07.png", "semaforo_h15.png", "semaforo_h30.png", "resumen.json", "mapa.html", "qa_reproduce_a.json"]:
-        shutil.copy2(repo_path(f"reports/semaforo_c/{fname}"), os.path.join(mapas_dir, fname))
+        src = repo_path(f"reports/semaforo_c/{fname}")
+        shutil.copy2(src, os.path.join(mapas_dir, fname))
 
-    print(f"  -> Curva normal 10 años: {len(df_curva)} tramos DAS | Píxeles Modelo C: {len(df_px_c):,} + 4 mapas PNG + mapa.html")
+    app_dir = os.path.join(GOLD_DIR, "semaforo_app")
+    for fname in ["zonas.json", "semaforo.json"]:
+        src = os.path.join(GITHUB_REPO, "app", "datos", fname)
+        if os.path.exists(src):
+            shutil.copy2(src, os.path.join(app_dir, fname))
+
+    print(f"  -> Curva 10 años: {len(df_curva)} tramos | Píxeles Semáforo Unificado: {len(df_px_c):,} ({len(df_px_c.columns)} cols)")
 
 
 def build_predios_catalog_and_model_metadata():
-    """Crea catálogo maestro oro/predios y registra metadatos reales de Modelos A, B (oficial + Etapa 1) y C."""
-    print("[5/6] Actualizando catálogo oro/predios y metadatos reales de Modelos A, B y C...")
+    """Crea catálogo maestro oro/predios y registra metadatos oficiales A, B (arimax.json + calendarios) y C."""
+    print("[5/6] Actualizando catálogo oro/predios y metadatos reales A, B (operación) y Semáforo Unificado...")
     df_predios = pd.DataFrame(
         [
             {
@@ -268,47 +254,46 @@ def build_predios_catalog_and_model_metadata():
     )
     df_predios.to_parquet(os.path.join(GOLD_DIR, "predios", "predios_catalogo.parquet"), index=False)
 
-    # 1. Calibración Landsat 7/8/9 -> Sentinel-2
     cal_df = pd.read_csv(repo_path("reports/modelo_a/entrenamiento_final/paso2_calibracion_landsat_s2.csv"))
     cal_df.to_parquet(os.path.join(MODELS_DIR, "calibracion_landsat_s2", "calibracion_landsat_s2.parquet"), index=False)
     with open(os.path.join(MODELS_DIR, "calibracion_landsat_s2", "calibracion_landsat_s2.json"), "w", encoding="utf-8") as f:
         json.dump(cal_df.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
 
-    # 2. Modelo A (meta + métricas absolutas commit 8ed983d + QA reproduce A commit 1a592aa + RMSE prueba)
     shutil.copy2(repo_path("models/pronosticador_a/meta.json"), os.path.join(MODELS_DIR, "pronosticador_a", "meta.json"))
     shutil.copy2(repo_path("reports/modelo_a/entrenamiento_final/paso8_metricas_absolutas.csv"), os.path.join(MODELS_DIR, "pronosticador_a", "paso8_metricas_absolutas.csv"))
     shutil.copy2(repo_path("reports/modelo_a/entrenamiento_final/paso8_prueba_clima_observado.csv"), os.path.join(MODELS_DIR, "pronosticador_a", "paso8_prueba_clima_observado.csv"))
     shutil.copy2(repo_path("reports/semaforo_c/qa_reproduce_a.json"), os.path.join(MODELS_DIR, "pronosticador_a", "qa_reproduce_a.json"))
 
-    # 3. Modelo B oficial (commit ec84551: ARIMAX(1) sin Prithvi + ROC familias) + Reentreno Etapa 1 (commit 8fde03d)
     shutil.copy2(repo_path("reports/semaforo_clasificador_ndvi_prithvi/familia_arimax/modelo_de_uso.json"), os.path.join(MODELS_DIR, "semaforo_b", "modelo_de_uso_oficial_arimax.json"))
     shutil.copy2(repo_path("reports/semaforo_clasificador_ndvi_ndmi/modelo_de_uso.json"), os.path.join(MODELS_DIR, "semaforo_b", "modelo_de_uso_ndvi_ndmi.json"))
     shutil.copy2(repo_path("reports/semaforo_clasificador_ndvi_prithvi/roc_auc.csv"), os.path.join(MODELS_DIR, "semaforo_b", "roc_auc_familias.csv"))
     shutil.copy2(repo_path("reports/b_reentreno/etapa1/resumen_por_variante.csv"), os.path.join(MODELS_DIR, "semaforo_b", "reentreno_etapa1_resumen.csv"))
     shutil.copy2(repo_path("reports/b_reentreno/etapa1/protocolo.json"), os.path.join(MODELS_DIR, "semaforo_b", "reentreno_etapa1_protocolo.json"))
 
-    # 4. Modelo C especificación oficial (commit 1a592aa)
+    # Nuevos artefactos operativos oficiales de d77ae9c
+    shutil.copy2(repo_path("models/semaforo_b/arimax.json"), os.path.join(MODELS_DIR, "semaforo_b", "arimax.json"))
+    shutil.copy2(repo_path("models/semaforo_b/calendarios_riego.csv"), os.path.join(MODELS_DIR, "semaforo_b", "calendarios_riego.csv"))
+    shutil.copy2(repo_path("reports/b_reentreno/dinamica/resultado.json"), os.path.join(MODELS_DIR, "semaforo_b", "prueba_dinamica_resultado.json"))
+
     modelo_c_spec = {
-        "nombre": "Modelo C — Semáforo Físico Operativo sin Riego Registrado",
-        "commit_origen": "1a592aa (scripts/operacion/semaforo_c.py)",
-        "requiere_entrenamiento": False,
-        "ecuacion": "Dr(t) = clip(Dr(t-1) - L_GEOS(t) + Ks * Kc(t) * ETo_GEOS(t)), drenaje k=0.5 si Dr < 0",
+        "nombre": "Semáforo Unificado SIRA — A (RF) + B (ARIMAX día 0) + Dr_modificada FAO-56 (+30 d)",
+        "commit_origen": "d77ae9c -> 86aa09b (docs/esquema_semaforo.md, scripts/operacion/semaforo_c.py)",
+        "tramo_1_siembra_a_hoy": "b_entradas.propagar() con CHIRPS (relleno POWER PRECTOTCORR) + ETo POWER + NDVI observado + 3 calendarios CD",
+        "dia_0_modelo_b": "ARIMAX(1) oficial (models/semaforo_b/operacion/arimax.json, sigma=3.12%): Dr0 = 1.5*(30 - mu0) + 1.5*sigma (margen 4.68 mm una sola vez)",
+        "tramo_2_hoy_a_30d": "propagar_dr() FAO-56 (TAW=6.7, p=0.65, DSAT=26.475, k=0.5, sin riego, sin margen adicional) sobre promedio de 5 miembros GEOS-S2S + NDVI de A",
         "kc_formula": "clip(1.0 * NDVI_A + 0.45, 0.6, 1.3)",
-        "parametros_suelo_nataima": {"TAW_mm": 6.7, "p": 0.65, "RAW_mm": 4.355, "Zr_mm": 150.0, "DSAT_mm": 26.475, "k_drenaje": 0.5, "DR_ROJO_mm": 4.34},
-        "inicializacion_dia0_ndmi": {"Z_NORMAL": -0.67, "Z_SECO": -1.28, "curva": "paso1_curva_por_dias_desde_siembra.csv (10 años)"},
         "clases": {"0": "suficiente (Dr <= 0 mm, >=30% VWC)", "1": "media (0 < Dr <= 4.34 mm, 27.1-30% VWC)", "2": "baja (Dr > 4.34 mm, <27.1% VWC)"},
         "control_anomalia_ndmi": {
             "regla": "((NDMI_A + RMSE_A(delta) - mu_das) / sd_das) < -1.28",
-            "efecto_en_media": "degrada a baja (2)",
+            "efecto_en_media": "no cambia el color",
             "efecto_en_suficiente": "activa marca morada: posible enfermedad o deficiencia nutricional",
         },
-        "escenario_base": "sin_riego_desde_hoy",
-        "agregacion_miembros_geos": "mediana de Dr (DRM) sobre 5 miembros + probabilidad p_baja = mean(DR > 4.34)",
+        "job_aws_glue": "sira-b-05-inferencia-unificada-ml (AWS Glue 5.0, Python 3.11, sklearn==1.6.1)",
+        "salida_app_s3": "s3://sira-b-lakehouse-929570730700/oro/semaforo_app/ (formato 2, 31 días, 6.868 píxeles en cultivo)",
     }
     with open(os.path.join(MODELS_DIR, "semaforo_c", "modelo_c_spec.json"), "w", encoding="utf-8") as f:
         json.dump(modelo_c_spec, f, indent=2, ensure_ascii=False)
 
-    # 5. Manifiesto oficial Prithvi-EO-2.0 (exclusivo para gap-fill operativo en nubes hoy)
     prithvi_manifest = {
         "repositorio_hf": "ibm-nasa-geospatial/Prithvi-EO-2.0-300M-TL",
         "revision": "63adbd39c271da4c42f447e69b1a7c91a338cdc9",
@@ -323,18 +308,17 @@ def build_predios_catalog_and_model_metadata():
     }
     with open(os.path.join(MODELS_DIR, "prithvi_gapfill", "prithvi_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(prithvi_manifest, f, indent=2, ensure_ascii=False)
-
-    print(f"  -> Catálogo oro/predios y metadatos A/B/C/Prithvi sincronizados desde {GITHUB_REPO}")
+    print(f"  -> Catálogo oro/predios y metadatos sincronizados desde {GITHUB_REPO}")
 
 
 def main():
     t0 = time.time()
-    print("=== SIRA B_SIRA_ARCH · INGESTA A CAPA BRONCE DESDE SIRA\\github (HEAD 8fde03d) ===")
+    print("=== SIRA B_SIRA_ARCH UNIFICADO · INGESTA A CAPA BRONCE DESDE SIRA\\github (HEAD 86aa09b) ===")
     ensure_dirs()
     ingest_satellite_bronze()
     ingest_climate_and_geos_bronze()
     ingest_ground_truth_and_audit()
-    ingest_modelo_c_and_curva_normal()
+    ingest_modelo_unificado_and_curva_normal()
     build_predios_catalog_and_model_metadata()
     print(f"[6/6] Ingesta Bronce B completada en {time.time() - t0:.2f} s.")
 
