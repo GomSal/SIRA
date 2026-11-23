@@ -1,0 +1,206 @@
+{
+ "a_familias": {
+  "ndmi|ARIMAX": [
+   0.071,
+   0.126,
+   NaN
+  ],
+  "ndmi|GRU": [
+   0.2,
+   0.102,
+   NaN
+  ],
+  "ndmi|Gradient Boosting": [
+   0.199,
+   0.104,
+   NaN
+  ],
+  "ndmi|Random Forest": [
+   0.204,
+   0.104,
+   NaN
+  ],
+  "ndmi|XGBoost": [
+   0.2,
+   0.104,
+   NaN
+  ],
+  "ndmi|[mejor de la familia] ARIMAX": [
+   0.071,
+   NaN,
+   false
+  ],
+  "ndmi|[mejor de la familia] GRU": [
+   0.2,
+   NaN,
+   true
+  ],
+  "ndmi|[mejor de la familia] Gradient Boosting": [
+   0.199,
+   NaN,
+   true
+  ],
+  "ndmi|[mejor de la familia] Random Forest": [
+   0.204,
+   NaN,
+   true
+  ],
+  "ndmi|[mejor de la familia] XGBoost": [
+   0.2,
+   NaN,
+   true
+  ],
+  "ndvi|ARIMAX": [
+   0.074,
+   0.159,
+   NaN
+  ],
+  "ndvi|GRU": [
+   0.19,
+   0.13,
+   NaN
+  ],
+  "ndvi|Gradient Boosting": [
+   0.195,
+   0.133,
+   NaN
+  ],
+  "ndvi|Random Forest": [
+   0.194,
+   0.133,
+   NaN
+  ],
+  "ndvi|XGBoost": [
+   0.195,
+   0.133,
+   NaN
+  ],
+  "ndvi|[mejor de la familia] ARIMAX": [
+   0.074,
+   NaN,
+   false
+  ],
+  "ndvi|[mejor de la familia] GRU": [
+   0.19,
+   NaN,
+   true
+  ],
+  "ndvi|[mejor de la familia] Gradient Boosting": [
+   0.195,
+   NaN,
+   true
+  ],
+  "ndvi|[mejor de la familia] Random Forest": [
+   0.194,
+   NaN,
+   true
+  ],
+  "ndvi|[mejor de la familia] XGBoost": [
+   0.195,
+   NaN,
+   true
+  ]
+ },
+ "a_prueba_ndvi": [
+  {
+   "h": 1,
+   "rmse": 0.083,
+   "skill_vs_persistencia": 0.099,
+   "skill_vs_persistencia_IC95": "+0.0481 a +0.1385"
+  },
+  {
+   "h": 3,
+   "rmse": 0.083,
+   "skill_vs_persistencia": 0.192,
+   "skill_vs_persistencia_IC95": "+0.1387 a +0.2349"
+  },
+  {
+   "h": 7,
+   "rmse": 0.097,
+   "skill_vs_persistencia": 0.208,
+   "skill_vs_persistencia_IC95": "+0.1666 a +0.2447"
+  },
+  {
+   "h": 15,
+   "rmse": 0.119,
+   "skill_vs_persistencia": 0.272,
+   "skill_vs_persistencia_IC95": "+0.2263 a +0.3044"
+  },
+  {
+   "h": 30,
+   "rmse": 0.146,
+   "skill_vs_persistencia": 0.316,
+   "skill_vs_persistencia_IC95": "+0.2731 a +0.3585"
+  }
+ ],
+ "a_prueba_ndmi": [
+  {
+   "h": 1,
+   "rmse": 0.063,
+   "skill_vs_persistencia": 0.024,
+   "skill_vs_persistencia_IC95": "-0.0865 a +0.1275"
+  },
+  {
+   "h": 3,
+   "rmse": 0.064,
+   "skill_vs_persistencia": 0.207,
+   "skill_vs_persistencia_IC95": "+0.1071 a +0.2655"
+  },
+  {
+   "h": 7,
+   "rmse": 0.077,
+   "skill_vs_persistencia": 0.201,
+   "skill_vs_persistencia_IC95": "+0.1464 a +0.2406"
+  },
+  {
+   "h": 15,
+   "rmse": 0.094,
+   "skill_vs_persistencia": 0.281,
+   "skill_vs_persistencia_IC95": "+0.2239 a +0.3192"
+  },
+  {
+   "h": 30,
+   "rmse": 0.111,
+   "skill_vs_persistencia": 0.334,
+   "skill_vs_persistencia_IC95": "+0.2767 a +0.3834"
+  }
+ ],
+ "b_familias_validacion": {
+  "ARIMAX": {
+   "auc_val": 0.774,
+   "hiper": {
+    "p": 1
+   }
+  },
+  "Gradient Boosting + Prithvi": {
+   "auc_val": 0.777,
+   "hiper": {
+    "max_depth": 3,
+    "learning_rate": 0.1,
+    "prithvi_pca": 3
+   }
+  },
+  "regresión logística": {
+   "auc_val": 0.717,
+   "hiper": {
+    "C": 1.0
+   }
+  },
+  "Random Forest": {
+   "auc_val": 0.773,
+   "hiper": {
+    "max_depth": 5,
+    "min_samples_leaf": 3
+   }
+  },
+  "XGBoost + Prithvi": {
+   "auc_val": 0.764,
+   "hiper": {
+    "max_depth": 2,
+    "learning_rate": 0.1,
+    "min_child_weight": 3,
+    "prithvi_pca": 3
+   }
+  }
+ }
+}

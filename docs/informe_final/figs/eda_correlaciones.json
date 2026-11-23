@@ -1,0 +1,12 @@
+{
+ "Riego 5 días": 0.41,
+ "Lluvia 5 días (CHIRPS)": -0.05,
+ "ETo 5 días": 0.06,
+ "Temperatura máxima": 0.08,
+ "Humedad del aire": -0.09,
+ "NDVI": -0.03,
+ "NDMI": 0.0,
+ "NDWI": 0.0,
+ "Reservorio S (τ = 20 d)": 0.53,
+ "Déficit Dr FAO-56": -0.14
+}

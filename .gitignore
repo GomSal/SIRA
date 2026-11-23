@@ -21,3 +21,7 @@ cloud/*/ultima_corrida.json
 
 # Modelo predictor (A): datos pesados fuera del repo (salidas de Kaggle y pruebas locales)
 data/interim/modelo_a/
+
+# Archivos de bloqueo de LibreOffice/Word
+.~lock.*#
+~$*
