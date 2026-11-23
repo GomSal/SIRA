@@ -33,6 +33,7 @@ Este README es la **guía de entrada de todo el proyecto**: qué está en línea
 | 📊 **Tablero técnico (Streamlit)** | Profesores y equipo técnico: situación de riego, mapa, plan por lote, clima, cultivo y la pestaña **Datos y modelo** (flujos de entrenamiento, curvas ROC, skill y AUC). Se actualiza solo cada día. | **https://sira-riego-arroz.streamlit.app** |
 | 🧩 **Código del tablero** | Repositorio aparte del tablero (Streamlit + GitHub Actions diario). | https://github.com/tomasguzman0925-ship-it/sira-dashboard |
 | ⚙️ **API pública en producción** | La app consume esta API (AWS Lambda Function URL, CORS). | `https://s435rizz22wj6qd3mv37doq76m0widfd.lambda-url.us-east-2.on.aws/` |
+| 📄 **Informe final** | Documento completo del proyecto: contexto, datos, metodología, modelos, arquitectura, resultados y referencias. | [`docs/informe_final/SIRA_informe_final_vista.pdf`](docs/informe_final/SIRA_informe_final_vista.pdf) (PDF) · [`SIRA_informe_final.docx`](docs/informe_final/SIRA_informe_final.docx) (Word) |
 | 🎞️ **Presentación final (18 diapositivas)** | Sustentación del proyecto, con notas del orador. | [`docs/presentacion/SIRA_presentacion_final.pptx`](docs/presentacion/SIRA_presentacion_final.pptx) |
 
 ---
@@ -80,6 +81,9 @@ SIRA/ (main)
     ├── arquitectura_produccion_predictor.md ← producción del Modelo A y criterio de Spark
     ├── HANDOVER_modelo_A.md / HANDOVER_modelo_B.md ← decisiones de cada modelo
     ├── plan_trabajo.html              ← plan de trabajo del equipo
+    ├── informe_final/
+    │   ├── SIRA_informe_final_vista.pdf ← informe final (PDF)
+    │   └── SIRA_informe_final.docx    ← informe final (Word); el código que lo construye está en modelo-humedad
     ├── presentacion/
     │   └── SIRA_presentacion_final.pptx ← presentación final (18 diapositivas)
     └── big_data/
@@ -123,7 +127,8 @@ SIRA/ (modelo-humedad)
 │   └── …
 ├── data/                   ← raw (digitalizado del artículo), interim y processed
 ├── app/datos/              ← semáforo y zonas que consume la app
-├── docs/                   ← mismos documentos de ML que main, fuentes del informe y presentación
+├── docs/                   ← documentos de ML, fuentes del informe, presentación y
+│   └── informe_final/      ← informe final con el código que lo arma (construir_informe.py, figuras_*.py, figs/)
 └── tests/                  ← pruebas de la digitalización y del Modelo B
 ```
 
@@ -377,6 +382,7 @@ Documentados en [`docs/esquema_semaforo.md`](docs/esquema_semaforo.md):
 ## 9. Índice completo de documentación
 
 ### Producto y sustentación
+- **[`docs/informe_final/SIRA_informe_final_vista.pdf`](docs/informe_final/SIRA_informe_final_vista.pdf)** ([Word](docs/informe_final/SIRA_informe_final.docx)) — Informe final. El código que genera sus figuras y el documento está en [`docs/informe_final/`](https://github.com/GomSal/SIRA/tree/modelo-humedad/docs/informe_final) de `modelo-humedad`.
 - **[`docs/presentacion/SIRA_presentacion_final.pptx`](docs/presentacion/SIRA_presentacion_final.pptx)** — Presentación final (18 diapositivas, con notas del orador).
 - **App:** https://arroz-a-tiempo-sira.lovable.app · **Tablero:** https://sira-riego-arroz.streamlit.app · **Código del tablero:** https://github.com/tomasguzman0925-ship-it/sira-dashboard
 
