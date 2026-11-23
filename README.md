@@ -11,8 +11,8 @@
 
 | Rama | Contenido y Propósito | Estado |
 |---|---|---|
-| **`main`** *(actual)* | **Documentación maestra, diagramas integrados y guía de replicación exacta** (integra el estado vigente de Machine Learning en `modelo-humedad` y de Big Data + AWS Lambda en `Big-Data_Arch`). | Actualizada (`876be25` + `Big-Data_Arch`) |
-| **`modelo-humedad`** | **Código y artefactos completos de Machine Learning** (Santiago Vélez Casallas): Fase 0 digitalización Nataima (`src/sira/`), Modelo A (`cloud/modelo_a/`, `scripts/modelo_a/`), Modelo B `ARIMAX(1)` (`models/semaforo_b/arimax.json`), pruebas selladas y dinámicas (`reports/`), Semáforo operativo (`scripts/operacion/semaforo_c.py`, `b_entradas.py`, `guardar_modelo_b.py`), actualización incremental (`actualizar_datos.py`), exportación a app (`exportar_app.py`) y subida a S3 (`subir_aws.py`). | Vigente (`HEAD 876be25`) |
+| **`main`** *(actual)* | **Documentación maestra, diagramas integrados y guía de replicación exacta** (integra el estado vigente de Machine Learning en `modelo-humedad` y de Big Data + AWS Lambda en `Big-Data_Arch`). | Actualizada (`d95f3a3` + `Big-Data_Arch`) |
+| **`modelo-humedad`** | **Código y artefactos completos de Machine Learning** (Santiago Vélez Casallas): Fase 0 digitalización Nataima (`src/sira/`), Modelo A (`cloud/modelo_a/`, `scripts/modelo_a/`), Modelo B `ARIMAX(1)` (`models/semaforo_b/arimax.json`), pruebas selladas y dinámicas (`reports/`), Semáforo operativo (`scripts/operacion/semaforo_c.py`, `b_entradas.py`, `guardar_modelo_b.py`), actualización incremental (`actualizar_datos.py`), exportación a app (`exportar_app.py`) y subida a S3 (`subir_aws.py`). | Vigente (`HEAD d95f3a3`) |
 | **`Big-Data_Arch`** | **Arquitectura completa y depurada de Big Data en AWS** (`B_SIRA_ARCH/` vigente + `A_SIRA_ARCH/` histórica): Lakehouse Medallion S3/Parquet, **2 Jobs activos en AWS Glue** (`sira-b-02` Glue 4.0 PySpark + `sira-b-05` Glue 5.0 con ML real y `--fecha_hoy=auto`), 3 Step Functions secuenciales, 3 EventBridge Schedules, 13 tablas en Amazon Athena y **AWS Lambda `sira-b-api-serving`** en producción con Lovable (`0 stacks` CloudFormation). | Vigente y verificada en vivo (`us-east-2`) |
 | **`General-Documentation`** | Estructura inicial de carpetas (`Big Data/` y `Machine Learning/`). | Carpetas base creadas |
 
@@ -32,7 +32,7 @@ Con profundidad radicular de `150 mm`, capacidad de campo `FC = 30 %` y déficit
 | 🟢 **Verde (Suficiente)** | `≥ 30,0 %` | `≤ 0 mm` | **No requiere riego** (alcanza con la lluvia pronosticada) |
 | 🟣 **Alarma Tardía NDMI** *(sobre píxel verde)* | Suelo suficiente (`verde`), pero `NDMI` pronosticado por A en el 10 % más seco de la curva normal de 10 años (aun sumando el RMSE de A) | No altera el color hídrico | **Revisar en campo: posible enfermedad o deficiencia nutricional** |
 
-### 2.2 Flujo Científico de Machine Learning (`modelo-humedad` · `HEAD 876be25`)
+### 2.2 Flujo Científico de Machine Learning (`modelo-humedad` · `HEAD d95f3a3`)
 
 ![Flujo del semáforo de humedad: modelos A y B, ecuaciones S y Dr, propagación con Dr FAO-56](docs/diagrama_semaforo.svg)
 
@@ -124,7 +124,7 @@ python scripts/operacion/actualizar_datos.py
 # 3. Correr semáforo operativo (auto-detecta último día con lluvia POWER) y exportar a app
 python scripts/operacion/semaforo_c.py --hoy 2026-11-19 --riego CD --lat 4.1895 --lon -74.9621 --lado_km 2
 python scripts/operacion/exportar_app.py
-python scripts/operacion/subir_aws.py --solo-oro
+python scripts/operacion/subir_aws.py  # sube solo entradas; Glue sira-b-05 produce oro/semaforo_app/
 ```
 
 ### Paso 2 · Replicación de Big Data y AWS (Rama `Big-Data_Arch`)
@@ -163,7 +163,7 @@ Tal como se documenta en [`docs/esquema_semaforo.md`](docs/esquema_semaforo.md):
 ## 5. Índice Completo de Documentación
 
 ### Documentación de Machine Learning y Ciencia de Datos (`modelo-humedad` → `docs/`)
-- **[`docs/esquema_semaforo.md`](docs/esquema_semaforo.md)** — Esquema definitivo del producto (`876be25`): Modelos A y B, ecuaciones `S` y `Dr`, propagación FAO-56, actualización `2026-11-19`, relleno POWER y límites.
+- **[`docs/esquema_semaforo.md`](docs/esquema_semaforo.md)** — Esquema definitivo del producto (`d95f3a3`): Modelos A y B, ecuaciones `S` y `Dr`, propagación FAO-56, actualización `2026-11-19`, relleno POWER y límites.
 - **[`docs/diagrama_semaforo.svg`](docs/diagrama_semaforo.svg)** — Diagrama oficial del flujo del semáforo de humedad.
 - **[`docs/informe_preliminar.md`](docs/informe_preliminar.md)** — Informe técnico completo: fuentes de datos, control de bruma, balance hídrico, arquitectura de entrenamiento y operación.
 - **[`docs/fase0_verdad_de_campo.md`](docs/fase0_verdad_de_campo.md)** — Digitalización y validación reproducible de las 198 mediciones TDR de Nataima.

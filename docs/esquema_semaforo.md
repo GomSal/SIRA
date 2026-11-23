@@ -29,7 +29,7 @@ Kc = 1,0·NDVI + 0,45, recortado a 0,6–1,3 (§11.4 del informe).
 2. **De la siembra a hoy: entradas de B.** Se calculan S₂₀, S₅, Dr, el riego de 5 días, los días desde el riego, la ETo de 5 días y el NDVI, con:
    - lluvia CHIRPS y ETo de NASA POWER observadas;
    - el NDVI observado del pixel, llevado a diario;
-   - **riego supuesto CD** (inundación continua).
+   - **riego supuesto CD** (distribución en cascada, que mantiene el suelo saturado).
 
    El riego supuesto son los 3 calendarios medidos en Nataima (GS1, GS2 y GS3, por días desde siembra). Se corre con cada uno y se promedia μ.
 3. **Hoy: B corrige y se aplica el margen, una sola vez.** El déficit de arranque es Dr₀ = 1,5·(30 − μ₀) + 1,5·σ, donde el margen 1,5·σ vale 4,7 mm. El color de hoy sale de Dr₀.
@@ -69,10 +69,22 @@ Los datos que se usan son los que ya existían: el cubo de A, `clima.csv` y GEOS
 ```
 python scripts/modelo_a/bajar_geos.py                 # GEOS-S2S: solo los inicios nuevos (retoma desde geos_nrt_parcial.csv)
 python scripts/operacion/actualizar_datos.py          # clima (POWER + CHIRPS) y escenas Sentinel-2/Landsat nuevas al cubo
-python scripts/operacion/semaforo_c.py --hoy <último día con lluvia POWER>
-python scripts/operacion/exportar_app.py              # app/datos/semaforo.json (31 días) y zonas.json
-python scripts/operacion/subir_aws.py                 # s3://sira-b-lakehouse-929570730700 (prefijos propios) y latest.json
+python scripts/operacion/subir_aws.py                 # sube las entradas a s3://sira-b-lakehouse-929570730700 (no toca oro/)
 ```
+
+**Quién produce el semáforo de la app** (decisión del 22-nov): el job de Glue `sira-b-05-inferencia-unificada-ml` de la iteración B de Big Data.
+- Lee del bucket los prefijos que sube este PC: `models/pronosticador_a/rf/`, `models/semaforo_b/operacion/`, `plata/cubo_a/` y `bronce/geos_s2s_a/`.
+- Corre la misma lógica de `semaforo_c.py` y escribe `oro/semaforo_app/emision=<hoy>/` y `latest.json`.
+- Comprobación del 22-nov: su corrida del 15-nov coincide con la nuestra. Mismos metadatos y píxeles, 5 colores distintos de 212.908 y déficit con diferencia máxima de 0,03 mm.
+- Debe correr con `fecha_hoy="auto"`.
+
+Este PC queda como fuente de los datos nuevos y como verificación local:
+```
+python scripts/operacion/semaforo_c.py --hoy <fecha>  # corrida local para comparar
+python scripts/operacion/exportar_app.py              # app/datos/semaforo.json (31 días) y zonas.json
+python scripts/operacion/subir_aws.py --con-oro       # solo como respaldo manual: escribe latest.json
+```
+Dos escritores del mismo `latest.json` se pisan, así que solo uno debe producir.
 
 Controles de la actualización:
 - **Clima:** en los días que ya estaban, POWER y CHIRPS nuevos son idénticos a los guardados, y la ETo recalculada es la del notebook 1.
